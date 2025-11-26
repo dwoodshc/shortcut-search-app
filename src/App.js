@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './App.css';
 
 function App() {
@@ -7,6 +7,73 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [expandedEpics, setExpandedEpics] = useState(new Set());
+  const [workflowStates, setWorkflowStates] = useState({});
+  const [members, setMembers] = useState({});
+
+  // Fetch workflow states on mount
+  useEffect(() => {
+    const fetchWorkflows = async () => {
+      try {
+        const workflowsResponse = await fetch('http://localhost:3001/api/workflows');
+        if (workflowsResponse.ok) {
+          const workflows = await workflowsResponse.json();
+          const statesMap = {};
+          workflows.forEach(workflow => {
+            workflow.states.forEach(state => {
+              statesMap[state.id] = state.name;
+            });
+          });
+          setWorkflowStates(statesMap);
+        }
+      } catch (err) {
+        console.error('Error fetching workflows:', err);
+      }
+    };
+
+    fetchWorkflows();
+  }, []);
+
+  // Fetch user name by ID
+  const fetchUserName = async (userId) => {
+    if (members[userId]) {
+      return members[userId];
+    }
+
+    try {
+      const response = await fetch(`http://localhost:3001/api/users/${userId}`);
+      if (response.ok) {
+        const user = await response.json();
+        const userName = user.profile.name;
+        setMembers(prev => ({ ...prev, [userId]: userName }));
+        return userName;
+      }
+    } catch (err) {
+      console.error('Error fetching user:', err);
+    }
+    return userId;
+  };
+
+  // Fetch owner names for epics when they're loaded
+  useEffect(() => {
+    const fetchOwnerNames = async () => {
+      const ownerIds = new Set();
+      epics.forEach(epic => {
+        if (epic.owner_ids) {
+          epic.owner_ids.forEach(id => ownerIds.add(id));
+        }
+      });
+
+      for (const ownerId of ownerIds) {
+        if (!members[ownerId]) {
+          await fetchUserName(ownerId);
+        }
+      }
+    };
+
+    if (epics.length > 0) {
+      fetchOwnerNames();
+    }
+  }, [epics]);
 
   const searchEpics = async (e) => {
     e.preventDefault();
@@ -153,6 +220,11 @@ function App() {
                         {epic.stats.num_stories_total || 0} stories
                       </span>
                     )}
+                    {epic.owner_ids && epic.owner_ids.length > 0 && (
+                      <span className="epic-owner">
+                        Owner: {epic.owner_ids.map(id => members[id] || id).join(', ')}
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -186,7 +258,7 @@ function App() {
                                 )}
                               </span>
                               <span className={`story-state state-${story.workflow_state_id}`}>
-                                {story.workflow_state_id}
+                                {workflowStates[story.workflow_state_id] || story.workflow_state_id}
                               </span>
                             </div>
                             {story.description && (

@@ -73,6 +73,43 @@ app.get('/api/epics/:id', async (req, res) => {
   }
 });
 
+// Get workflows with states
+app.get('/api/workflows', async (req, res) => {
+  try {
+    const response = await axios.get(`${SHORTCUT_API_BASE}/workflows`, {
+      headers: {
+        'Shortcut-Token': SHORTCUT_API_TOKEN,
+        'Content-Type': 'application/json'
+      }
+    });
+    res.json(response.data);
+  } catch (error) {
+    console.error('Error fetching workflows:', error.response?.data || error.message);
+    res.status(error.response?.status || 500).json({
+      error: error.response?.data || 'Failed to fetch workflows'
+    });
+  }
+});
+
+// Get user/member by ID
+app.get('/api/users/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const response = await axios.get(`${SHORTCUT_API_BASE}/members/${id}`, {
+      headers: {
+        'Shortcut-Token': SHORTCUT_API_TOKEN,
+        'Content-Type': 'application/json'
+      }
+    });
+    res.json(response.data);
+  } catch (error) {
+    console.error('Error fetching user:', error.response?.data || error.message);
+    res.status(error.response?.status || 500).json({
+      error: error.response?.data || 'Failed to fetch user'
+    });
+  }
+});
+
 // Get stories for an epic
 app.get('/api/epics/:id/stories', async (req, res) => {
   try {
@@ -86,8 +123,8 @@ app.get('/api/epics/:id/stories', async (req, res) => {
     res.json(response.data);
   } catch (error) {
     console.error('Error fetching stories:', error.response?.data || error.message);
-    res.status(error.response?.status || 500).json({ 
-      error: error.response?.data || 'Failed to fetch stories' 
+    res.status(error.response?.status || 500).json({
+      error: error.response?.data || 'Failed to fetch stories'
     });
   }
 });

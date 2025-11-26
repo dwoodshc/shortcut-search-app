@@ -181,6 +181,11 @@ body {
   font-size: 0.875rem;
 }
 
+.epic-owner {
+  color: #718096;
+  font-size: 0.875rem;
+}
+
 .epic-description {
   color: #718096;
   margin: 1rem 0;
