@@ -228,10 +228,6 @@ function App() {
                   </div>
                 </div>
 
-                {epic.description && (
-                  <p className="epic-description">{epic.description}</p>
-                )}
-
                 {expandedEpics.has(epic.id) && (
                   <div className="stories-section">
                     <h4>Stories:</h4>
