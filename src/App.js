@@ -32,6 +32,31 @@ function App() {
     }));
   };
 
+  // Toggle all charts and tables collapse state
+  const toggleAllCharts = () => {
+    const allChartKeys = [];
+    const chartTypes = ['column', 'workflow-pie', 'type-pie', 'owners-table', 'team-tickets'];
+
+    epics.forEach(epic => {
+      if (!epic.notFound) {
+        chartTypes.forEach(type => {
+          allChartKeys.push(`${epic.id}-${type}`);
+        });
+      }
+    });
+
+    // Check if all are currently collapsed
+    const allCollapsed = allChartKeys.every(key => collapsedCharts[key]);
+
+    // Set all to the opposite state
+    const newState = {};
+    allChartKeys.forEach(key => {
+      newState[key] = !allCollapsed;
+    });
+
+    setCollapsedCharts(newState);
+  };
+
   // Check if API token exists on mount
   useEffect(() => {
     const checkToken = async () => {
@@ -719,10 +744,31 @@ function App() {
 
         {epics.length > 0 && (
           <div className="epics-list">
-            <h2>
-              {epics.filter(e => !e.notFound).length === filteredEpicNames.length ? '✅ ' : '⚠️ '}
-              Found {epics.filter(e => !e.notFound).length} of {filteredEpicNames.length} Epic{filteredEpicNames.length !== 1 ? 's' : ''}
-            </h2>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+              <h2 style={{ margin: 0 }}>
+                {epics.filter(e => !e.notFound).length === filteredEpicNames.length ? '✅ ' : '⚠️ '}
+                Found {epics.filter(e => !e.notFound).length} of {filteredEpicNames.length} Epic{filteredEpicNames.length !== 1 ? 's' : ''}
+              </h2>
+              <button
+                onClick={toggleAllCharts}
+                className="btn-secondary"
+                style={{ whiteSpace: 'nowrap' }}
+              >
+                {(() => {
+                  const allChartKeys = [];
+                  const chartTypes = ['column', 'workflow-pie', 'type-pie', 'owners-table', 'team-tickets'];
+                  epics.forEach(epic => {
+                    if (!epic.notFound) {
+                      chartTypes.forEach(type => {
+                        allChartKeys.push(`${epic.id}-${type}`);
+                      });
+                    }
+                  });
+                  const allCollapsed = allChartKeys.every(key => collapsedCharts[key]);
+                  return allCollapsed ? 'Expand All Charts & Tables' : 'Collapse All Charts & Tables';
+                })()}
+              </button>
+            </div>
             {epics.map((epic) => (
               epic.notFound ? (
                 <div key={epic.id} className="epic-not-found">
