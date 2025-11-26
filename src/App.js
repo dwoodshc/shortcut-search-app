@@ -11,7 +11,7 @@ function App() {
   const [workflowStates, setWorkflowStates] = useState({});
   const [workflowStateOrder, setWorkflowStateOrder] = useState([]);
   const [members, setMembers] = useState({});
-  const [filterByList, setFilterByList] = useState(false);
+  const [filterByList, setFilterByList] = useState(true);
   const [filteredEpicNames, setFilteredEpicNames] = useState([]);
 
   // Fetch teams, workflow states, and filtered epic names on mount
