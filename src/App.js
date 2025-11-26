@@ -8,6 +8,7 @@ function App() {
   const [error, setError] = useState(null);
   const [expandedEpics, setExpandedEpics] = useState(new Set());
   const [workflowStates, setWorkflowStates] = useState({});
+  const [workflowStateOrder, setWorkflowStateOrder] = useState([]);
   const [members, setMembers] = useState({});
 
   // Fetch workflow states on mount
@@ -18,12 +19,22 @@ function App() {
         if (workflowsResponse.ok) {
           const workflows = await workflowsResponse.json();
           const statesMap = {};
+          const stateOrder = [];
+
+          // Only use the "RnD Workflow"
           workflows.forEach(workflow => {
-            workflow.states.forEach(state => {
-              statesMap[state.id] = state.name;
-            });
+            if (workflow.name === "RnD Workflow") {
+              workflow.states.forEach(state => {
+                statesMap[state.id] = state.name;
+                if (!stateOrder.includes(state.id)) {
+                  stateOrder.push(state.id);
+                }
+              });
+            }
           });
+
           setWorkflowStates(statesMap);
+          setWorkflowStateOrder(stateOrder);
         }
       } catch (err) {
         console.error('Error fetching workflows:', err);
@@ -98,9 +109,27 @@ function App() {
       }
 
       const data = await response.json();
-      setEpics(data.data || []);
-      
-      if (!data.data || data.data.length === 0) {
+      const epicsList = data.data || [];
+
+      // Fetch stories for all epics to show the workflow status chart
+      const epicsWithStories = await Promise.all(
+        epicsList.map(async (epic) => {
+          try {
+            const storiesResponse = await fetch(`http://localhost:3001/api/epics/${epic.id}/stories`);
+            if (storiesResponse.ok) {
+              const stories = await storiesResponse.json();
+              return { ...epic, stories };
+            }
+          } catch (err) {
+            console.error('Error fetching stories for epic:', err);
+          }
+          return epic;
+        })
+      );
+
+      setEpics(epicsWithStories);
+
+      if (!epicsList.length) {
         setError('No epics found for this team name');
       }
     } catch (err) {
@@ -227,6 +256,68 @@ function App() {
                     )}
                   </div>
                 </div>
+
+                {epic.stories && workflowStateOrder.length > 0 && (
+                  <div className="workflow-status-chart">
+                    {(() => {
+                      // Calculate workflow state counts
+                      const stateCounts = {};
+                      let total = epic.stories.length || 0;
+                      epic.stories.forEach(story => {
+                        const stateId = story.workflow_state_id;
+                        stateCounts[stateId] = (stateCounts[stateId] || 0) + 1;
+                      });
+
+                      // Define the specific states to show (exact match, case-sensitive)
+                      const targetStates = [
+                        "Backlog",
+                        "Ready for Development",
+                        "In Development",
+                        "In Review",
+                        "Ready for Release",
+                        "Complete"
+                      ];
+
+                      // Create a normalized map for comparison
+                      const normalizedTargets = targetStates.map(s => s.toLowerCase().trim());
+
+                      // Filter workflow states to only include target states
+                      const filteredStateIds = workflowStateOrder.filter(stateId => {
+                        const stateName = workflowStates[stateId];
+                        if (!stateName) return false;
+                        const normalized = stateName.toLowerCase().trim();
+                        return normalizedTargets.includes(normalized);
+                      });
+
+                      return filteredStateIds.map((stateId) => {
+                        const count = stateCounts[stateId] || 0;
+                        const percentage = total > 0 ? (count / total) * 100 : 0;
+                        const stateName = workflowStates[stateId] || stateId;
+
+                        return (
+                          <div key={stateId} className="status-bar-item">
+                            <div className="column-3d-wrapper">
+                              <div className="column-3d-container">
+                                <div className="status-count-label">{count}</div>
+                                <div
+                                  className="column-3d-fill"
+                                  style={{ height: `${percentage}%` }}
+                                >
+                                  <div className="column-3d-top"></div>
+                                  <div className="column-3d-front"></div>
+                                  <div className="column-3d-side"></div>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="status-bar-label">
+                              <span className="status-name">{stateName}</span>
+                            </div>
+                          </div>
+                        );
+                      });
+                    })()}
+                  </div>
+                )}
 
                 {expandedEpics.has(epic.id) && (
                   <div className="stories-section">

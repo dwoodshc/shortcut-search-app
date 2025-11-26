@@ -186,6 +186,144 @@ body {
   font-size: 0.875rem;
 }
 
+.workflow-status-chart {
+  margin: 1rem 0;
+  padding: 2rem 1rem 2.5rem 1.5rem;
+  background: linear-gradient(to bottom, #f7fafc 0%, #edf2f7 100%);
+  border-radius: 6px;
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-end;
+  justify-content: space-around;
+  perspective: 1000px;
+  width: 50%;
+  position: relative;
+}
+
+.status-bar-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  min-width: 60px;
+  position: relative;
+  padding-bottom: 2.5rem;
+}
+
+.column-3d-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.status-bar-label {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  text-align: center;
+  width: 100%;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2.5rem;
+  padding: 0 0.25rem;
+}
+
+.status-name {
+  color: #2d3748;
+  font-weight: 600;
+  word-wrap: break-word;
+  line-height: 1.2;
+}
+
+.status-count {
+  color: #718096;
+  font-weight: 500;
+}
+
+.column-3d-container {
+  width: 40px;
+  height: 200px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  position: relative;
+}
+
+.column-3d-fill {
+  width: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: height 0.4s ease;
+  min-height: 2px;
+}
+
+.column-3d-container .status-count-label {
+  position: absolute;
+  top: -1.25rem;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #2d3748;
+  font-weight: 700;
+  font-size: 0.875rem;
+  white-space: nowrap;
+  z-index: 10;
+}
+
+.column-3d-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 12px;
+  background: #8b9cff;
+  transform: rotateX(60deg) translateZ(6px);
+  transform-origin: top;
+  border-radius: 2px 2px 0 0;
+}
+
+.column-3d-front {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #667eea;
+  box-shadow:
+    inset -2px 0 8px rgba(0, 0, 0, 0.1),
+    2px 2px 12px rgba(0, 0, 0, 0.15);
+}
+
+.column-3d-side {
+  position: absolute;
+  top: 0;
+  right: -6px;
+  width: 6px;
+  height: 100%;
+  background: #5468d4;
+  transform: skewY(-45deg);
+  transform-origin: top left;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.2);
+}
+
+.status-bar-container {
+  width: 100%;
+  height: 24px;
+  background-color: #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.status-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
 .epic-description {
   color: #718096;
   margin: 1rem 0;
