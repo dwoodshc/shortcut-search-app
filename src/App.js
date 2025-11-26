@@ -13,6 +13,29 @@ function App() {
   const [members, setMembers] = useState({});
   const [filteredEpicNames, setFilteredEpicNames] = useState([]);
   const [epicEmails, setEpicEmails] = useState({});
+  const [showTokenModal, setShowTokenModal] = useState(false);
+  const [apiToken, setApiToken] = useState('');
+  const [tokenError, setTokenError] = useState('');
+
+  // Check if API token exists on mount
+  useEffect(() => {
+    const checkToken = async () => {
+      try {
+        const response = await fetch('http://localhost:3001/api/check-token');
+        if (response.ok) {
+          const data = await response.json();
+          if (!data.hasToken) {
+            setShowTokenModal(true);
+          }
+        }
+      } catch (err) {
+        console.error('Error checking token:', err);
+        setShowTokenModal(true);
+      }
+    };
+
+    checkToken();
+  }, []);
 
   // Fetch teams, workflow states, and filtered epic names on mount
   useEffect(() => {
@@ -98,6 +121,39 @@ function App() {
   }, []);
 
   // Fetch user name by ID
+  // Save API token
+  const handleSaveToken = async () => {
+    setTokenError('');
+
+    if (!apiToken.trim()) {
+      setTokenError('Please enter an API token');
+      return;
+    }
+
+    try {
+      const response = await fetch('http://localhost:3001/api/save-token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ token: apiToken.trim() })
+      });
+
+      if (response.ok) {
+        setShowTokenModal(false);
+        setApiToken('');
+        // Reload the page to reinitialize with the new token
+        window.location.reload();
+      } else {
+        const data = await response.json();
+        setTokenError(data.error || 'Failed to save token');
+      }
+    } catch (err) {
+      console.error('Error saving token:', err);
+      setTokenError('Failed to save token. Please try again.');
+    }
+  };
+
   const fetchUserName = useCallback(async (userId) => {
     if (members[userId]) {
       return members[userId];
@@ -255,6 +311,53 @@ function App() {
 
   return (
     <div className="App">
+      {showTokenModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h2>Shortcut API Token Required</h2>
+            <p>To use this application, you need to provide a Shortcut API token.</p>
+
+            <p><strong>How to get your API token:</strong></p>
+            <ol>
+              <li>Go to <a href="https://app.shortcut.com/settings/account/api-tokens" target="_blank" rel="noopener noreferrer">Shortcut Settings → API Tokens</a></li>
+              <li>Click "Generate Token"</li>
+              <li>Give it a name (e.g., "Epic Viewer")</li>
+              <li>Copy the generated token</li>
+              <li>Paste it below</li>
+            </ol>
+
+            <div className="form-group">
+              <label htmlFor="apiToken">API Token:</label>
+              <input
+                type="text"
+                id="apiToken"
+                value={apiToken}
+                onChange={(e) => setApiToken(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSaveToken()}
+                className="input-field"
+                placeholder="Enter your Shortcut API token"
+                autoFocus
+              />
+              {tokenError && (
+                <div style={{ color: '#c33', marginTop: '0.5rem', fontSize: '0.875rem' }}>
+                  {tokenError}
+                </div>
+              )}
+            </div>
+
+            <div className="modal-buttons">
+              <button
+                type="button"
+                onClick={handleSaveToken}
+                className="btn-primary"
+              >
+                Save Token
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <header className="App-header">
         <h1>Shortcut Epic & Story Viewer</h1>
       </header>

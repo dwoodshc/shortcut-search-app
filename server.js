@@ -11,8 +11,35 @@ const PORT = 3001;
 app.use(cors());
 app.use(express.json());
 
-const SHORTCUT_API_TOKEN = process.env.SHORTCUT_API_TOKEN;
+let SHORTCUT_API_TOKEN = process.env.SHORTCUT_API_TOKEN;
 const SHORTCUT_API_BASE = 'https://api.app.shortcut.com/api/v3';
+
+// Check if API token is configured
+app.get('/api/check-token', async (_req, res) => {
+  res.json({ hasToken: !!SHORTCUT_API_TOKEN });
+});
+
+// Save API token to .env file
+app.post('/api/save-token', async (req, res) => {
+  try {
+    const { token } = req.body;
+
+    if (!token || !token.trim()) {
+      return res.status(400).json({ error: 'Token is required' });
+    }
+
+    const envPath = path.join(__dirname, '.env');
+    const envContent = `SHORTCUT_API_TOKEN=${token.trim()}\n`;
+
+    await fs.writeFile(envPath, envContent, 'utf-8');
+    SHORTCUT_API_TOKEN = token.trim();
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error saving token:', error.message);
+    res.status(500).json({ error: 'Failed to save token' });
+  }
+});
 
 // Search epics endpoint
 app.get('/api/search/epics', async (req, res) => {
