@@ -896,7 +896,7 @@ function App() {
 
                       {/* Pie Chart */}
                       <div>
-                      <h4 style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '2rem' }}>
+                      <h4 style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '1rem' }}>
                         <span>Workflow Status Pie Chart</span>
                         <button
                           onClick={() => toggleChart(epic.id, 'workflow-pie')}
@@ -1053,7 +1053,7 @@ function App() {
 
                       {/* Story Type Pie Chart */}
                       <div>
-                      <h4 style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '2rem' }}>
+                      <h4 style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '1rem' }}>
                         <span>Story Type Breakdown</span>
                         <button
                           onClick={() => toggleChart(epic.id, 'type-pie')}
