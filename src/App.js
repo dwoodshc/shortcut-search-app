@@ -942,6 +942,25 @@ function App() {
                         const createPieSlice = (startAngle, angle, radius = 80) => {
                           const centerX = 100;
                           const centerY = 100;
+
+                          // Special case: if angle is 360 degrees (or very close), draw two semi-circles
+                          // because SVG arcs can't handle a full circle in a single path
+                          if (angle >= 359.9) {
+                            const startRad = (startAngle - 90) * Math.PI / 180;
+                            const midRad = (startAngle + 180 - 90) * Math.PI / 180;
+                            const endRad = (startAngle + 360 - 90) * Math.PI / 180;
+
+                            const x1 = centerX + radius * Math.cos(startRad);
+                            const y1 = centerY + radius * Math.sin(startRad);
+                            const x2 = centerX + radius * Math.cos(midRad);
+                            const y2 = centerY + radius * Math.sin(midRad);
+                            const x3 = centerX + radius * Math.cos(endRad);
+                            const y3 = centerY + radius * Math.sin(endRad);
+
+                            // Draw full circle as two 180-degree arcs
+                            return `M ${centerX} ${centerY} L ${x1} ${y1} A ${radius} ${radius} 0 0 1 ${x2} ${y2} A ${radius} ${radius} 0 0 1 ${x3} ${y3} Z`;
+                          }
+
                           const startRad = (startAngle - 90) * Math.PI / 180;
                           const endRad = (startAngle + angle - 90) * Math.PI / 180;
 
@@ -1061,6 +1080,25 @@ function App() {
                         const createPieSlice = (startAngle, angle, radius = 80) => {
                           const centerX = 100;
                           const centerY = 100;
+
+                          // Special case: if angle is 360 degrees (or very close), draw two semi-circles
+                          // because SVG arcs can't handle a full circle in a single path
+                          if (angle >= 359.9) {
+                            const startRad = (startAngle - 90) * Math.PI / 180;
+                            const midRad = (startAngle + 180 - 90) * Math.PI / 180;
+                            const endRad = (startAngle + 360 - 90) * Math.PI / 180;
+
+                            const x1 = centerX + radius * Math.cos(startRad);
+                            const y1 = centerY + radius * Math.sin(startRad);
+                            const x2 = centerX + radius * Math.cos(midRad);
+                            const y2 = centerY + radius * Math.sin(midRad);
+                            const x3 = centerX + radius * Math.cos(endRad);
+                            const y3 = centerY + radius * Math.sin(endRad);
+
+                            // Draw full circle as two 180-degree arcs
+                            return `M ${centerX} ${centerY} L ${x1} ${y1} A ${radius} ${radius} 0 0 1 ${x2} ${y2} A ${radius} ${radius} 0 0 1 ${x3} ${y3} Z`;
+                          }
+
                           const startRad = (startAngle - 90) * Math.PI / 180;
                           const endRad = (startAngle + angle - 90) * Math.PI / 180;
 
