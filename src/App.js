@@ -490,11 +490,11 @@ function App() {
                             <div key={stateId} className="status-bar-item">
                               <div className="column-3d-wrapper">
                                 <div className="column-3d-container">
-                                  <div className="status-count-label">{count}</div>
                                   <div
                                     className="column-3d-fill"
                                     style={{ height: `${percentage}%` }}
                                   >
+                                    <div className="status-count-label">{count}</div>
                                     <div className="column-3d-top"></div>
                                     <div className="column-3d-front"></div>
                                     <div className="column-3d-side"></div>
