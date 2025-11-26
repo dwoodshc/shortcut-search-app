@@ -423,7 +423,29 @@ function App() {
         })
       );
 
-      setEpics(epicsWithStories);
+      // Sort epics based on the order in filteredEpicNames
+      epicsWithStories.sort((a, b) => {
+        const indexA = filteredEpicNames.indexOf(a.name);
+        const indexB = filteredEpicNames.indexOf(b.name);
+        return indexA - indexB;
+      });
+
+      // Add not found epics to the results (in order)
+      const allEpics = [];
+      filteredEpicNames.forEach(name => {
+        const foundEpic = epicsWithStories.find(epic => epic.name === name);
+        if (foundEpic) {
+          allEpics.push(foundEpic);
+        } else {
+          allEpics.push({
+            id: `not-found-${name}`,
+            name: name,
+            notFound: true
+          });
+        }
+      });
+
+      setEpics(allEpics);
 
       if (!filteredEpicsList.length) {
         setError('No epics found from the list in epics.txt');
@@ -697,8 +719,17 @@ function App() {
 
         {epics.length > 0 && (
           <div className="epics-list">
-            <h2>Found {epics.length} Epic{epics.length !== 1 ? 's' : ''}</h2>
+            <h2>
+              {epics.filter(e => !e.notFound).length === filteredEpicNames.length ? '✅ ' : '⚠️ '}
+              Found {epics.filter(e => !e.notFound).length} of {filteredEpicNames.length} Epic{filteredEpicNames.length !== 1 ? 's' : ''}
+            </h2>
             {epics.map((epic) => (
+              epic.notFound ? (
+                <div key={epic.id} className="epic-not-found">
+                  <h3>{epic.name}</h3>
+                  <p>Epic not found in Shortcut</p>
+                </div>
+              ) : (
               <div key={epic.id} className="epic-card">
                 <div 
                   className="epic-header"
@@ -1298,6 +1329,7 @@ function App() {
                   </div>
                 )}
               </div>
+              )
             ))}
           </div>
         )}

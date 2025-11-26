@@ -210,6 +210,26 @@ textarea.input-field {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
+.epic-not-found {
+  background-color: #fee;
+  border: 2px solid #fcc;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  width: 100%;
+}
+
+.epic-not-found h3 {
+  color: #c00;
+  margin-bottom: 0.5rem;
+  font-size: 1.25rem;
+}
+
+.epic-not-found p {
+  color: #800;
+  font-weight: 500;
+}
+
 .epic-header {
   cursor: pointer;
   display: flex;
