@@ -283,7 +283,7 @@ function App() {
                         checked={filterByList}
                         onChange={(e) => setFilterByList(e.target.checked)}
                       />
-                      <span>Show only epics from list</span>
+                      <span>Show only epics from list in [epics.txt]</span>
                     </label>
                   </div>
 
