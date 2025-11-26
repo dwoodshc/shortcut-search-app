@@ -166,6 +166,23 @@ function App() {
       .join(' ');
   };
 
+  // Get story state CSS class based on state name
+  const getStateClass = (stateName) => {
+    const lowerStateName = stateName.toLowerCase();
+    if (lowerStateName === 'in development') {
+      return 'story-state-in-development';
+    } else if (lowerStateName === 'complete' || lowerStateName === 'completed') {
+      return 'story-state-complete';
+    } else if (lowerStateName === 'ready for release') {
+      return 'story-state-ready-for-release';
+    } else if (lowerStateName === 'ready for development') {
+      return 'story-state-ready-for-development';
+    } else if (lowerStateName === 'in review') {
+      return 'story-state-in-review';
+    }
+    return 'story-state-default';
+  };
+
   // Load epic list content
   const handleOpenEpicList = async () => {
     setEpicListError('');
@@ -969,8 +986,10 @@ function App() {
                                   story.name
                                 )}
                               </span>
-                              <span className={`story-state state-${story.workflow_state_id}`}>
+                              <span className={`story-state ${getStateClass(workflowStates[story.workflow_state_id] || '')}`}>
                                 {workflowStates[story.workflow_state_id] || story.workflow_state_id}
+                                {(workflowStates[story.workflow_state_id] || '').toLowerCase() === 'complete' && ' ✓'}
+                                {(workflowStates[story.workflow_state_id] || '').toLowerCase() === 'in review' && ' 🔍'}
                               </span>
                             </div>
                             {story.description && (

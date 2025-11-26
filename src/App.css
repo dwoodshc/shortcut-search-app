@@ -595,6 +595,36 @@ textarea.input-field {
   color: #2c5282;
 }
 
+.story-state-in-development {
+  background-color: #c6f6d5;
+  color: #22543d;
+}
+
+.story-state-complete {
+  background-color: #2f855a;
+  color: white;
+}
+
+.story-state-ready-for-release {
+  background-color: #2f855a;
+  color: white;
+}
+
+.story-state-ready-for-development {
+  background-color: #fef08a;
+  color: #854d0e;
+}
+
+.story-state-in-review {
+  background-color: #e9d5ff;
+  color: #6b21a8;
+}
+
+.story-state-default {
+  background-color: #bee3f8;
+  color: #2c5282;
+}
+
 .story-description {
   color: #718096;
   font-size: 0.875rem;
