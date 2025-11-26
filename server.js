@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
+const fs = require('fs').promises;
+const path = require('path');
 require('dotenv').config();
 
 const app = express();
@@ -146,6 +148,27 @@ app.get('/api/teams', async (req, res) => {
     console.error('Error fetching teams:', error.response?.data || error.message);
     res.status(error.response?.status || 500).json({
       error: error.response?.data || 'Failed to fetch teams'
+    });
+  }
+});
+
+// Get filtered epic names from epics.txt
+app.get('/api/filtered-epics', async (req, res) => {
+  try {
+    const filePath = path.join(__dirname, 'epics.txt');
+    const fileContent = await fs.readFile(filePath, 'utf-8');
+
+    // Parse epic names from file (remove quotes and empty lines)
+    const epicNames = fileContent
+      .split('\n')
+      .map(line => line.trim().replace(/^"|"$/g, ''))
+      .filter(line => line.length > 0);
+
+    res.json(epicNames);
+  } catch (error) {
+    console.error('Error reading filtered epics:', error.message);
+    res.status(500).json({
+      error: 'Failed to read filtered epics file'
     });
   }
 });

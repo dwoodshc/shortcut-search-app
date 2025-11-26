@@ -11,8 +11,10 @@ function App() {
   const [workflowStates, setWorkflowStates] = useState({});
   const [workflowStateOrder, setWorkflowStateOrder] = useState([]);
   const [members, setMembers] = useState({});
+  const [filterByList, setFilterByList] = useState(false);
+  const [filteredEpicNames, setFilteredEpicNames] = useState([]);
 
-  // Fetch teams and workflow states on mount
+  // Fetch teams, workflow states, and filtered epic names on mount
   useEffect(() => {
     const fetchTeams = async () => {
       try {
@@ -65,8 +67,21 @@ function App() {
       }
     };
 
+    const fetchFilteredEpics = async () => {
+      try {
+        const response = await fetch('http://localhost:3001/api/filtered-epics');
+        if (response.ok) {
+          const epicNames = await response.json();
+          setFilteredEpicNames(epicNames);
+        }
+      } catch (err) {
+        console.error('Error fetching filtered epics:', err);
+      }
+    };
+
     fetchTeams();
     fetchWorkflows();
+    fetchFilteredEpics();
   }, []);
 
   // Fetch user name by ID
@@ -248,9 +263,31 @@ function App() {
 
         {epics.length > 0 && (
           <div className="epics-list">
-            <h2>Found {epics.length} Epic{epics.length !== 1 ? 's' : ''}</h2>
-            
-            {epics.map((epic) => (
+            {(() => {
+              const displayedEpics = filterByList
+                ? epics.filter(epic => filteredEpicNames.includes(epic.name))
+                : epics;
+
+              return (
+                <>
+                  <div className="filter-checkbox-container">
+                    <h2>
+                      {filterByList
+                        ? `Showing ${displayedEpics.length} of ${epics.length} Epic${epics.length !== 1 ? 's' : ''}`
+                        : `Found ${epics.length} Epic${epics.length !== 1 ? 's' : ''}`
+                      }
+                    </h2>
+                    <label className="filter-checkbox-label">
+                      <input
+                        type="checkbox"
+                        checked={filterByList}
+                        onChange={(e) => setFilterByList(e.target.checked)}
+                      />
+                      <span>Show only epics from list</span>
+                    </label>
+                  </div>
+
+                  {displayedEpics.map((epic) => (
               <div key={epic.id} className="epic-card">
                 <div 
                   className="epic-header"
@@ -394,7 +431,10 @@ function App() {
                   </div>
                 )}
               </div>
-            ))}
+                  ))}
+                </>
+              );
+            })()}
           </div>
         )}
       </main>
