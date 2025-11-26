@@ -8,6 +8,7 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [expandedEpics, setExpandedEpics] = useState(new Set());
+  const [hoveredPieSegment, setHoveredPieSegment] = useState(null);
   const [workflowStates, setWorkflowStates] = useState({});
   const [workflowStateOrder, setWorkflowStateOrder] = useState([]);
   const [members, setMembers] = useState({});
@@ -842,6 +843,130 @@ function App() {
                             </div>
                           );
                         });
+                      })()}
+                      </div>
+
+                      {/* Pie Chart */}
+                      <div className="workflow-status-pie-chart">
+                      {(() => {
+                        // Calculate workflow state counts
+                        const stateCounts = {};
+                        let total = epic.stories.length || 0;
+                        epic.stories.forEach(story => {
+                          const stateId = story.workflow_state_id;
+                          stateCounts[stateId] = (stateCounts[stateId] || 0) + 1;
+                        });
+
+                        // Define the specific states to show
+                        const targetStates = [
+                          "Backlog",
+                          "Ready for Development",
+                          "In Development",
+                          "In Review",
+                          "Ready for Release",
+                          "Complete"
+                        ];
+
+                        // Create a normalized map for comparison
+                        const normalizedTargets = targetStates.map(s => s.toLowerCase().trim());
+
+                        // Filter workflow states to only include target states
+                        const filteredStateIds = workflowStateOrder.filter(stateId => {
+                          const stateName = workflowStates[stateId];
+                          if (!stateName) return false;
+                          const normalized = stateName.toLowerCase().trim();
+                          return normalizedTargets.includes(normalized);
+                        });
+
+                        // Calculate percentages and create segments
+                        const segments = filteredStateIds.map((stateId) => {
+                          const count = stateCounts[stateId] || 0;
+                          const percentage = total > 0 ? (count / total) * 100 : 0;
+                          const stateName = workflowStates[stateId] || stateId;
+                          return { stateId, stateName, count, percentage };
+                        }).filter(seg => seg.count > 0);
+
+                        // Define colors for each state
+                        const stateColors = {
+                          'backlog': '#94a3b8',
+                          'ready for development': '#fef08a',
+                          'in development': '#86efac',
+                          'in review': '#e9d5ff',
+                          'ready for release': '#2f855a',
+                          'complete': '#2f855a'
+                        };
+
+                        // Calculate cumulative angles for pie segments
+                        let cumulativeAngle = 0;
+                        const segmentsWithAngles = segments.map(seg => {
+                          const angle = (seg.percentage / 100) * 360;
+                          const startAngle = cumulativeAngle;
+                          cumulativeAngle += angle;
+                          return { ...seg, startAngle, angle };
+                        });
+
+                        // Function to create SVG path for pie slice
+                        const createPieSlice = (startAngle, angle, radius = 80) => {
+                          const centerX = 100;
+                          const centerY = 100;
+                          const startRad = (startAngle - 90) * Math.PI / 180;
+                          const endRad = (startAngle + angle - 90) * Math.PI / 180;
+
+                          const x1 = centerX + radius * Math.cos(startRad);
+                          const y1 = centerY + radius * Math.sin(startRad);
+                          const x2 = centerX + radius * Math.cos(endRad);
+                          const y2 = centerY + radius * Math.sin(endRad);
+
+                          const largeArcFlag = angle > 180 ? 1 : 0;
+
+                          return `M ${centerX} ${centerY} L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2} Z`;
+                        };
+
+                        return total > 0 ? (
+                          <div className="pie-chart-wrapper">
+                            <div style={{ position: 'relative' }}>
+                              <svg viewBox="0 0 200 200" className="pie-chart-svg">
+                                {segmentsWithAngles.map((seg) => {
+                                  const color = stateColors[seg.stateName.toLowerCase()] || '#667eea';
+                                  return (
+                                    <g key={seg.stateId}>
+                                      <path
+                                        d={createPieSlice(seg.startAngle, seg.angle)}
+                                        fill={color}
+                                        stroke="#fff"
+                                        strokeWidth="2"
+                                        style={{ cursor: 'pointer' }}
+                                        onMouseEnter={() => setHoveredPieSegment(seg)}
+                                        onMouseLeave={() => setHoveredPieSegment(null)}
+                                      />
+                                    </g>
+                                  );
+                                })}
+                              </svg>
+                              {hoveredPieSegment && (
+                                <div className="pie-chart-tooltip">
+                                  <div className="tooltip-title">{hoveredPieSegment.stateName}</div>
+                                  <div className="tooltip-details">
+                                    <div>Count: {hoveredPieSegment.count}</div>
+                                    <div>Percentage: {hoveredPieSegment.percentage.toFixed(1)}%</div>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                            <div className="pie-chart-legend">
+                              {segments.map((seg) => {
+                                const color = stateColors[seg.stateName.toLowerCase()] || '#667eea';
+                                return (
+                                  <div key={seg.stateId} className="legend-item">
+                                    <span className="legend-color" style={{ backgroundColor: color }}></span>
+                                    <span className="legend-label">{seg.stateName}</span>
+                                    <span className="legend-value">{seg.count} ({seg.percentage.toFixed(1)}%)</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ) : null;
                       })()}
                       </div>
                     </div>
