@@ -735,17 +735,17 @@ function App() {
                     </h3>
                   </div>
                   <div className="epic-meta">
-                    <span className="epic-state">{toTitleCase(epic.state)}</span>
-                    {epic.stats && (
-                      <span className="story-count">
-                        {epic.stats.num_stories_total || 0} stories
-                      </span>
-                    )}
                     {epic.owner_ids && epic.owner_ids.length > 0 && (
                       <span className="epic-owner">
                         Owner: {epic.owner_ids.map(id => members[id] || id).join(', ')}
                       </span>
                     )}
+                    {epic.stats && (
+                      <span className="story-count">
+                        {epic.stats.num_stories_total || 0} stories
+                      </span>
+                    )}
+                    <span className="epic-state">{toTitleCase(epic.state)}</span>
                   </div>
                 </div>
 
