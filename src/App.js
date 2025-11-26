@@ -183,6 +183,17 @@ function App() {
     return 'story-state-default';
   };
 
+  // Get epic state CSS class based on state name
+  const getEpicStateClass = (stateName) => {
+    const lowerStateName = stateName.toLowerCase();
+    if (lowerStateName === 'in progress') {
+      return 'epic-state-in-progress';
+    } else if (lowerStateName === 'done') {
+      return 'epic-state-done';
+    }
+    return 'epic-state-default';
+  };
+
   // Load epic list content
   const handleOpenEpicList = async () => {
     setEpicListError('');
@@ -763,7 +774,10 @@ function App() {
                         {epic.stats.num_stories_total || 0} stories
                       </span>
                     )}
-                    <span className="epic-state">{toTitleCase(epic.state)}</span>
+                    <span className={`epic-state ${getEpicStateClass(epic.state)}`}>
+                      {toTitleCase(epic.state)}
+                      {epic.state.toLowerCase() === 'done' && ' ✓'}
+                    </span>
                   </div>
                 </div>
 

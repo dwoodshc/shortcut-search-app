@@ -1,3 +1,4 @@
 "SCW - Post release tasks", ["Tenal Bourchier; Matt Budde; Adrian Trunzo; Dean Gibson; Jorden Parker; Antonio Carusone; Dan Meeking; Mihail Mickalovski; Gary Robinson"]
 "Bridge to Online: Order Payment", ["Mark McDermid; Vidushi; Sean McKenna; Vladimir Temjanoski"]
+"In-store Kiosk v1", ["Mark McDermid; Vidushi; Sean McKenna; Vladimir Temjanoski"]
 "Tailwind CSS v4", ["Adrian Trunzo; Jovica Markoski; David Robinson; Darren Hoyt"]
