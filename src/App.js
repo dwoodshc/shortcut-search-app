@@ -1171,7 +1171,18 @@ function App() {
 
                         return sortedOwners.length > 0 || unassignedCount > 0 ? (
                           <>
-                            <h4>Story Owners</h4>
+                            <h4 style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                              <span>Story Owners</span>
+                              <button
+                                onClick={() => toggleChart(epic.id, 'owners-table')}
+                                className="chart-toggle-btn"
+                                aria-label="Toggle story owners table"
+                              >
+                                {collapsedCharts[`${epic.id}-owners-table`] ? '▼' : '▲'}
+                              </button>
+                            </h4>
+                            {!collapsedCharts[`${epic.id}-owners-table`] && (
+                            <>
                             <table>
                               <thead>
                                 <tr>
@@ -1195,6 +1206,8 @@ function App() {
                             <p style={{ color: '#718096', fontSize: '0.75rem', fontStyle: 'italic', marginTop: '0.5rem' }}>
                               NOTE: Counts may not add up if a story has more than one owner
                             </p>
+                            </>
+                            )}
                           </>
                         ) : (
                           <>
@@ -1258,7 +1271,18 @@ function App() {
 
                         return (
                           <>
-                            <h4>Team Open Tickets</h4>
+                            <h4 style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                              <span>Team Open Tickets</span>
+                              <button
+                                onClick={() => toggleChart(epic.id, 'team-tickets')}
+                                className="chart-toggle-btn"
+                                aria-label="Toggle team open tickets table"
+                              >
+                                {collapsedCharts[`${epic.id}-team-tickets`] ? '▼' : '▲'}
+                              </button>
+                            </h4>
+                            {!collapsedCharts[`${epic.id}-team-tickets`] && (
+                            <>
                             <table>
                               <thead>
                                 <tr>
@@ -1278,6 +1302,8 @@ function App() {
                             <p style={{ color: '#718096', fontSize: '0.75rem', fontStyle: 'italic', marginTop: '0.5rem' }}>
                               NOTE: This table shows the count of open tickets only for the team
                             </p>
+                            </>
+                            )}
                           </>
                         );
                       })()}
