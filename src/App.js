@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import './App.css';
 
 function App() {
@@ -85,7 +85,7 @@ function App() {
   }, []);
 
   // Fetch user name by ID
-  const fetchUserName = async (userId) => {
+  const fetchUserName = useCallback(async (userId) => {
     if (members[userId]) {
       return members[userId];
     }
@@ -102,18 +102,30 @@ function App() {
       console.error('Error fetching user:', err);
     }
     return userId;
-  };
+  }, [members]);
 
-  // Fetch owner names for epics when they're loaded
+  // Fetch owner names for epics and stories when they're loaded
   useEffect(() => {
     const fetchOwnerNames = async () => {
       const ownerIds = new Set();
+
+      // Collect epic owner IDs
       epics.forEach(epic => {
         if (epic.owner_ids) {
           epic.owner_ids.forEach(id => ownerIds.add(id));
         }
+
+        // Collect story owner IDs
+        if (epic.stories) {
+          epic.stories.forEach(story => {
+            if (story.owner_ids) {
+              story.owner_ids.forEach(id => ownerIds.add(id));
+            }
+          });
+        }
       });
 
+      // Fetch names for all unique owner IDs
       for (const ownerId of ownerIds) {
         if (!members[ownerId]) {
           await fetchUserName(ownerId);
@@ -124,7 +136,7 @@ function App() {
     if (epics.length > 0) {
       fetchOwnerNames();
     }
-  }, [epics]);
+  }, [epics, members, fetchUserName]);
 
   const searchEpics = async (e) => {
     e.preventDefault();
@@ -328,64 +340,117 @@ function App() {
                 </div>
 
                 {epic.stories && workflowStateOrder.length > 0 && (
-                  <div className="workflow-status-chart">
-                    {(() => {
-                      // Calculate workflow state counts
-                      const stateCounts = {};
-                      let total = epic.stories.length || 0;
-                      epic.stories.forEach(story => {
-                        const stateId = story.workflow_state_id;
-                        stateCounts[stateId] = (stateCounts[stateId] || 0) + 1;
-                      });
+                  <div className="epic-stats-container">
+                    <div className="workflow-status-chart">
+                      {(() => {
+                        // Calculate workflow state counts
+                        const stateCounts = {};
+                        let total = epic.stories.length || 0;
+                        epic.stories.forEach(story => {
+                          const stateId = story.workflow_state_id;
+                          stateCounts[stateId] = (stateCounts[stateId] || 0) + 1;
+                        });
 
-                      // Define the specific states to show (exact match, case-sensitive)
-                      const targetStates = [
-                        "Backlog",
-                        "Ready for Development",
-                        "In Development",
-                        "In Review",
-                        "Ready for Release",
-                        "Complete"
-                      ];
+                        // Define the specific states to show (exact match, case-sensitive)
+                        const targetStates = [
+                          "Backlog",
+                          "Ready for Development",
+                          "In Development",
+                          "In Review",
+                          "Ready for Release",
+                          "Complete"
+                        ];
 
-                      // Create a normalized map for comparison
-                      const normalizedTargets = targetStates.map(s => s.toLowerCase().trim());
+                        // Create a normalized map for comparison
+                        const normalizedTargets = targetStates.map(s => s.toLowerCase().trim());
 
-                      // Filter workflow states to only include target states
-                      const filteredStateIds = workflowStateOrder.filter(stateId => {
-                        const stateName = workflowStates[stateId];
-                        if (!stateName) return false;
-                        const normalized = stateName.toLowerCase().trim();
-                        return normalizedTargets.includes(normalized);
-                      });
+                        // Filter workflow states to only include target states
+                        const filteredStateIds = workflowStateOrder.filter(stateId => {
+                          const stateName = workflowStates[stateId];
+                          if (!stateName) return false;
+                          const normalized = stateName.toLowerCase().trim();
+                          return normalizedTargets.includes(normalized);
+                        });
 
-                      return filteredStateIds.map((stateId) => {
-                        const count = stateCounts[stateId] || 0;
-                        const percentage = total > 0 ? (count / total) * 100 : 0;
-                        const stateName = workflowStates[stateId] || stateId;
+                        return filteredStateIds.map((stateId) => {
+                          const count = stateCounts[stateId] || 0;
+                          const percentage = total > 0 ? (count / total) * 100 : 0;
+                          const stateName = workflowStates[stateId] || stateId;
 
-                        return (
-                          <div key={stateId} className="status-bar-item">
-                            <div className="column-3d-wrapper">
-                              <div className="column-3d-container">
-                                <div className="status-count-label">{count}</div>
-                                <div
-                                  className="column-3d-fill"
-                                  style={{ height: `${percentage}%` }}
-                                >
-                                  <div className="column-3d-top"></div>
-                                  <div className="column-3d-front"></div>
-                                  <div className="column-3d-side"></div>
+                          return (
+                            <div key={stateId} className="status-bar-item">
+                              <div className="column-3d-wrapper">
+                                <div className="column-3d-container">
+                                  <div className="status-count-label">{count}</div>
+                                  <div
+                                    className="column-3d-fill"
+                                    style={{ height: `${percentage}%` }}
+                                  >
+                                    <div className="column-3d-top"></div>
+                                    <div className="column-3d-front"></div>
+                                    <div className="column-3d-side"></div>
+                                  </div>
                                 </div>
                               </div>
+                              <div className="status-bar-label">
+                                <span className="status-name">{stateName}</span>
+                              </div>
                             </div>
-                            <div className="status-bar-label">
-                              <span className="status-name">{stateName}</span>
-                            </div>
-                          </div>
+                          );
+                        });
+                      })()}
+                    </div>
+
+                    <div className="story-owners-table">
+                      {(() => {
+                        // Calculate owner counts (excluding unassigned)
+                        const ownerCounts = {};
+                        epic.stories.forEach(story => {
+                          if (story.owner_ids && story.owner_ids.length > 0) {
+                            story.owner_ids.forEach(ownerId => {
+                              const ownerName = members[ownerId] || ownerId;
+                              ownerCounts[ownerName] = (ownerCounts[ownerName] || 0) + 1;
+                            });
+                          }
+                        });
+
+                        // Sort by count descending
+                        const sortedOwners = Object.entries(ownerCounts)
+                          .sort((a, b) => b[1] - a[1]);
+
+                        return sortedOwners.length > 0 ? (
+                          <>
+                            <h4>Story Owners</h4>
+                            <table>
+                              <thead>
+                                <tr>
+                                  <th>Owner</th>
+                                  <th>Count</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {sortedOwners.map(([owner, count]) => (
+                                  <tr key={owner}>
+                                    <td>{owner}</td>
+                                    <td>{count}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                            <p style={{ color: '#718096', fontSize: '0.75rem', fontStyle: 'italic', marginTop: '0.5rem' }}>
+                              NOTE: Counts may not add up if a story has more than one owner
+                            </p>
+                          </>
+                        ) : (
+                          <>
+                            <h4>Story Owners</h4>
+                            <p style={{ color: '#718096', fontSize: '0.875rem', fontStyle: 'italic' }}>
+                              No assigned owners
+                            </p>
+                          </>
                         );
-                      });
-                    })()}
+                      })()}
+                    </div>
                   </div>
                 )}
 

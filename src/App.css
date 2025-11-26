@@ -209,8 +209,14 @@ body {
   font-size: 0.875rem;
 }
 
-.workflow-status-chart {
+.epic-stats-container {
+  display: flex;
+  gap: 2rem;
   margin: 1rem 0;
+  align-items: flex-start;
+}
+
+.workflow-status-chart {
   padding: 2rem 1rem 2.5rem 1.5rem;
   background: linear-gradient(to bottom, #f7fafc 0%, #edf2f7 100%);
   border-radius: 6px;
@@ -221,6 +227,7 @@ body {
   perspective: 1000px;
   width: 50%;
   position: relative;
+  flex-shrink: 0;
 }
 
 .status-bar-item {
@@ -347,6 +354,65 @@ body {
   transition: width 0.3s ease;
 }
 
+.story-owners-table {
+  flex: 1;
+  min-width: 250px;
+}
+
+.story-owners-table h4 {
+  color: #333;
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+}
+
+.story-owners-table table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.story-owners-table thead {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.story-owners-table th {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.story-owners-table th:last-child {
+  text-align: right;
+}
+
+.story-owners-table td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #e2e8f0;
+  color: #4a5568;
+  font-size: 0.875rem;
+}
+
+.story-owners-table td:last-child {
+  text-align: right;
+  font-weight: 600;
+  color: #667eea;
+}
+
+.story-owners-table tbody tr:hover {
+  background-color: #f7fafc;
+}
+
+.story-owners-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
 .epic-description {
   color: #718096;
   margin: 1rem 0;
@@ -456,5 +522,17 @@ body {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.5rem;
+  }
+
+  .epic-stats-container {
+    flex-direction: column;
+  }
+
+  .workflow-status-chart {
+    width: 100%;
+  }
+
+  .story-owners-table {
+    width: 100%;
   }
 }
