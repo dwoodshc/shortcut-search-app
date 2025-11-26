@@ -121,6 +121,15 @@ function App() {
   }, []);
 
   // Fetch user name by ID
+  // Convert text to title case (initial capitals)
+  const toTitleCase = (str) => {
+    return str
+      .toLowerCase()
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  };
+
   // Save API token
   const handleSaveToken = async () => {
     setTokenError('');
@@ -423,7 +432,7 @@ function App() {
                     </h3>
                   </div>
                   <div className="epic-meta">
-                    <span className="epic-state">{epic.state}</span>
+                    <span className="epic-state">{toTitleCase(epic.state)}</span>
                     {epic.stats && (
                       <span className="story-count">
                         {epic.stats.num_stories_total || 0} stories
