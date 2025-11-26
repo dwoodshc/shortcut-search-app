@@ -735,11 +735,12 @@ function App() {
                     </h3>
                   </div>
                   <div className="epic-meta">
-                    {epic.owner_ids && epic.owner_ids.length > 0 && (
-                      <span className="epic-owner">
-                        Owner: {epic.owner_ids.map(id => members[id] || id).join(', ')}
-                      </span>
-                    )}
+                    <span className="epic-owner">
+                      {epic.owner_ids && epic.owner_ids.length > 1 ? 'Owners: ' : 'Owner: '}
+                      {epic.owner_ids && epic.owner_ids.length > 0
+                        ? epic.owner_ids.map(id => members[id] || id).join(', ')
+                        : 'No Owner'}
+                    </span>
                     {epic.stats && (
                       <span className="story-count">
                         {epic.stats.num_stories_total || 0} stories
