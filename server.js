@@ -249,6 +249,44 @@ app.get('/api/epic-emails', async (req, res) => {
   }
 });
 
+// Get raw epics.txt content
+app.get('/api/epics-file', async (_req, res) => {
+  try {
+    const filePath = path.join(__dirname, 'epics.txt');
+    const fileContent = await fs.readFile(filePath, 'utf-8');
+    res.json({ content: fileContent });
+  } catch (error) {
+    // If file doesn't exist, return 404
+    if (error.code === 'ENOENT') {
+      return res.status(404).json({
+        error: 'epics.txt file not found'
+      });
+    }
+    console.error('Error reading epics.txt:', error.message);
+    res.status(500).json({
+      error: 'Failed to read epics.txt file'
+    });
+  }
+});
+
+// Save epics.txt content
+app.post('/api/epics-file', async (req, res) => {
+  try {
+    const { content } = req.body;
+
+    if (content === undefined) {
+      return res.status(400).json({ error: 'Content is required' });
+    }
+
+    const filePath = path.join(__dirname, 'epics.txt');
+    await fs.writeFile(filePath, content, 'utf-8');
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error writing epics.txt:', error.message);
+    res.status(500).json({ error: 'Failed to save epics.txt file' });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Proxy server running on http://localhost:${PORT}`);
 });

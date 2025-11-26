@@ -19,6 +19,9 @@ function App() {
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const [showAboutModal, setShowAboutModal] = useState(false);
   const [hasExistingToken, setHasExistingToken] = useState(false);
+  const [showEpicListModal, setShowEpicListModal] = useState(false);
+  const [epicsFileContent, setEpicsFileContent] = useState('');
+  const [epicListError, setEpicListError] = useState('');
 
   // Check if API token exists on mount
   useEffect(() => {
@@ -44,6 +47,19 @@ function App() {
 
   // Fetch teams, workflow states, and filtered epic names on mount
   useEffect(() => {
+    const checkEpicsFile = async () => {
+      try {
+        const response = await fetch('http://localhost:3001/api/epics-file');
+        if (!response.ok) {
+          // If epics.txt doesn't exist, open the modal with empty content
+          setEpicsFileContent('');
+          setShowEpicListModal(true);
+        }
+      } catch (err) {
+        console.error('Error checking epics file:', err);
+      }
+    };
+
     const fetchTeams = async () => {
       try {
         const teamsResponse = await fetch('http://localhost:3001/api/teams');
@@ -119,6 +135,7 @@ function App() {
       }
     };
 
+    checkEpicsFile();
     fetchTeams();
     fetchWorkflows();
     fetchFilteredEpics();
@@ -147,6 +164,122 @@ function App() {
       .split(' ')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
+  };
+
+  // Load epic list content
+  const handleOpenEpicList = async () => {
+    setEpicListError('');
+    try {
+      const response = await fetch('http://localhost:3001/api/epics-file');
+      if (response.ok) {
+        const data = await response.json();
+        setEpicsFileContent(data.content);
+        setShowEpicListModal(true);
+      } else {
+        setEpicListError('Failed to load epics.txt file');
+      }
+    } catch (err) {
+      console.error('Error loading epics file:', err);
+      setEpicListError('Failed to load epics.txt file');
+    }
+  };
+
+  // Validate epic list format
+  const validateEpicList = (content) => {
+    const lines = content.split('\n');
+    const errors = [];
+
+    lines.forEach((line, index) => {
+      const lineNum = index + 1;
+      const trimmed = line.trim();
+
+      // Skip empty lines
+      if (!trimmed) return;
+
+      // Check basic format: "Epic Name", ["Member1; Member2"]
+      const basicPattern = /^"[^"]+",\s*\[".+"\]$/;
+
+      if (!basicPattern.test(trimmed)) {
+        // Provide specific error messages
+        if (!trimmed.startsWith('"')) {
+          errors.push(`Line ${lineNum}: Epic name must start with a quote (")`);
+        } else if (!trimmed.includes('",')) {
+          errors.push(`Line ${lineNum}: Epic name must end with a quote followed by a comma (", )`);
+        } else if (!trimmed.includes('[')) {
+          errors.push(`Line ${lineNum}: Team members must be enclosed in square brackets [ ]`);
+        } else if (!trimmed.includes('["')) {
+          errors.push(`Line ${lineNum}: Team members array must start with ["`);
+        } else if (!trimmed.endsWith('"]')) {
+          errors.push(`Line ${lineNum}: Team members array must end with "]`);
+        } else {
+          errors.push(`Line ${lineNum}: Invalid format. Expected: "Epic Name", ["Member1; Member2; Member3"]`);
+        }
+      } else {
+        // Additional validation: Check for properly quoted epic name and members
+        const match = trimmed.match(/^"([^"]+)",\s*\["([^"]*)"\]$/);
+        if (!match) {
+          errors.push(`Line ${lineNum}: Check for extra quotes or special characters`);
+        } else {
+          const epicName = match[1];
+          const members = match[2];
+
+          if (!epicName || epicName.trim().length === 0) {
+            errors.push(`Line ${lineNum}: Epic name cannot be empty`);
+          }
+
+          if (!members || members.trim().length === 0) {
+            errors.push(`Line ${lineNum}: Team members list cannot be empty`);
+          }
+        }
+      }
+    });
+
+    return errors;
+  };
+
+  // Save epic list content
+  const handleSaveEpicList = async () => {
+    setEpicListError('');
+
+    // Validate format before saving
+    const validationErrors = validateEpicList(epicsFileContent);
+    if (validationErrors.length > 0) {
+      setEpicListError(
+        'Format errors found:\n' + validationErrors.join('\n')
+      );
+      return;
+    }
+
+    try {
+      const response = await fetch('http://localhost:3001/api/epics-file', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ content: epicsFileContent })
+      });
+
+      if (response.ok) {
+        setShowEpicListModal(false);
+        // Reload the epic emails and filtered epic names
+        const emailsResponse = await fetch('http://localhost:3001/api/epic-emails');
+        if (emailsResponse.ok) {
+          const emailsData = await emailsResponse.json();
+          setEpicEmails(emailsData);
+        }
+        const filteredResponse = await fetch('http://localhost:3001/api/filtered-epics');
+        if (filteredResponse.ok) {
+          const epicNames = await filteredResponse.json();
+          setFilteredEpicNames(epicNames);
+        }
+      } else {
+        const data = await response.json();
+        setEpicListError(data.error || 'Failed to save epics.txt file');
+      }
+    } catch (err) {
+      console.error('Error saving epics file:', err);
+      setEpicListError('Failed to save epics.txt file. Please try again.');
+    }
   };
 
   // Save API token
@@ -433,6 +566,70 @@ function App() {
         </div>
       )}
 
+      {showEpicListModal && (
+        <div className="modal-overlay" onClick={() => setShowEpicListModal(false)}>
+          <div className="modal-content modal-content-large" onClick={(e) => e.stopPropagation()}>
+            <h2>Edit Epic List</h2>
+            <p>
+              Edit the list of epics and their team members. Each line should follow the format:
+            </p>
+            <p style={{ fontFamily: 'monospace', backgroundColor: '#f7fafc', padding: '0.5rem', borderRadius: '4px', fontSize: '0.875rem' }}>
+              "Epic Name", ["Member1; Member2; Member3"]
+            </p>
+
+            <div className="form-group">
+              <label htmlFor="epicsContent">Epic List Content:</label>
+              <textarea
+                id="epicsContent"
+                value={epicsFileContent}
+                onChange={(e) => setEpicsFileContent(e.target.value)}
+                className="input-field"
+                rows={15}
+                style={{ fontFamily: 'monospace', fontSize: '0.875rem' }}
+                placeholder='Enter epic list entries, one per line...'
+              />
+              {epicListError && (
+                <div style={{
+                  color: '#c33',
+                  marginTop: '0.5rem',
+                  fontSize: '0.875rem',
+                  backgroundColor: '#fee',
+                  border: '1px solid #fcc',
+                  padding: '0.75rem',
+                  borderRadius: '6px',
+                  whiteSpace: 'pre-line',
+                  maxHeight: '200px',
+                  overflowY: 'auto'
+                }}>
+                  {epicListError}
+                </div>
+              )}
+            </div>
+
+            <div className="modal-buttons">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowEpicListModal(false);
+                  setEpicsFileContent('');
+                  setEpicListError('');
+                }}
+                className="btn-secondary"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveEpicList}
+                className="btn-primary"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <header className="App-header">
         <h1>Shortcut Epic & Story Viewer</h1>
         <div className="settings-container">
@@ -445,6 +642,15 @@ function App() {
           </button>
           {showSettingsMenu && (
             <div className="settings-menu">
+              <button
+                className="settings-menu-item"
+                onClick={() => {
+                  setShowSettingsMenu(false);
+                  handleOpenEpicList();
+                }}
+              >
+                Edit Epic List
+              </button>
               <button
                 className="settings-menu-item"
                 onClick={() => {
