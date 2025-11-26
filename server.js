@@ -162,27 +162,6 @@ app.get('/api/epics/:id/stories', async (req, res) => {
   }
 });
 
-// Get all groups/teams
-app.get('/api/teams', async (req, res) => {
-  try {
-    const response = await axios.get(`${SHORTCUT_API_BASE}/groups`, {
-      headers: {
-        'Shortcut-Token': SHORTCUT_API_TOKEN,
-        'Content-Type': 'application/json'
-      }
-    });
-
-    // Map groups to team objects with name property
-    const teams = response.data.map(group => ({ name: group.name }));
-    res.json(teams);
-  } catch (error) {
-    console.error('Error fetching teams:', error.response?.data || error.message);
-    res.status(error.response?.status || 500).json({
-      error: error.response?.data || 'Failed to fetch teams'
-    });
-  }
-});
-
 // Get filtered epic names from epics.txt
 app.get('/api/filtered-epics', async (req, res) => {
   try {

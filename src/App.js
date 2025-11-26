@@ -2,8 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import './App.css';
 
 function App() {
-  const [teamName, setTeamName] = useState('');
-  const [teams, setTeams] = useState([]);
   const [epics, setEpics] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -71,29 +69,6 @@ function App() {
       }
     };
 
-    const fetchTeams = async () => {
-      try {
-        const teamsResponse = await fetch('http://localhost:3001/api/teams');
-        if (teamsResponse.ok) {
-          const teamsData = await teamsResponse.json();
-          // Sort teams alphabetically by name
-          const sortedTeams = teamsData.sort((a, b) =>
-            a.name.toLowerCase().localeCompare(b.name.toLowerCase())
-          );
-          setTeams(sortedTeams);
-          // Set default team to 'web' if it exists, otherwise use first team
-          const webTeam = sortedTeams.find(t => t.name.toLowerCase() === 'web');
-          if (webTeam) {
-            setTeamName(webTeam.name);
-          } else if (sortedTeams.length > 0) {
-            setTeamName(sortedTeams[0].name);
-          }
-        }
-      } catch (err) {
-        console.error('Error fetching teams:', err);
-      }
-    };
-
     const fetchWorkflows = async () => {
       try {
         const workflowsResponse = await fetch('http://localhost:3001/api/workflows');
@@ -147,7 +122,6 @@ function App() {
     };
 
     checkEpicsFile();
-    fetchTeams();
     fetchWorkflows();
     fetchFilteredEpics();
     fetchEpicEmails();
@@ -411,19 +385,14 @@ function App() {
   const searchEpics = async (e) => {
     e.preventDefault();
 
-    if (!teamName.trim()) {
-      setError('Please enter a team name');
-      return;
-    }
-
     setLoading(true);
     setError(null);
     setEpics([]);
 
     try {
-      // Search for epics by team name
+      // Search for all epics that are not complete
       const response = await fetch(
-        `http://localhost:3001/api/search/epics?query=team:${encodeURIComponent(teamName)} !state:Complete`
+        `http://localhost:3001/api/search/epics?query=!state:Complete`
       );
 
       if (!response.ok) {
@@ -715,25 +684,6 @@ function App() {
 
       <main className="container">
         <form onSubmit={searchEpics} className="search-form">
-          <div className="form-group">
-            <label htmlFor="teamName">Team Name:</label>
-            <select
-              id="teamName"
-              value={teamName}
-              onChange={(e) => setTeamName(e.target.value)}
-              className="input-field"
-            >
-              {teams.length === 0 ? (
-                <option value="">Loading teams...</option>
-              ) : (
-                teams.map((team) => (
-                  <option key={team.name} value={team.name}>
-                    {team.name}
-                  </option>
-                ))
-              )}
-            </select>
-          </div>
           <button type="submit" disabled={loading} className="btn-primary">
             {loading ? 'Searching...' : 'Search Epics'}
           </button>
