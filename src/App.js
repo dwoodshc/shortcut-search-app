@@ -972,7 +972,7 @@ function App() {
                       </div>
 
                       {/* Story Type Pie Chart */}
-                      <div className="workflow-status-pie-chart">
+                      <div>
                       {(() => {
                         // Calculate story type counts
                         const typeCounts = {};
@@ -1030,55 +1030,57 @@ function App() {
 
                         return total > 0 ? (
                           <div>
-                            <h4 style={{ color: '#333', marginBottom: '1rem', fontSize: '1.1rem' }}>Story Type Breakdown</h4>
-                            <div className="pie-chart-wrapper">
-                              <div style={{ position: 'relative' }}>
-                                <svg viewBox="0 0 200 200" className="pie-chart-svg">
-                                  {segmentsWithAngles.map((seg) => {
+                            <h4 style={{ marginTop: '1rem' }}>Story Type Breakdown</h4>
+                            <div className="workflow-status-pie-chart" style={{ marginTop: '0.5rem' }}>
+                              <div className="pie-chart-wrapper">
+                                <div style={{ position: 'relative' }}>
+                                  <svg viewBox="0 0 200 200" className="pie-chart-svg">
+                                    {segmentsWithAngles.map((seg) => {
+                                      const color = typeColors[seg.type] || '#667eea';
+                                      return (
+                                        <g key={seg.type}>
+                                          <path
+                                            d={createPieSlice(seg.startAngle, seg.angle)}
+                                            fill={color}
+                                            stroke="#fff"
+                                            strokeWidth="2"
+                                            style={{ cursor: 'pointer' }}
+                                            onMouseEnter={() => setHoveredTypeSegment(seg)}
+                                            onMouseLeave={() => setHoveredTypeSegment(null)}
+                                          />
+                                        </g>
+                                      );
+                                    })}
+                                  </svg>
+                                  {hoveredTypeSegment && (
+                                    <div className="pie-chart-tooltip">
+                                      <div className="tooltip-title">{hoveredTypeSegment.typeName}</div>
+                                      <div className="tooltip-details">
+                                        <div>Count: {hoveredTypeSegment.count}</div>
+                                        <div>Percentage: {hoveredTypeSegment.percentage.toFixed(1)}%</div>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="pie-chart-legend">
+                                  {segments.map((seg) => {
                                     const color = typeColors[seg.type] || '#667eea';
                                     return (
-                                      <g key={seg.type}>
-                                        <path
-                                          d={createPieSlice(seg.startAngle, seg.angle)}
-                                          fill={color}
-                                          stroke="#fff"
-                                          strokeWidth="2"
-                                          style={{ cursor: 'pointer' }}
-                                          onMouseEnter={() => setHoveredTypeSegment(seg)}
-                                          onMouseLeave={() => setHoveredTypeSegment(null)}
-                                        />
-                                      </g>
+                                      <div key={seg.type} className="legend-item">
+                                        <span className="legend-color" style={{ backgroundColor: color }}></span>
+                                        <span className="legend-label">{seg.typeName}</span>
+                                        <span className="legend-value">{seg.count} ({seg.percentage.toFixed(1)}%)</span>
+                                      </div>
                                     );
                                   })}
-                                </svg>
-                                {hoveredTypeSegment && (
-                                  <div className="pie-chart-tooltip">
-                                    <div className="tooltip-title">{hoveredTypeSegment.typeName}</div>
-                                    <div className="tooltip-details">
-                                      <div>Count: {hoveredTypeSegment.count}</div>
-                                      <div>Percentage: {hoveredTypeSegment.percentage.toFixed(1)}%</div>
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                              <div className="pie-chart-legend">
-                                {segments.map((seg) => {
-                                  const color = typeColors[seg.type] || '#667eea';
-                                  return (
-                                    <div key={seg.type} className="legend-item">
-                                      <span className="legend-color" style={{ backgroundColor: color }}></span>
-                                      <span className="legend-label">{seg.typeName}</span>
-                                      <span className="legend-value">{seg.count} ({seg.percentage.toFixed(1)}%)</span>
-                                    </div>
-                                  );
-                                })}
+                                </div>
                               </div>
                             </div>
                           </div>
                         ) : null;
                       })()}
                       </div>
-                    </div>
+                      </div>
 
                     <div className="story-owners-table">
                       {(() => {
