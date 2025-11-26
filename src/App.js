@@ -16,6 +16,9 @@ function App() {
   const [showTokenModal, setShowTokenModal] = useState(false);
   const [apiToken, setApiToken] = useState('');
   const [tokenError, setTokenError] = useState('');
+  const [showSettingsMenu, setShowSettingsMenu] = useState(false);
+  const [showAboutModal, setShowAboutModal] = useState(false);
+  const [hasExistingToken, setHasExistingToken] = useState(false);
 
   // Check if API token exists on mount
   useEffect(() => {
@@ -24,6 +27,7 @@ function App() {
         const response = await fetch('http://localhost:3001/api/check-token');
         if (response.ok) {
           const data = await response.json();
+          setHasExistingToken(data.hasToken);
           if (!data.hasToken) {
             setShowTokenModal(true);
           }
@@ -31,6 +35,7 @@ function App() {
       } catch (err) {
         console.error('Error checking token:', err);
         setShowTokenModal(true);
+        setHasExistingToken(false);
       }
     };
 
@@ -120,6 +125,20 @@ function App() {
     fetchEpicEmails();
   }, []);
 
+  // Close settings menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showSettingsMenu && !event.target.closest('.settings-container')) {
+        setShowSettingsMenu(false);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [showSettingsMenu]);
+
   // Fetch user name by ID
   // Convert text to title case (initial capitals)
   const toTitleCase = (str) => {
@@ -151,6 +170,7 @@ function App() {
       if (response.ok) {
         setShowTokenModal(false);
         setApiToken('');
+        setHasExistingToken(true);
         // Reload the page to reinitialize with the new token
         window.location.reload();
       } else {
@@ -323,7 +343,7 @@ function App() {
       {showTokenModal && (
         <div className="modal-overlay">
           <div className="modal-content">
-            <h2>Shortcut API Token Required</h2>
+            <h2>{hasExistingToken ? 'Edit API Token' : 'Shortcut API Token Required'}</h2>
             <p>To use this application, you need to provide a Shortcut API token.</p>
 
             <p><strong>How to get your API token:</strong></p>
@@ -355,6 +375,19 @@ function App() {
             </div>
 
             <div className="modal-buttons">
+              {hasExistingToken && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowTokenModal(false);
+                    setApiToken('');
+                    setTokenError('');
+                  }}
+                  className="btn-secondary"
+                >
+                  Cancel
+                </button>
+              )}
               <button
                 type="button"
                 onClick={handleSaveToken}
@@ -367,8 +400,72 @@ function App() {
         </div>
       )}
 
+      {showAboutModal && (
+        <div className="modal-overlay" onClick={() => setShowAboutModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h2>About Shortcut Epic & Story Viewer</h2>
+            <p>
+              This application helps you search and view Epics and Stories from Shortcut.com.
+            </p>
+            <p>
+              <strong>Features:</strong>
+            </p>
+            <ul>
+              <li>Search epics by team name</li>
+              <li>View ticket status breakdown with interactive charts</li>
+              <li>Track story ownership and assignments</li>
+              <li>Monitor team open tickets</li>
+              <li>Filter to show only epics from your configured list</li>
+            </ul>
+            <p style={{ marginTop: '1rem', fontSize: '0.875rem', color: '#718096' }}>
+              Version 1.0.0
+            </p>
+            <div className="modal-buttons">
+              <button
+                type="button"
+                onClick={() => setShowAboutModal(false)}
+                className="btn-primary"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <header className="App-header">
         <h1>Shortcut Epic & Story Viewer</h1>
+        <div className="settings-container">
+          <button
+            className="settings-icon"
+            onClick={() => setShowSettingsMenu(!showSettingsMenu)}
+            aria-label="Settings"
+          >
+            ⚙️
+          </button>
+          {showSettingsMenu && (
+            <div className="settings-menu">
+              <button
+                className="settings-menu-item"
+                onClick={() => {
+                  setShowSettingsMenu(false);
+                  setShowTokenModal(true);
+                }}
+              >
+                Edit API Token
+              </button>
+              <button
+                className="settings-menu-item"
+                onClick={() => {
+                  setShowSettingsMenu(false);
+                  setShowAboutModal(true);
+                }}
+              >
+                About
+              </button>
+            </div>
+          )}
+        </div>
       </header>
 
       <main className="container">

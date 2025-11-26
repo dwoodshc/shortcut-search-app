@@ -23,11 +23,70 @@ body {
   padding: 2rem;
   text-align: center;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  position: relative;
 }
 
 .App-header h1 {
   font-size: 2.5rem;
   font-weight: 700;
+}
+
+.settings-container {
+  position: absolute;
+  top: 2rem;
+  right: 2rem;
+}
+
+.settings-icon {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.3s;
+}
+
+.settings-icon:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.settings-menu {
+  position: absolute;
+  top: 50px;
+  right: 0;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  min-width: 180px;
+  overflow: hidden;
+  z-index: 100;
+}
+
+.settings-menu-item {
+  display: block;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: white;
+  border: none;
+  color: #333;
+  text-align: left;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: background 0.2s;
+}
+
+.settings-menu-item:hover {
+  background: #f7fafc;
+}
+
+.settings-menu-item:not(:last-child) {
+  border-bottom: 1px solid #e2e8f0;
 }
 
 .container {
@@ -601,13 +660,15 @@ body {
   line-height: 1.6;
 }
 
-.modal-content ol {
+.modal-content ol,
+.modal-content ul {
   color: #4a5568;
   margin: 0 0 1.5rem 1.5rem;
   line-height: 1.8;
 }
 
-.modal-content ol li {
+.modal-content ol li,
+.modal-content ul li {
   margin-bottom: 0.5rem;
 }
 
