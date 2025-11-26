@@ -1171,12 +1171,16 @@ function App() {
                       {(() => {
                         // Calculate owner counts (excluding unassigned)
                         const ownerCounts = {};
+                        let unassignedCount = 0;
+
                         epic.stories.forEach(story => {
                           if (story.owner_ids && story.owner_ids.length > 0) {
                             story.owner_ids.forEach(ownerId => {
                               const ownerName = members[ownerId] || ownerId;
                               ownerCounts[ownerName] = (ownerCounts[ownerName] || 0) + 1;
                             });
+                          } else {
+                            unassignedCount++;
                           }
                         });
 
@@ -1184,7 +1188,7 @@ function App() {
                         const sortedOwners = Object.entries(ownerCounts)
                           .sort((a, b) => b[1] - a[1]);
 
-                        return sortedOwners.length > 0 ? (
+                        return sortedOwners.length > 0 || unassignedCount > 0 ? (
                           <>
                             <h4>Story Owners</h4>
                             <table>
@@ -1201,6 +1205,10 @@ function App() {
                                     <td>{count}</td>
                                   </tr>
                                 ))}
+                                <tr style={{ backgroundColor: '#f7fafc' }}>
+                                  <td>Unassigned</td>
+                                  <td>{unassignedCount}</td>
+                                </tr>
                               </tbody>
                             </table>
                             <p style={{ color: '#718096', fontSize: '0.75rem', fontStyle: 'italic', marginTop: '0.5rem' }}>

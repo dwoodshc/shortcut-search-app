@@ -149,7 +149,11 @@ app.get('/api/epics/:id/stories', async (req, res) => {
         'Content-Type': 'application/json'
       }
     });
-    res.json(response.data);
+
+    // Filter out archived stories
+    const nonArchivedStories = response.data.filter(story => !story.archived);
+
+    res.json(nonArchivedStories);
   } catch (error) {
     console.error('Error fetching stories:', error.response?.data || error.message);
     res.status(error.response?.status || 500).json({
