@@ -3,6 +3,7 @@ import './App.css';
 
 function App() {
   const [teamName, setTeamName] = useState('');
+  const [teams, setTeams] = useState([]);
   const [epics, setEpics] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -11,8 +12,31 @@ function App() {
   const [workflowStateOrder, setWorkflowStateOrder] = useState([]);
   const [members, setMembers] = useState({});
 
-  // Fetch workflow states on mount
+  // Fetch teams and workflow states on mount
   useEffect(() => {
+    const fetchTeams = async () => {
+      try {
+        const teamsResponse = await fetch('http://localhost:3001/api/teams');
+        if (teamsResponse.ok) {
+          const teamsData = await teamsResponse.json();
+          // Sort teams alphabetically by name
+          const sortedTeams = teamsData.sort((a, b) =>
+            a.name.toLowerCase().localeCompare(b.name.toLowerCase())
+          );
+          setTeams(sortedTeams);
+          // Set default team to 'web' if it exists, otherwise use first team
+          const webTeam = sortedTeams.find(t => t.name.toLowerCase() === 'web');
+          if (webTeam) {
+            setTeamName(webTeam.name);
+          } else if (sortedTeams.length > 0) {
+            setTeamName(sortedTeams[0].name);
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching teams:', err);
+      }
+    };
+
     const fetchWorkflows = async () => {
       try {
         const workflowsResponse = await fetch('http://localhost:3001/api/workflows');
@@ -41,6 +65,7 @@ function App() {
       }
     };
 
+    fetchTeams();
     fetchWorkflows();
   }, []);
 
@@ -193,14 +218,22 @@ function App() {
         <form onSubmit={searchEpics} className="search-form">
           <div className="form-group">
             <label htmlFor="teamName">Team Name:</label>
-            <input
+            <select
               id="teamName"
-              type="text"
               value={teamName}
               onChange={(e) => setTeamName(e.target.value)}
-              placeholder="Enter team name to search epics"
               className="input-field"
-            />
+            >
+              {teams.length === 0 ? (
+                <option value="">Loading teams...</option>
+              ) : (
+                teams.map((team) => (
+                  <option key={team.name} value={team.name}>
+                    {team.name}
+                  </option>
+                ))
+              )}
+            </select>
           </div>
           <button type="submit" disabled={loading} className="btn-primary">
             {loading ? 'Searching...' : 'Search Epics'}
