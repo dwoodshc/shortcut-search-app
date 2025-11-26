@@ -307,7 +307,7 @@ textarea.input-field {
 }
 
 .workflow-status-chart {
-  padding: 2rem 1rem 3rem 1.5rem;
+  padding: 0rem 1rem 1rem 1rem;
   background: linear-gradient(135deg, #f8f9fc 0%, #e9ecf5 100%);
   border-radius: 12px;
   display: flex;
