@@ -635,6 +635,26 @@ textarea.input-field {
   line-height: 1.6;
 }
 
+.chart-toggle-btn {
+  background: none;
+  border: none;
+  color: #667eea;
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0.25rem 0.5rem;
+  transition: all 0.2s ease;
+  border-radius: 4px;
+}
+
+.chart-toggle-btn:hover {
+  background-color: rgba(102, 126, 234, 0.1);
+  transform: scale(1.1);
+}
+
+.chart-toggle-btn:active {
+  transform: scale(0.95);
+}
+
 .stories-section {
   margin-top: 1.5rem;
   padding-top: 1.5rem;

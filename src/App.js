@@ -24,6 +24,15 @@ function App() {
   const [showEpicListModal, setShowEpicListModal] = useState(false);
   const [epicsFileContent, setEpicsFileContent] = useState('');
   const [epicListError, setEpicListError] = useState('');
+  const [collapsedCharts, setCollapsedCharts] = useState({});
+
+  // Toggle chart collapse state for a specific epic and chart type
+  const toggleChart = (epicId, chartType) => {
+    setCollapsedCharts(prev => ({
+      ...prev,
+      [`${epicId}-${chartType}`]: !prev[`${epicId}-${chartType}`]
+    }));
+  };
 
   // Check if API token exists on mount
   useEffect(() => {
@@ -786,7 +795,17 @@ function App() {
                 {epic.stories && workflowStateOrder.length > 0 && (
                   <div className="epic-stats-container">
                     <div className="workflow-status-chart-container">
-                      <h4>Ticket Status Breakdown</h4>
+                      <h4 style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <span>Ticket Status Breakdown</span>
+                        <button
+                          onClick={() => toggleChart(epic.id, 'column')}
+                          className="chart-toggle-btn"
+                          aria-label="Toggle column chart"
+                        >
+                          {collapsedCharts[`${epic.id}-column`] ? '▼' : '▲'}
+                        </button>
+                      </h4>
+                      {!collapsedCharts[`${epic.id}-column`] && (
                       <div className="workflow-status-chart">
                       {(() => {
                         // Calculate workflow state counts
@@ -846,8 +865,21 @@ function App() {
                         });
                       })()}
                       </div>
+                      )}
 
                       {/* Pie Chart */}
+                      <div>
+                      <h4 style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '2rem' }}>
+                        <span>Workflow Status Pie Chart</span>
+                        <button
+                          onClick={() => toggleChart(epic.id, 'workflow-pie')}
+                          className="chart-toggle-btn"
+                          aria-label="Toggle workflow pie chart"
+                        >
+                          {collapsedCharts[`${epic.id}-workflow-pie`] ? '▼' : '▲'}
+                        </button>
+                      </h4>
+                      {!collapsedCharts[`${epic.id}-workflow-pie`] && (
                       <div className="workflow-status-pie-chart">
                       {(() => {
                         // Calculate workflow state counts
@@ -970,8 +1002,22 @@ function App() {
                         ) : null;
                       })()}
                       </div>
+                      )}
+                      </div>
 
                       {/* Story Type Pie Chart */}
+                      <div>
+                      <h4 style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '2rem' }}>
+                        <span>Story Type Breakdown</span>
+                        <button
+                          onClick={() => toggleChart(epic.id, 'type-pie')}
+                          className="chart-toggle-btn"
+                          aria-label="Toggle story type pie chart"
+                        >
+                          {collapsedCharts[`${epic.id}-type-pie`] ? '▼' : '▲'}
+                        </button>
+                      </h4>
+                      {!collapsedCharts[`${epic.id}-type-pie`] && (
                       <div>
                       {(() => {
                         // Calculate story type counts
@@ -1030,7 +1076,6 @@ function App() {
 
                         return total > 0 ? (
                           <div>
-                            <h4 style={{ marginTop: '1rem' }}>Story Type Breakdown</h4>
                             <div className="workflow-status-pie-chart" style={{ marginTop: '0.5rem' }}>
                               <div className="pie-chart-wrapper">
                                 <div style={{ position: 'relative' }}>
@@ -1079,6 +1124,8 @@ function App() {
                           </div>
                         ) : null;
                       })()}
+                      </div>
+                      )}
                       </div>
                       </div>
 
