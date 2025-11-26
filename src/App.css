@@ -1,38 +1,272 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #f5f7fa;
+}
+
 .App {
-  text-align: center;
-}
-
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+  min-height: 100vh;
 }
 
 .App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
+  padding: 2rem;
+  text-align: center;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-.App-link {
-  color: #61dafb;
+.App-header h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.search-form {
+  background: white;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.input-field {
+  width: 100%;
+  padding: 0.75rem;
+  font-size: 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 6px;
+  transition: border-color 0.3s;
+}
+
+.input-field:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 0.75rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.error-message {
+  background-color: #fee;
+  border: 1px solid #fcc;
+  color: #c33;
+  padding: 1rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+}
+
+.epics-list {
+  margin-top: 2rem;
+}
+
+.epics-list > h2 {
+  color: #333;
+  margin-bottom: 1.5rem;
+  font-size: 1.5rem;
+}
+
+.epic-card {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: box-shadow 0.3s;
+}
+
+.epic-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.epic-header {
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.epic-title {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+}
+
+.expand-icon {
+  color: #667eea;
+  font-size: 0.875rem;
+  transition: transform 0.3s;
+}
+
+.epic-title h3 {
+  color: #333;
+  font-size: 1.25rem;
+  margin: 0;
+}
+
+.epic-meta {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.epic-state {
+  background-color: #e2e8f0;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #4a5568;
+}
+
+.story-count {
+  color: #718096;
+  font-size: 0.875rem;
+}
+
+.epic-description {
+  color: #718096;
+  margin: 1rem 0;
+  line-height: 1.6;
+}
+
+.stories-section {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 2px solid #e2e8f0;
+}
+
+.stories-section h4 {
+  color: #333;
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+}
+
+.loading-text {
+  color: #718096;
+  font-style: italic;
+}
+
+.no-stories {
+  color: #a0aec0;
+  font-style: italic;
+}
+
+.stories-list {
+  list-style: none;
+}
+
+.story-item {
+  background-color: #f7fafc;
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+  border-radius: 6px;
+  border-left: 4px solid #667eea;
+  transition: background-color 0.2s;
+}
+
+.story-item:hover {
+  background-color: #edf2f7;
+}
+
+.story-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.story-name {
+  font-weight: 600;
+  color: #2d3748;
+  flex: 1;
+}
+
+.story-state {
+  background-color: #bee3f8;
+  padding: 0.25rem 0.5rem;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #2c5282;
+}
+
+.story-description {
+  color: #718096;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  margin-top: 0.5rem;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 1rem;
   }
-  to {
-    transform: rotate(360deg);
+
+  .App-header h1 {
+    font-size: 1.75rem;
+  }
+
+  .epic-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .epic-meta {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .story-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
   }
 }
