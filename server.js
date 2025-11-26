@@ -158,11 +158,24 @@ app.get('/api/filtered-epics', async (req, res) => {
     const filePath = path.join(__dirname, 'epics.txt');
     const fileContent = await fs.readFile(filePath, 'utf-8');
 
-    // Parse epic names from file (remove quotes and empty lines)
+    // Parse epic names from file (extract first field before comma)
     const epicNames = fileContent
       .split('\n')
-      .map(line => line.trim().replace(/^"|"$/g, ''))
-      .filter(line => line.length > 0);
+      .map(line => {
+        const trimmed = line.trim();
+        if (!trimmed) return '';
+
+        // Extract text before the first comma
+        const commaIndex = trimmed.indexOf(',');
+        if (commaIndex === -1) {
+          // No comma, treat entire line as epic name
+          return trimmed.replace(/^"|"$/g, '');
+        }
+
+        // Get text before comma and remove quotes
+        return trimmed.substring(0, commaIndex).trim().replace(/^"|"$/g, '');
+      })
+      .filter(name => name.length > 0);
 
     res.json(epicNames);
   } catch (error) {

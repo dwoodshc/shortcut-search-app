@@ -1,3 +1,3 @@
-"SCW - Post release tasks"
-"Bridge to Online: Order Payment"
-"Tailwind CSS v4"
+"SCW - Post release tasks", ["tenal@slice.com; matt.budde@slice.com; adrian.trunzo@slice.com; dean.gibson@slice.com; jorden.parker@slice.com; antonio.carusone@slice.com; dan.meeking@slice.com; mihail.m@slice.com; gary.robinson@slice.com"]
+"Bridge to Online: Order Payment", ["mark.mcdermid@slice.com; vidushi.rajput@slice.com; sean.mckenna@slice.com; vladimir.t@slice.com"]
+"Tailwind CSS v4", ["adrian.trunzo@slice.com; jovica.markoski@slice.com; david.robinson@slice.com; darren.hoyt@slice.com"]
