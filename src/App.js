@@ -448,7 +448,9 @@ function App() {
 
                 {epic.stories && workflowStateOrder.length > 0 && (
                   <div className="epic-stats-container">
-                    <div className="workflow-status-chart">
+                    <div className="workflow-status-chart-container">
+                      <h4>Ticket Status Breakdown</h4>
+                      <div className="workflow-status-chart">
                       {(() => {
                         // Calculate workflow state counts
                         const stateCounts = {};
@@ -506,6 +508,7 @@ function App() {
                           );
                         });
                       })()}
+                      </div>
                     </div>
 
                     <div className="story-owners-table">
