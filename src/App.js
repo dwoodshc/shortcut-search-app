@@ -172,7 +172,19 @@ function App() {
                         {epic.stories.map((story) => (
                           <li key={story.id} className="story-item">
                             <div className="story-header">
-                              <span className="story-name">{story.name}</span>
+                              <span className="story-name">
+                                {story.app_url ? (
+                                  <a
+                                    href={story.app_url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                  >
+                                    {story.name}
+                                  </a>
+                                ) : (
+                                  story.name
+                                )}
+                              </span>
                               <span className={`story-state state-${story.workflow_state_id}`}>
                                 {story.workflow_state_id}
                               </span>

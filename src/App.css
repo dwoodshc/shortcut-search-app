@@ -239,6 +239,17 @@ body {
   flex: 1;
 }
 
+.story-name a {
+  color: #667eea;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.story-name a:hover {
+  color: #764ba2;
+  text-decoration: underline;
+}
+
 .story-state {
   background-color: #bee3f8;
   padding: 0.25rem 0.5rem;
