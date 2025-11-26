@@ -131,7 +131,20 @@ function App() {
                     <span className="expand-icon">
                       {expandedEpics.has(epic.id) ? '▼' : '▶'}
                     </span>
-                    <h3>{epic.name}</h3>
+                    <h3>
+                      {epic.app_url ? (
+                        <a
+                          href={epic.app_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {epic.name}
+                        </a>
+                      ) : (
+                        epic.name
+                      )}
+                    </h3>
                   </div>
                   <div className="epic-meta">
                     <span className="epic-state">{epic.state}</span>

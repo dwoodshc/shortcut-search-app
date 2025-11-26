@@ -150,6 +150,17 @@ body {
   margin: 0;
 }
 
+.epic-title h3 a {
+  color: #667eea;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.epic-title h3 a:hover {
+  color: #764ba2;
+  text-decoration: underline;
+}
+
 .epic-meta {
   display: flex;
   gap: 1rem;
