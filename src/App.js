@@ -1281,7 +1281,7 @@ function App() {
                             <table>
                               <thead>
                                 <tr>
-                                  <th>Name</th>
+                                  <th>Owner</th>
                                   <th>Count</th>
                                 </tr>
                               </thead>
