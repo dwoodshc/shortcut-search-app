@@ -424,11 +424,11 @@ body {
 }
 
 .email-ticket-counts-table tbody tr.zero-count-row {
-  background-color: #f0f0f0;
+  background-color: #fff9c4;
 }
 
 .email-ticket-counts-table tbody tr.zero-count-row:hover {
-  background-color: #e8e8e8;
+  background-color: #fff59d;
 }
 
 .epic-description {
