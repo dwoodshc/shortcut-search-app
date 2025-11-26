@@ -186,6 +186,42 @@ app.get('/api/filtered-epics', async (req, res) => {
   }
 });
 
+// Get email lists from epics.txt
+app.get('/api/epic-emails', async (req, res) => {
+  try {
+    const filePath = path.join(__dirname, 'epics.txt');
+    const fileContent = await fs.readFile(filePath, 'utf-8');
+
+    // Parse epic data including emails
+    const epicData = {};
+    fileContent.split('\n').forEach(line => {
+      const trimmed = line.trim();
+      if (!trimmed) return;
+
+      // Extract epic name and email list
+      const commaIndex = trimmed.indexOf(',');
+      if (commaIndex === -1) return;
+
+      const epicName = trimmed.substring(0, commaIndex).trim().replace(/^"|"$/g, '');
+      const emailsPart = trimmed.substring(commaIndex + 1).trim();
+
+      // Extract names from the array format ["Name1; Name2; ..."]
+      const match = emailsPart.match(/\["([^"]+)"\]/);
+      if (match && match[1]) {
+        const names = match[1].split(';').map(e => e.trim()).filter(e => e.length > 0);
+        epicData[epicName] = names;
+      }
+    });
+
+    res.json(epicData);
+  } catch (error) {
+    console.error('Error reading epic emails:', error.message);
+    res.status(500).json({
+      error: 'Failed to read epic emails file'
+    });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Proxy server running on http://localhost:${PORT}`);
 });

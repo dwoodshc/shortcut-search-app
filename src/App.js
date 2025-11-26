@@ -12,6 +12,7 @@ function App() {
   const [workflowStateOrder, setWorkflowStateOrder] = useState([]);
   const [members, setMembers] = useState({});
   const [filteredEpicNames, setFilteredEpicNames] = useState([]);
+  const [epicEmails, setEpicEmails] = useState({});
 
   // Fetch teams, workflow states, and filtered epic names on mount
   useEffect(() => {
@@ -78,9 +79,22 @@ function App() {
       }
     };
 
+    const fetchEpicEmails = async () => {
+      try {
+        const response = await fetch('http://localhost:3001/api/epic-emails');
+        if (response.ok) {
+          const emailsData = await response.json();
+          setEpicEmails(emailsData);
+        }
+      } catch (err) {
+        console.error('Error fetching epic emails:', err);
+      }
+    };
+
     fetchTeams();
     fetchWorkflows();
     fetchFilteredEpics();
+    fetchEpicEmails();
   }, []);
 
   // Fetch user name by ID
@@ -427,6 +441,82 @@ function App() {
                             <h4>Story Owners</h4>
                             <p style={{ color: '#718096', fontSize: '0.875rem', fontStyle: 'italic' }}>
                               No assigned owners
+                            </p>
+                          </>
+                        );
+                      })()}
+                    </div>
+
+                    <div className="email-ticket-counts-table">
+                      {(() => {
+                        // Get name list for this epic
+                        const nameList = epicEmails[epic.name] || [];
+
+                        if (nameList.length === 0) {
+                          return (
+                            <>
+                              <h4>Team Open Tickets</h4>
+                              <p style={{ color: '#718096', fontSize: '0.875rem', fontStyle: 'italic' }}>
+                                No team list configured
+                              </p>
+                            </>
+                          );
+                        }
+
+                        // Initialize counts for all names in the list
+                        const nameCounts = {};
+                        nameList.forEach(name => {
+                          nameCounts[name] = 0;
+                        });
+
+                        // Count open tickets for users in the name list (exclude Complete state)
+                        epic.stories.forEach(story => {
+                          // Get the state name for this story
+                          const stateName = workflowStates[story.workflow_state_id] || '';
+                          const isComplete = stateName.toLowerCase().trim() === 'complete';
+
+                          // Only count if not complete
+                          if (!isComplete && story.owner_ids && story.owner_ids.length > 0) {
+                            story.owner_ids.forEach(ownerId => {
+                              const ownerName = members[ownerId] || '';
+                              // Match by full or partial name (case insensitive)
+                              nameList.forEach(listName => {
+                                const ownerNameLower = ownerName.toLowerCase();
+                                const listNameLower = listName.toLowerCase();
+                                // Check if the owner name contains the list name or vice versa
+                                if (ownerNameLower.includes(listNameLower) || listNameLower.includes(ownerNameLower)) {
+                                  nameCounts[listName] = (nameCounts[listName] || 0) + 1;
+                                }
+                              });
+                            });
+                          }
+                        });
+
+                        // Sort by count descending
+                        const sortedNames = Object.entries(nameCounts)
+                          .sort((a, b) => b[1] - a[1]);
+
+                        return (
+                          <>
+                            <h4>Team Open Tickets</h4>
+                            <table>
+                              <thead>
+                                <tr>
+                                  <th>Name</th>
+                                  <th>Count</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {sortedNames.map(([name, count]) => (
+                                  <tr key={name} className={count === 0 ? 'zero-count-row' : ''}>
+                                    <td>{name}</td>
+                                    <td>{count}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                            <p style={{ color: '#718096', fontSize: '0.75rem', fontStyle: 'italic', marginTop: '0.5rem' }}>
+                              NOTE: This table shows the count of open tickets only for the team
                             </p>
                           </>
                         );

@@ -354,18 +354,21 @@ body {
   transition: width 0.3s ease;
 }
 
-.story-owners-table {
+.story-owners-table,
+.email-ticket-counts-table {
   flex: 1;
   min-width: 250px;
 }
 
-.story-owners-table h4 {
+.story-owners-table h4,
+.email-ticket-counts-table h4 {
   color: #333;
   margin-bottom: 1rem;
   font-size: 1.1rem;
 }
 
-.story-owners-table table {
+.story-owners-table table,
+.email-ticket-counts-table table {
   width: 100%;
   border-collapse: collapse;
   background: white;
@@ -374,12 +377,14 @@ body {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.story-owners-table thead {
+.story-owners-table thead,
+.email-ticket-counts-table thead {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
 }
 
-.story-owners-table th {
+.story-owners-table th,
+.email-ticket-counts-table th {
   padding: 0.75rem 1rem;
   text-align: left;
   font-weight: 600;
@@ -388,29 +393,42 @@ body {
   letter-spacing: 0.5px;
 }
 
-.story-owners-table th:last-child {
+.story-owners-table th:last-child,
+.email-ticket-counts-table th:last-child {
   text-align: right;
 }
 
-.story-owners-table td {
+.story-owners-table td,
+.email-ticket-counts-table td {
   padding: 0.75rem 1rem;
   border-bottom: 1px solid #e2e8f0;
   color: #4a5568;
   font-size: 0.875rem;
 }
 
-.story-owners-table td:last-child {
+.story-owners-table td:last-child,
+.email-ticket-counts-table td:last-child {
   text-align: right;
   font-weight: 600;
   color: #667eea;
 }
 
-.story-owners-table tbody tr:hover {
+.story-owners-table tbody tr:hover,
+.email-ticket-counts-table tbody tr:hover {
   background-color: #f7fafc;
 }
 
-.story-owners-table tbody tr:last-child td {
+.story-owners-table tbody tr:last-child td,
+.email-ticket-counts-table tbody tr:last-child td {
   border-bottom: none;
+}
+
+.email-ticket-counts-table tbody tr.zero-count-row {
+  background-color: #f0f0f0;
+}
+
+.email-ticket-counts-table tbody tr.zero-count-row:hover {
+  background-color: #e8e8e8;
 }
 
 .epic-description {
