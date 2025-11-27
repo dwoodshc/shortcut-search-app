@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import yaml from 'js-yaml';
+import { marked } from 'marked';
 import './App.css';
 
 function App() {
@@ -23,6 +24,8 @@ function App() {
   const [epicListError, setEpicListError] = useState('');
   const [collapsedCharts, setCollapsedCharts] = useState({});
   const [epicsList, setEpicsList] = useState([]);
+  const [showReadmeModal, setShowReadmeModal] = useState(false);
+  const [readmeContent, setReadmeContent] = useState('');
 
   // Toggle chart collapse state for a specific epic and chart type
   const toggleChart = (epicId, chartType) => {
@@ -330,6 +333,25 @@ function App() {
     }
   };
 
+  // Load README content
+  const handleOpenReadme = async () => {
+    try {
+      const response = await fetch('http://localhost:3001/api/readme');
+      if (response.ok) {
+        const data = await response.json();
+        setReadmeContent(data.content);
+        setShowReadmeModal(true);
+      } else {
+        setReadmeContent('Failed to load README.md file');
+        setShowReadmeModal(true);
+      }
+    } catch (err) {
+      console.error('Error loading README:', err);
+      setReadmeContent('Failed to load README.md file');
+      setShowReadmeModal(true);
+    }
+  };
+
   // Epic management helper functions
   const addEpic = () => {
     setEpicsList([...epicsList, { name: '', team: [] }]);
@@ -607,6 +629,36 @@ function App() {
         </div>
       )}
 
+      {showReadmeModal && (
+        <div className="modal-overlay" onClick={() => setShowReadmeModal(false)}>
+          <div className="modal-content modal-content-large" onClick={(e) => e.stopPropagation()}>
+            <h2>README.md</h2>
+            <div
+              className="markdown-content"
+              style={{
+                maxHeight: '60vh',
+                overflowY: 'auto',
+                marginBottom: '1rem',
+                backgroundColor: '#ffffff',
+                padding: '1.5rem',
+                borderRadius: '6px',
+                border: '1px solid #e2e8f0'
+              }}
+              dangerouslySetInnerHTML={{ __html: marked(readmeContent || '') }}
+            />
+            <div className="modal-buttons">
+              <button
+                type="button"
+                onClick={() => setShowReadmeModal(false)}
+                className="btn-primary"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showEpicListModal && (
         <div className="modal-overlay" onClick={() => setShowEpicListModal(false)}>
           <div className="modal-content modal-content-large" onClick={(e) => e.stopPropagation()}>
@@ -782,6 +834,15 @@ function App() {
                 }}
               >
                 Edit API Token
+              </button>
+              <button
+                className="settings-menu-item"
+                onClick={() => {
+                  setShowSettingsMenu(false);
+                  handleOpenReadme();
+                }}
+              >
+                README.md
               </button>
               <button
                 className="settings-menu-item"

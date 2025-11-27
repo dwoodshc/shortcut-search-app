@@ -249,6 +249,26 @@ app.post('/api/epics-file', async (req, res) => {
   }
 });
 
+// Get README.md content
+app.get('/api/readme', async (_req, res) => {
+  try {
+    const filePath = path.join(__dirname, 'README.md');
+    const fileContent = await fs.readFile(filePath, 'utf-8');
+    res.json({ content: fileContent });
+  } catch (error) {
+    // If file doesn't exist, return 404
+    if (error.code === 'ENOENT') {
+      return res.status(404).json({
+        error: 'README.md file not found'
+      });
+    }
+    console.error('Error reading README.md:', error.message);
+    res.status(500).json({
+      error: 'Failed to read README.md file'
+    });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Proxy server running on http://localhost:${PORT}`);
 });
