@@ -777,7 +777,7 @@ function App() {
         {epics.length > 0 && (
           <div className="epics-list">
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-              <h2 style={{ margin: 0 }}>
+              <h2 style={{ margin: 0, fontSize: '1.0rem' }}>
                 {epics.filter(e => !e.notFound).length === filteredEpicNames.length ? '✅ ' : '⚠️ '}
                 Found {epics.filter(e => !e.notFound).length} of {filteredEpicNames.length} Epic{filteredEpicNames.length !== 1 ? 's' : ''}
               </h2>
