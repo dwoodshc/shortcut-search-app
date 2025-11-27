@@ -27,6 +27,8 @@ function App() {
   const [showReadmeModal, setShowReadmeModal] = useState(false);
   const [readmeContent, setReadmeContent] = useState('');
   const [collapsedTeamMembers, setCollapsedTeamMembers] = useState({});
+  const [draggedEpicIndex, setDraggedEpicIndex] = useState(null);
+  const [dragOverIndex, setDragOverIndex] = useState(null);
 
   // Toggle chart collapse state for a specific epic and chart type
   const toggleChart = (epicId, chartType) => {
@@ -389,6 +391,62 @@ function App() {
     setEpicsList(newEpicsList);
   };
 
+  // Drag and drop handlers for epic reordering
+  const handleDragStart = (e, index) => {
+    setDraggedEpicIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e, index) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverIndex(index);
+  };
+
+  const handleDragLeave = (e) => {
+    // Only clear if we're leaving the drop target entirely (not moving to a child element)
+    if (!e.currentTarget.contains(e.relatedTarget)) {
+      setDragOverIndex(null);
+    }
+  };
+
+  const handleDrop = (e, dropIndex) => {
+    e.preventDefault();
+
+    if (draggedEpicIndex === null) return;
+
+    const newEpicsList = [...epicsList];
+
+    // Calculate the actual insertion position
+    // dropIndex represents the "drop zone" position:
+    // - dropIndex 0 = insert at position 0 (before all items)
+    // - dropIndex 1 = insert at position 1 (after item 0)
+    // - etc.
+
+    let insertIndex = dropIndex;
+
+    // If we're dragging to a position after the dragged item's current position,
+    // we need to adjust because removing the item shifts everything down
+    if (dropIndex > draggedEpicIndex) {
+      insertIndex = dropIndex - 1;
+    }
+
+    // Remove the item from its current position
+    const [draggedItem] = newEpicsList.splice(draggedEpicIndex, 1);
+
+    // Insert it at the new position
+    newEpicsList.splice(insertIndex, 0, draggedItem);
+
+    setEpicsList(newEpicsList);
+    setDraggedEpicIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedEpicIndex(null);
+    setDragOverIndex(null);
+  };
+
   const fetchUserName = useCallback(async (userId) => {
     if (members[userId]) {
       return members[userId];
@@ -669,91 +727,172 @@ function App() {
             </p>
 
             <div className="form-group" style={{ maxHeight: '60vh', overflowY: 'auto', marginBottom: '1rem' }}>
-              {epicsList.map((epic, epicIndex) => (
-                <div key={epicIndex} style={{
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '8px',
-                  padding: '1rem',
-                  marginBottom: '1rem',
-                  backgroundColor: '#f7fafc'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
-                    <label style={{ fontWeight: 'bold', minWidth: '80px' }}>Epic Name:</label>
-                    <input
-                      type="text"
-                      value={epic.name || ''}
-                      onChange={(e) => updateEpicName(epicIndex, e.target.value)}
-                      className="input-field"
-                      placeholder="Enter epic name"
-                      style={{ flex: 1 }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeEpic(epicIndex)}
-                      className="btn-secondary"
-                      style={{
-                        padding: '0.5rem 1rem',
-                        backgroundColor: '#ef4444',
-                        color: 'white'
-                      }}
-                    >
-                      Remove Epic
-                    </button>
-                  </div>
+              {/* Drop zone at the top for first position */}
+              <div
+                onDragOver={(e) => handleDragOver(e, 0)}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, 0)}
+                style={{
+                  minHeight: dragOverIndex === 0 ? '40px' : '20px',
+                  transition: 'min-height 0.2s ease',
+                  position: 'relative',
+                  marginBottom: '0.5rem'
+                }}
+              >
+                {dragOverIndex === 0 && (
+                  <div style={{
+                    height: '3px',
+                    backgroundColor: '#494BCB',
+                    borderRadius: '2px',
+                    margin: '8px 0',
+                    boxShadow: '0 0 4px rgba(73, 75, 203, 0.5)'
+                  }} />
+                )}
+              </div>
 
-                  <div style={{ marginLeft: '1rem', marginTop: '0.75rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                      <label style={{ fontWeight: 'bold', display: 'block', margin: 0 }}>
-                        Team Members {epic.team && epic.team.length > 0 && `(${epic.team.length})`}
-                      </label>
+              {epicsList.map((epic, epicIndex) => (
+                <React.Fragment key={epicIndex}>
+                  <div
+                    onDragOver={(e) => handleDragOver(e, epicIndex + 1)}
+                    onDragLeave={handleDragLeave}
+                    onDrop={(e) => handleDrop(e, epicIndex + 1)}
+                    style={{
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '8px',
+                      padding: '1rem',
+                      marginBottom: '1rem',
+                      backgroundColor: draggedEpicIndex === epicIndex ? '#f0f0f0' : '#f7fafc',
+                      opacity: draggedEpicIndex === epicIndex ? 0.5 : 1,
+                      position: 'relative'
+                    }}
+                  >
+                    {/* Drop indicator line */}
+                    {dragOverIndex === epicIndex + 1 && draggedEpicIndex !== epicIndex && (
+                      <div style={{
+                        position: 'absolute',
+                        bottom: '-8px',
+                        left: 0,
+                        right: 0,
+                        height: '3px',
+                        backgroundColor: '#494BCB',
+                        borderRadius: '2px',
+                        zIndex: 10,
+                        boxShadow: '0 0 4px rgba(73, 75, 203, 0.5)'
+                      }} />
+                    )}
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                      {/* Drag handle */}
+                      <div
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, epicIndex)}
+                        onDragEnd={handleDragEnd}
+                        style={{
+                          cursor: 'grab',
+                          padding: '0.25rem',
+                          color: '#666',
+                          fontSize: '1.2rem',
+                          lineHeight: 1,
+                          userSelect: 'none'
+                        }}
+                        title="Drag to reorder"
+                      >
+                        ⋮⋮
+                      </div>
+
+                      {/* Position badge */}
+                      <div style={{
+                        backgroundColor: '#494BCB',
+                        color: 'white',
+                        borderRadius: '50%',
+                        width: '28px',
+                        height: '28px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontWeight: 'bold',
+                        fontSize: '0.875rem'
+                      }}>
+                        {epicIndex + 1}
+                      </div>
+
+                      <label style={{ fontWeight: 'bold', minWidth: '80px' }}>Epic Name:</label>
+                      <input
+                        type="text"
+                        value={epic.name || ''}
+                        onChange={(e) => updateEpicName(epicIndex, e.target.value)}
+                        className="input-field"
+                        placeholder="Enter epic name"
+                        style={{ flex: 1 }}
+                      />
                       <button
                         type="button"
-                        onClick={() => toggleTeamMembers(epicIndex)}
-                        className="chart-toggle-btn"
-                        aria-label="Toggle team members"
-                        style={{ marginLeft: '0.5rem' }}
+                        onClick={() => removeEpic(epicIndex)}
+                        className="btn-secondary"
+                        style={{
+                          padding: '0.5rem 1rem',
+                          backgroundColor: '#ef4444',
+                          color: 'white'
+                        }}
                       >
-                        {collapsedTeamMembers[epicIndex] ? '▼' : '▲'}
+                        Remove Epic
                       </button>
                     </div>
-                    {!collapsedTeamMembers[epicIndex] && (
-                      <>
-                        {epic.team && epic.team.map((member, memberIndex) => (
-                          <div key={memberIndex} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                            <input
-                              type="text"
-                              value={member || ''}
-                              onChange={(e) => updateTeamMember(epicIndex, memberIndex, e.target.value)}
-                              className="input-field"
-                              placeholder="Enter team member name"
-                              style={{ flex: 1 }}
-                            />
-                            <button
-                              type="button"
-                              onClick={() => removeTeamMember(epicIndex, memberIndex)}
-                              className="btn-secondary"
-                              style={{
-                                padding: '0.5rem 1rem',
-                                backgroundColor: '#f59e0b',
-                                color: 'white'
-                              }}
-                            >
-                              Remove
-                            </button>
-                          </div>
-                        ))}
+
+                    <div style={{ marginLeft: '1rem', marginTop: '0.75rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                        <label style={{ fontWeight: 'bold', display: 'block', margin: 0 }}>
+                          Team Members {epic.team && epic.team.length > 0 && `(${epic.team.length})`}
+                        </label>
                         <button
                           type="button"
-                          onClick={() => addTeamMember(epicIndex)}
-                          className="btn-secondary"
-                          style={{ marginTop: '0.5rem' }}
+                          onClick={() => toggleTeamMembers(epicIndex)}
+                          className="chart-toggle-btn"
+                          aria-label="Toggle team members"
+                          style={{ marginLeft: '0.5rem' }}
                         >
-                          + Add Team Member
+                          {collapsedTeamMembers[epicIndex] ? '▼' : '▲'}
                         </button>
-                      </>
-                    )}
+                      </div>
+                      {!collapsedTeamMembers[epicIndex] && (
+                        <>
+                          {epic.team && epic.team.map((member, memberIndex) => (
+                            <div key={memberIndex} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                              <input
+                                type="text"
+                                value={member || ''}
+                                onChange={(e) => updateTeamMember(epicIndex, memberIndex, e.target.value)}
+                                className="input-field"
+                                placeholder="Enter team member name"
+                                style={{ flex: 1 }}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => removeTeamMember(epicIndex, memberIndex)}
+                                className="btn-secondary"
+                                style={{
+                                  padding: '0.5rem 1rem',
+                                  backgroundColor: '#f59e0b',
+                                  color: 'white'
+                                }}
+                              >
+                                Remove
+                              </button>
+                            </div>
+                          ))}
+                          <button
+                            type="button"
+                            onClick={() => addTeamMember(epicIndex)}
+                            className="btn-secondary"
+                            style={{ marginTop: '0.5rem' }}
+                          >
+                            + Add Team Member
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </div>
-                </div>
+                </React.Fragment>
               ))}
 
               <button
