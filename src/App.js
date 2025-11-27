@@ -29,6 +29,7 @@ function App() {
   const [collapsedTeamMembers, setCollapsedTeamMembers] = useState({});
   const [draggedEpicIndex, setDraggedEpicIndex] = useState(null);
   const [dragOverIndex, setDragOverIndex] = useState(null);
+  const [showSidebar, setShowSidebar] = useState(false);
 
   // Toggle chart collapse state for a specific epic and chart type
   const toggleChart = (epicId, chartType) => {
@@ -44,6 +45,17 @@ function App() {
       ...prev,
       [epicIndex]: !prev[epicIndex]
     }));
+  };
+
+  // Scroll to epic by ID
+  const scrollToEpic = (epicId) => {
+    const element = document.getElementById(`epic-${epicId}`);
+    if (element) {
+      const yOffset = -20; // Offset to account for any spacing
+      const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset;
+      window.scrollTo({ top: y, behavior: 'smooth' });
+      setShowSidebar(false);
+    }
   };
 
   // Toggle all charts and tables collapse state (excluding stories)
@@ -219,6 +231,8 @@ function App() {
           setShowReadmeModal(false);
         } else if (showSettingsMenu) {
           setShowSettingsMenu(false);
+        } else if (showSidebar) {
+          setShowSidebar(false);
         }
       }
     };
@@ -227,7 +241,7 @@ function App() {
     return () => {
       document.removeEventListener('keydown', handleEscKey);
     };
-  }, [showTokenModal, showEpicListModal, showAboutModal, showReadmeModal, showSettingsMenu]);
+  }, [showTokenModal, showEpicListModal, showAboutModal, showReadmeModal, showSettingsMenu, showSidebar]);
 
   // Fetch user name by ID
   // Convert text to title case (initial capitals)
@@ -1044,11 +1058,62 @@ function App() {
         </div>
       </header>
 
+      {/* Epic Navigation Sidebar */}
+      {epics.length > 0 && (
+        <>
+          {/* Sidebar Toggle Button */}
+          <button
+            className={`sidebar-toggle ${showSidebar ? 'active' : ''}`}
+            onClick={() => setShowSidebar(!showSidebar)}
+            aria-label="Toggle epic navigation"
+          >
+            {showSidebar ? '◀' : '▶'}
+          </button>
+
+          {/* Sidebar */}
+          <div className={`epic-sidebar ${showSidebar ? 'show' : ''}`}>
+            <div className="sidebar-header">
+              <h3>Epics</h3>
+              <button
+                className="sidebar-close"
+                onClick={() => setShowSidebar(false)}
+                aria-label="Close sidebar"
+              >
+                ✕
+              </button>
+            </div>
+            <nav className="sidebar-nav">
+              {epics.map((epic, index) => (
+                !epic.notFound && (
+                  <button
+                    key={epic.id}
+                    className="sidebar-nav-item"
+                    onClick={() => scrollToEpic(epic.id)}
+                    title={epic.name}
+                  >
+                    <span className="sidebar-nav-number">{index + 1}</span>
+                    <span className="sidebar-nav-text">{epic.name}</span>
+                  </button>
+                )
+              ))}
+            </nav>
+          </div>
+
+          {/* Overlay */}
+          {showSidebar && (
+            <div
+              className="sidebar-overlay"
+              onClick={() => setShowSidebar(false)}
+            />
+          )}
+        </>
+      )}
+
       <main className="container">
         <form onSubmit={searchEpics} className="search-form">
           <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem' }}>
             <button type="submit" disabled={loading} className="btn-primary">
-              {loading ? 'Searching...' : 'Search Epics'}
+              {loading ? 'Searching...' : (epics.length > 0 ? 'Refresh Epics' : 'Search Epics')}
             </button>
             <button
               type="button"
@@ -1118,7 +1183,7 @@ function App() {
                   <p>Epic not found in Shortcut</p>
                 </div>
               ) : (
-              <div key={epic.id} className="epic-card">
+              <div key={epic.id} id={`epic-${epic.id}`} className="epic-card">
                 <div
                   className="epic-header"
                 >
