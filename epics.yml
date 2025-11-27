@@ -1,5 +1,5 @@
 epics:
-  - name: "SCW - Post release tasks"
+  - name: SCW - Post release tasks
     team:
       - Tenal Bourchier
       - Matt Budde
@@ -10,22 +10,19 @@ epics:
       - Dan Meeking
       - Mihail Mickalovski
       - Gary Robinson
-
-  - name: "Bridge to Online: Order Payment"
+  - name: 'Bridge to Online: Order Payment'
     team:
       - Mark McDermid
       - Vidushi
       - Sean McKenna
       - Vladimir Temjanoski
-
-  - name: "In-store Kiosk v1"
+  - name: In-store Kiosk v1
     team:
       - Mark McDermid
       - Vidushi
       - Sean McKenna
       - Vladimir Temjanoski
-
-  - name: "Tailwind CSS V4"
+  - name: Tailwind CSS V4
     team:
       - Adrian Trunzo
       - Jovica Markoski

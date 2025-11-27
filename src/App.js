@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import yaml from 'js-yaml';
 import './App.css';
 
 function App() {
@@ -20,9 +21,9 @@ function App() {
   const [showAboutModal, setShowAboutModal] = useState(false);
   const [hasExistingToken, setHasExistingToken] = useState(false);
   const [showEpicListModal, setShowEpicListModal] = useState(false);
-  const [epicsFileContent, setEpicsFileContent] = useState('');
   const [epicListError, setEpicListError] = useState('');
   const [collapsedCharts, setCollapsedCharts] = useState({});
+  const [epicsList, setEpicsList] = useState([]);
 
   // Toggle chart collapse state for a specific epic and chart type
   const toggleChart = (epicId, chartType) => {
@@ -85,8 +86,8 @@ function App() {
       try {
         const response = await fetch('http://localhost:3001/api/epics-file');
         if (!response.ok) {
-          // If epics.txt doesn't exist, open the modal with empty content
-          setEpicsFileContent('');
+          // If epics.yml doesn't exist, open the modal with empty content
+          setEpicsList([]);
           setShowEpicListModal(true);
         }
       } catch (err) {
@@ -211,7 +212,20 @@ function App() {
       const response = await fetch('http://localhost:3001/api/epics-file');
       if (response.ok) {
         const data = await response.json();
-        setEpicsFileContent(data.content);
+
+        // Parse YAML into structured data
+        try {
+          const parsedData = yaml.load(data.content);
+          if (parsedData && parsedData.epics) {
+            setEpicsList(parsedData.epics);
+          } else {
+            setEpicsList([]);
+          }
+        } catch (yamlErr) {
+          console.error('Error parsing YAML:', yamlErr);
+          setEpicsList([]);
+        }
+
         setShowEpicListModal(true);
       } else {
         setEpicListError('Failed to load epics.yml file');
@@ -227,12 +241,15 @@ function App() {
     setEpicListError('');
 
     try {
+      // Convert structured data back to YAML
+      const yamlContent = yaml.dump({ epics: epicsList });
+
       const response = await fetch('http://localhost:3001/api/epics-file', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ content: epicsFileContent })
+        body: JSON.stringify({ content: yamlContent })
       });
 
       if (response.ok) {
@@ -290,6 +307,42 @@ function App() {
       console.error('Error saving token:', err);
       setTokenError('Failed to save token. Please try again.');
     }
+  };
+
+  // Epic management helper functions
+  const addEpic = () => {
+    setEpicsList([...epicsList, { name: '', team: [] }]);
+  };
+
+  const removeEpic = (index) => {
+    setEpicsList(epicsList.filter((_, i) => i !== index));
+  };
+
+  const updateEpicName = (index, name) => {
+    const newEpicsList = [...epicsList];
+    newEpicsList[index].name = name;
+    setEpicsList(newEpicsList);
+  };
+
+  const addTeamMember = (epicIndex) => {
+    const newEpicsList = [...epicsList];
+    if (!newEpicsList[epicIndex].team) {
+      newEpicsList[epicIndex].team = [];
+    }
+    newEpicsList[epicIndex].team.push('');
+    setEpicsList(newEpicsList);
+  };
+
+  const removeTeamMember = (epicIndex, memberIndex) => {
+    const newEpicsList = [...epicsList];
+    newEpicsList[epicIndex].team = newEpicsList[epicIndex].team.filter((_, i) => i !== memberIndex);
+    setEpicsList(newEpicsList);
+  };
+
+  const updateTeamMember = (epicIndex, memberIndex, name) => {
+    const newEpicsList = [...epicsList];
+    newEpicsList[epicIndex].team[memberIndex] = name;
+    setEpicsList(newEpicsList);
   };
 
   const fetchUserName = useCallback(async (userId) => {
@@ -564,51 +617,114 @@ function App() {
           <div className="modal-content modal-content-large" onClick={(e) => e.stopPropagation()}>
             <h2>Edit Epic List</h2>
             <p>
-              Edit the list of epics and their team members in YAML format:
+              Add or remove epics and their team members:
             </p>
-            <pre style={{ fontFamily: 'monospace', backgroundColor: '#f7fafc', padding: '0.75rem', borderRadius: '4px', fontSize: '0.875rem', overflowX: 'auto' }}>
-{`epics:
-  - name: "Epic Name"
-    team:
-      - Member Name 1
-      - Member Name 2`}
-            </pre>
 
-            <div className="form-group">
-              <label htmlFor="epicsContent">Epic List Content (YAML):</label>
-              <textarea
-                id="epicsContent"
-                value={epicsFileContent}
-                onChange={(e) => setEpicsFileContent(e.target.value)}
-                className="input-field"
-                rows={15}
-                style={{ fontFamily: 'monospace', fontSize: '0.875rem' }}
-                placeholder='Enter epic list in YAML format...'
-              />
-              {epicListError && (
-                <div style={{
-                  color: '#c33',
-                  marginTop: '0.5rem',
-                  fontSize: '0.875rem',
-                  backgroundColor: '#fee',
-                  border: '1px solid #fcc',
-                  padding: '0.75rem',
-                  borderRadius: '6px',
-                  whiteSpace: 'pre-line',
-                  maxHeight: '200px',
-                  overflowY: 'auto'
+            <div className="form-group" style={{ maxHeight: '60vh', overflowY: 'auto', marginBottom: '1rem' }}>
+              {epicsList.map((epic, epicIndex) => (
+                <div key={epicIndex} style={{
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '8px',
+                  padding: '1rem',
+                  marginBottom: '1rem',
+                  backgroundColor: '#f7fafc'
                 }}>
-                  {epicListError}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                    <label style={{ fontWeight: 'bold', minWidth: '80px' }}>Epic Name:</label>
+                    <input
+                      type="text"
+                      value={epic.name || ''}
+                      onChange={(e) => updateEpicName(epicIndex, e.target.value)}
+                      className="input-field"
+                      placeholder="Enter epic name"
+                      style={{ flex: 1 }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeEpic(epicIndex)}
+                      className="btn-secondary"
+                      style={{
+                        padding: '0.5rem 1rem',
+                        backgroundColor: '#ef4444',
+                        color: 'white'
+                      }}
+                    >
+                      Remove Epic
+                    </button>
+                  </div>
+
+                  <div style={{ marginLeft: '1rem', marginTop: '0.75rem' }}>
+                    <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '0.5rem' }}>
+                      Team Members:
+                    </label>
+                    {epic.team && epic.team.map((member, memberIndex) => (
+                      <div key={memberIndex} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                        <input
+                          type="text"
+                          value={member || ''}
+                          onChange={(e) => updateTeamMember(epicIndex, memberIndex, e.target.value)}
+                          className="input-field"
+                          placeholder="Enter team member name"
+                          style={{ flex: 1 }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeTeamMember(epicIndex, memberIndex)}
+                          className="btn-secondary"
+                          style={{
+                            padding: '0.5rem 1rem',
+                            backgroundColor: '#f59e0b',
+                            color: 'white'
+                          }}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => addTeamMember(epicIndex)}
+                      className="btn-secondary"
+                      style={{ marginTop: '0.5rem' }}
+                    >
+                      + Add Team Member
+                    </button>
+                  </div>
                 </div>
-              )}
+              ))}
+
+              <button
+                type="button"
+                onClick={addEpic}
+                className="btn-secondary"
+                style={{ width: '100%', padding: '0.75rem' }}
+              >
+                + Add New Epic
+              </button>
             </div>
+
+            {epicListError && (
+              <div style={{
+                color: '#c33',
+                marginTop: '0.5rem',
+                fontSize: '0.875rem',
+                backgroundColor: '#fee',
+                border: '1px solid #fcc',
+                padding: '0.75rem',
+                borderRadius: '6px',
+                whiteSpace: 'pre-line',
+                maxHeight: '200px',
+                overflowY: 'auto'
+              }}>
+                {epicListError}
+              </div>
+            )}
 
             <div className="modal-buttons">
               <button
                 type="button"
                 onClick={() => {
                   setShowEpicListModal(false);
-                  setEpicsFileContent('');
                   setEpicListError('');
                 }}
                 className="btn-secondary"
