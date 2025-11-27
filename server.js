@@ -3,6 +3,7 @@ const cors = require('cors');
 const axios = require('axios');
 const fs = require('fs').promises;
 const path = require('path');
+const yaml = require('js-yaml');
 require('dotenv').config();
 
 const app = express();
@@ -162,30 +163,15 @@ app.get('/api/epics/:id/stories', async (req, res) => {
   }
 });
 
-// Get filtered epic names from epics.txt
+// Get filtered epic names from epics.yml
 app.get('/api/filtered-epics', async (req, res) => {
   try {
-    const filePath = path.join(__dirname, 'epics.txt');
+    const filePath = path.join(__dirname, 'epics.yml');
     const fileContent = await fs.readFile(filePath, 'utf-8');
+    const data = yaml.load(fileContent);
 
-    // Parse epic names from file (extract first field before comma)
-    const epicNames = fileContent
-      .split('\n')
-      .map(line => {
-        const trimmed = line.trim();
-        if (!trimmed) return '';
-
-        // Extract text before the first comma
-        const commaIndex = trimmed.indexOf(',');
-        if (commaIndex === -1) {
-          // No comma, treat entire line as epic name
-          return trimmed.replace(/^"|"$/g, '');
-        }
-
-        // Get text before comma and remove quotes
-        return trimmed.substring(0, commaIndex).trim().replace(/^"|"$/g, '');
-      })
-      .filter(name => name.length > 0);
+    // Extract epic names from YAML
+    const epicNames = data.epics.map(epic => epic.name);
 
     res.json(epicNames);
   } catch (error) {
@@ -196,31 +182,17 @@ app.get('/api/filtered-epics', async (req, res) => {
   }
 });
 
-// Get email lists from epics.txt
+// Get team lists from epics.yml
 app.get('/api/epic-emails', async (req, res) => {
   try {
-    const filePath = path.join(__dirname, 'epics.txt');
+    const filePath = path.join(__dirname, 'epics.yml');
     const fileContent = await fs.readFile(filePath, 'utf-8');
+    const data = yaml.load(fileContent);
 
-    // Parse epic data including emails
+    // Create a map of epic names to team members
     const epicData = {};
-    fileContent.split('\n').forEach(line => {
-      const trimmed = line.trim();
-      if (!trimmed) return;
-
-      // Extract epic name and email list
-      const commaIndex = trimmed.indexOf(',');
-      if (commaIndex === -1) return;
-
-      const epicName = trimmed.substring(0, commaIndex).trim().replace(/^"|"$/g, '');
-      const emailsPart = trimmed.substring(commaIndex + 1).trim();
-
-      // Extract names from the array format ["Name1; Name2; ..."]
-      const match = emailsPart.match(/\["([^"]+)"\]/);
-      if (match && match[1]) {
-        const names = match[1].split(';').map(e => e.trim()).filter(e => e.length > 0);
-        epicData[epicName] = names;
-      }
+    data.epics.forEach(epic => {
+      epicData[epic.name] = epic.team;
     });
 
     res.json(epicData);
@@ -232,27 +204,27 @@ app.get('/api/epic-emails', async (req, res) => {
   }
 });
 
-// Get raw epics.txt content
+// Get raw epics.yml content
 app.get('/api/epics-file', async (_req, res) => {
   try {
-    const filePath = path.join(__dirname, 'epics.txt');
+    const filePath = path.join(__dirname, 'epics.yml');
     const fileContent = await fs.readFile(filePath, 'utf-8');
     res.json({ content: fileContent });
   } catch (error) {
     // If file doesn't exist, return 404
     if (error.code === 'ENOENT') {
       return res.status(404).json({
-        error: 'epics.txt file not found'
+        error: 'epics.yml file not found'
       });
     }
-    console.error('Error reading epics.txt:', error.message);
+    console.error('Error reading epics.yml:', error.message);
     res.status(500).json({
-      error: 'Failed to read epics.txt file'
+      error: 'Failed to read epics.yml file'
     });
   }
 });
 
-// Save epics.txt content
+// Save epics.yml content
 app.post('/api/epics-file', async (req, res) => {
   try {
     const { content } = req.body;
@@ -261,12 +233,19 @@ app.post('/api/epics-file', async (req, res) => {
       return res.status(400).json({ error: 'Content is required' });
     }
 
-    const filePath = path.join(__dirname, 'epics.txt');
+    // Validate YAML format
+    try {
+      yaml.load(content);
+    } catch (yamlError) {
+      return res.status(400).json({ error: `Invalid YAML format: ${yamlError.message}` });
+    }
+
+    const filePath = path.join(__dirname, 'epics.yml');
     await fs.writeFile(filePath, content, 'utf-8');
     res.json({ success: true });
   } catch (error) {
-    console.error('Error writing epics.txt:', error.message);
-    res.status(500).json({ error: 'Failed to save epics.txt file' });
+    console.error('Error writing epics.yml:', error.message);
+    res.status(500).json({ error: 'Failed to save epics.yml file' });
   }
 });
 

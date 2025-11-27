@@ -1,0 +1,33 @@
+epics:
+  - name: "SCW - Post release tasks"
+    team:
+      - Tenal Bourchier
+      - Matt Budde
+      - Adrian Trunzo
+      - Dean Gibson
+      - Jorden Parker
+      - Antonio Carusone
+      - Dan Meeking
+      - Mihail Mickalovski
+      - Gary Robinson
+
+  - name: "Bridge to Online: Order Payment"
+    team:
+      - Mark McDermid
+      - Vidushi
+      - Sean McKenna
+      - Vladimir Temjanoski
+
+  - name: "In-store Kiosk v1"
+    team:
+      - Mark McDermid
+      - Vidushi
+      - Sean McKenna
+      - Vladimir Temjanoski
+
+  - name: "Tailwind CSS V4"
+    team:
+      - Adrian Trunzo
+      - Jovica Markoski
+      - David Robinson
+      - Darren Hoyt
