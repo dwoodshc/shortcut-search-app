@@ -976,11 +976,11 @@ function App() {
                         // Define colors for each state
                         const stateColors = {
                           'backlog': '#d1d5db',
-                          'ready for development': '#fef08a',
-                          'in development': '#86efac',
-                          'in review': '#fca5a5',
-                          'ready for release': '#4ade80',
-                          'complete': '#2f855a'
+                          'ready for development': '#a7f3d0',
+                          'in development': '#6ee7b7',
+                          'in review': '#4ade80',
+                          'ready for release': '#22c55e',
+                          'complete': '#16a34a'
                         };
 
                         // Calculate cumulative angles for pie segments
