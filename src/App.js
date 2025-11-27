@@ -642,8 +642,8 @@ function App() {
             <p><strong>How to get your API token:</strong></p>
             <ol>
               <li>Go to <a href="https://app.shortcut.com/settings/account/api-tokens" target="_blank" rel="noopener noreferrer">Shortcut Settings → API Tokens</a></li>
-              <li>Click "Generate Token"</li>
               <li>Give it a name (e.g., "Epic Viewer")</li>
+              <li>Click "Generate Token"</li>
               <li>Copy the generated token</li>
               <li>Paste it below</li>
             </ol>
