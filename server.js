@@ -45,41 +45,27 @@ app.post('/api/save-token', async (req, res) => {
 // Search epics endpoint
 app.get('/api/search/epics', async (req, res) => {
   try {
-
-    //req.query = `${req.query} !state:Complete`;
-
     const { query } = req.query;
 
     const params = {
       query: query || '',
-      page_size: 240
+      page_size: 25
     };
 
-    
-
-    
     const response = await axios.get(`${SHORTCUT_API_BASE}/search/epics`, {
-      params: { query },
+      params,
       headers: {
         'Shortcut-Token': SHORTCUT_API_TOKEN,
         'Content-Type': 'application/json'
-      },
-      params
+      }
     });
+
     res.json(response.data);
-
-    console.log("Query");
-    console.log(query);
-
-    console.log("Req.Query");
-    console.log(req.query);
-
-
 
   } catch (error) {
     console.error('Error searching epics:', error.response?.data || error.message);
-    res.status(error.response?.status || 500).json({ 
-      error: error.response?.data || 'Failed to search epics' 
+    res.status(error.response?.status || 500).json({
+      error: error.response?.data || 'Failed to search epics'
     });
   }
 });

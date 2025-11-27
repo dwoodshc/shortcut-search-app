@@ -508,50 +508,53 @@ function App() {
     setEpics([]);
 
     try {
-      // Search for all epics that are not complete
-      const response = await fetch(
-        `http://localhost:3001/api/search/epics?query=!state:Complete`
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to search epics');
-      }
-
-      const data = await response.json();
-      const epicsList = data.data || [];
-
-      // Filter to only include epics from epics.txt
-      const filteredEpicsList = epicsList.filter(epic =>
-        filteredEpicNames.includes(epic.name)
-      );
-
-      // Fetch stories for filtered epics to show the workflow status chart
+      // Search for each epic individually by name
       const epicsWithStories = await Promise.all(
-        filteredEpicsList.map(async (epic) => {
+        filteredEpicNames.map(async (name) => {
           try {
-            const storiesResponse = await fetch(`http://localhost:3001/api/epics/${epic.id}/stories`);
-            if (storiesResponse.ok) {
-              const stories = await storiesResponse.json();
-              return { ...epic, stories };
+            // Search for this specific epic by name
+            const searchResponse = await fetch(
+              `http://localhost:3001/api/search/epics?query=${encodeURIComponent(name)}`
+            );
+
+            if (!searchResponse.ok) {
+              console.error(`Failed to search for epic: ${name}`);
+              return null;
             }
+
+            const searchData = await searchResponse.json();
+            const epicsList = searchData.data || [];
+
+            // Find exact match (case-insensitive)
+            const epic = epicsList.find(e => e.name.toLowerCase() === name.toLowerCase());
+
+            if (!epic) {
+              return null;
+            }
+
+            // Fetch stories for this epic
+            try {
+              const storiesResponse = await fetch(`http://localhost:3001/api/epics/${epic.id}/stories`);
+              if (storiesResponse.ok) {
+                const stories = await storiesResponse.json();
+                return { ...epic, stories };
+              }
+            } catch (err) {
+              console.error('Error fetching stories for epic:', err);
+            }
+
+            return epic;
           } catch (err) {
-            console.error('Error fetching stories for epic:', err);
+            console.error(`Error searching for epic "${name}":`, err);
+            return null;
           }
-          return epic;
         })
       );
 
-      // Sort epics based on the order in filteredEpicNames
-      epicsWithStories.sort((a, b) => {
-        const indexA = filteredEpicNames.indexOf(a.name);
-        const indexB = filteredEpicNames.indexOf(b.name);
-        return indexA - indexB;
-      });
-
       // Add not found epics to the results (in order)
       const allEpics = [];
-      filteredEpicNames.forEach(name => {
-        const foundEpic = epicsWithStories.find(epic => epic.name === name);
+      filteredEpicNames.forEach((name, index) => {
+        const foundEpic = epicsWithStories[index];
         if (foundEpic) {
           allEpics.push(foundEpic);
         } else {
@@ -574,8 +577,9 @@ function App() {
       });
       setCollapsedCharts(prev => ({ ...prev, ...newCollapsedState }));
 
-      if (!filteredEpicsList.length) {
-        setError('No epics found from the list in epics.txt');
+      const foundCount = allEpics.filter(e => !e.notFound).length;
+      if (foundCount === 0) {
+        setError('No epics found from the list in epics.yml');
       }
     } catch (err) {
       setError(err.message);
