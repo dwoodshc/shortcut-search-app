@@ -32,10 +32,10 @@ function App() {
     }));
   };
 
-  // Toggle all charts and tables collapse state
+  // Toggle all charts and tables collapse state (excluding stories)
   const toggleAllCharts = () => {
     const allChartKeys = [];
-    const chartTypes = ['column', 'workflow-pie', 'type-pie', 'owners-table', 'team-tickets', 'stories'];
+    const chartTypes = ['column', 'workflow-pie', 'type-pie', 'owners-table', 'team-tickets'];
 
     epics.forEach(epic => {
       if (!epic.notFound) {
@@ -48,9 +48,31 @@ function App() {
     // Check if all are currently collapsed
     const allCollapsed = allChartKeys.every(key => collapsedCharts[key]);
 
-    // Set all to the opposite state
-    const newState = {};
+    // Set all charts/tables to the opposite state, but preserve stories state
+    const newState = { ...collapsedCharts };
     allChartKeys.forEach(key => {
+      newState[key] = !allCollapsed;
+    });
+
+    setCollapsedCharts(newState);
+  };
+
+  // Toggle only stories sections
+  const toggleAllStories = () => {
+    const allStoriesKeys = [];
+
+    epics.forEach(epic => {
+      if (!epic.notFound) {
+        allStoriesKeys.push(`${epic.id}-stories`);
+      }
+    });
+
+    // Check if all stories are currently collapsed
+    const allCollapsed = allStoriesKeys.every(key => collapsedCharts[key]);
+
+    // Set all stories to the opposite state
+    const newState = { ...collapsedCharts };
+    allStoriesKeys.forEach(key => {
       newState[key] = !allCollapsed;
     });
 
@@ -781,25 +803,43 @@ function App() {
                 {epics.filter(e => !e.notFound).length === filteredEpicNames.length ? '✅ ' : '⚠️ '}
                 Found {epics.filter(e => !e.notFound).length} of {filteredEpicNames.length} Epic{filteredEpicNames.length !== 1 ? 's' : ''}
               </h2>
-              <button
-                onClick={toggleAllCharts}
-                className="btn-secondary"
-                style={{ whiteSpace: 'nowrap' }}
-              >
-                {(() => {
-                  const allChartKeys = [];
-                  const chartTypes = ['column', 'workflow-pie', 'type-pie', 'owners-table', 'team-tickets', 'stories'];
-                  epics.forEach(epic => {
-                    if (!epic.notFound) {
-                      chartTypes.forEach(type => {
-                        allChartKeys.push(`${epic.id}-${type}`);
-                      });
-                    }
-                  });
-                  const allCollapsed = allChartKeys.every(key => collapsedCharts[key]);
-                  return allCollapsed ? 'Expand All' : 'Collapse All';
-                })()}
-              </button>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <button
+                  onClick={toggleAllStories}
+                  className="btn-secondary"
+                  style={{ whiteSpace: 'nowrap' }}
+                >
+                  {(() => {
+                    const allStoriesKeys = [];
+                    epics.forEach(epic => {
+                      if (!epic.notFound) {
+                        allStoriesKeys.push(`${epic.id}-stories`);
+                      }
+                    });
+                    const allCollapsed = allStoriesKeys.every(key => collapsedCharts[key]);
+                    return allCollapsed ? 'Expand Stories' : 'Collapse Stories';
+                  })()}
+                </button>
+                <button
+                  onClick={toggleAllCharts}
+                  className="btn-secondary"
+                  style={{ whiteSpace: 'nowrap' }}
+                >
+                  {(() => {
+                    const allChartKeys = [];
+                    const chartTypes = ['column', 'workflow-pie', 'type-pie', 'owners-table', 'team-tickets'];
+                    epics.forEach(epic => {
+                      if (!epic.notFound) {
+                        chartTypes.forEach(type => {
+                          allChartKeys.push(`${epic.id}-${type}`);
+                        });
+                      }
+                    });
+                    const allCollapsed = allChartKeys.every(key => collapsedCharts[key]);
+                    return allCollapsed ? 'Expand Charts' : 'Collapse Charts';
+                  })()}
+                </button>
+              </div>
             </div>
             {epics.map((epic) => (
               epic.notFound ? (
