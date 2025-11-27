@@ -201,23 +201,6 @@ function App() {
       .join(' ');
   };
 
-  // Get story state CSS class based on state name
-  const getStateClass = (stateName) => {
-    const lowerStateName = stateName.toLowerCase();
-    if (lowerStateName === 'in development') {
-      return 'story-state-in-development';
-    } else if (lowerStateName === 'complete' || lowerStateName === 'completed') {
-      return 'story-state-complete';
-    } else if (lowerStateName === 'ready for release') {
-      return 'story-state-ready-for-release';
-    } else if (lowerStateName === 'ready for development') {
-      return 'story-state-ready-for-development';
-    } else if (lowerStateName === 'in review') {
-      return 'story-state-in-review';
-    }
-    return 'story-state-default';
-  };
-
   // Get epic state CSS class based on state name
   const getEpicStateClass = (stateName) => {
     const lowerStateName = stateName.toLowerCase();
