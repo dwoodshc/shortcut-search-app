@@ -202,6 +202,33 @@ function App() {
     };
   }, [showSettingsMenu]);
 
+  // Close modals when ESC key is pressed
+  useEffect(() => {
+    const handleEscKey = (event) => {
+      if (event.key === 'Escape') {
+        // Close modals in priority order (close the most recently opened)
+        if (showTokenModal) {
+          setShowTokenModal(false);
+          setTokenError('');
+        } else if (showEpicListModal) {
+          setShowEpicListModal(false);
+          setEpicListError('');
+        } else if (showAboutModal) {
+          setShowAboutModal(false);
+        } else if (showReadmeModal) {
+          setShowReadmeModal(false);
+        } else if (showSettingsMenu) {
+          setShowSettingsMenu(false);
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleEscKey);
+    return () => {
+      document.removeEventListener('keydown', handleEscKey);
+    };
+  }, [showTokenModal, showEpicListModal, showAboutModal, showReadmeModal, showSettingsMenu]);
+
   // Fetch user name by ID
   // Convert text to title case (initial capitals)
   const toTitleCase = (str) => {
