@@ -10,7 +10,7 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #f5f7fa;
+  background-color: #F6F6FA;
 }
 
 .App {
@@ -18,7 +18,7 @@ body {
 }
 
 .App-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #494BCB;
   color: white;
   padding: 2rem;
   text-align: center;
@@ -38,9 +38,9 @@ body {
 }
 
 .settings-icon {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 222, 135, 0.2);
   border: none;
-  color: white;
+  color: #FFDE87;
   font-size: 1.5rem;
   width: 40px;
   height: 40px;
@@ -49,11 +49,12 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.3s;
+  transition: all 0.3s;
 }
 
 .settings-icon:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: #FFDE87;
+  color: #03045E;
 }
 
 .settings-menu {
@@ -66,6 +67,7 @@ body {
   min-width: 180px;
   overflow: hidden;
   z-index: 100;
+  border: 1px solid #F0F0F7;
 }
 
 .settings-menu-item {
@@ -74,19 +76,20 @@ body {
   padding: 0.75rem 1rem;
   background: white;
   border: none;
-  color: #333;
+  color: #03045E;
   text-align: left;
   cursor: pointer;
   font-size: 0.95rem;
-  transition: background 0.2s;
+  transition: all 0.2s;
 }
 
 .settings-menu-item:hover {
-  background: #f7fafc;
+  background: #F6F6FA;
+  color: #494BCB;
 }
 
 .settings-menu-item:not(:last-child) {
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid #F0F0F7;
 }
 
 .container {
@@ -111,21 +114,24 @@ body {
   display: block;
   margin-bottom: 0.5rem;
   font-weight: 600;
-  color: #333;
+  color: #03045E;
 }
 
 .input-field {
   width: 100%;
   padding: 0.75rem;
   font-size: 1rem;
-  border: 2px solid #e2e8f0;
+  border: 2px solid #F0F0F7;
   border-radius: 6px;
-  transition: border-color 0.3s;
+  transition: all 0.3s;
+  background: white;
+  color: #03045E;
 }
 
 .input-field:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: #494BCB;
+  box-shadow: 0 0 0 3px rgba(73, 75, 203, 0.1);
 }
 
 textarea.input-field {
@@ -134,7 +140,7 @@ textarea.input-field {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #494BCB;
   color: white;
   border: none;
   padding: 0.75rem 2rem;
@@ -142,12 +148,13 @@ textarea.input-field {
   font-weight: 600;
   border-radius: 6px;
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: all 0.2s;
 }
 
 .btn-primary:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 4px 12px rgba(73, 75, 203, 0.4);
+  background: #3d3eb5;
 }
 
 .btn-primary:disabled {
@@ -169,7 +176,7 @@ textarea.input-field {
 }
 
 .epics-list > h2 {
-  color: #333;
+  color: #03045E;
   margin-bottom: 1.5rem;
   font-size: 1.5rem;
 }
@@ -202,12 +209,14 @@ textarea.input-field {
   border-radius: 8px;
   padding: 1.5rem;
   margin-bottom: 1rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  transition: box-shadow 0.3s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s;
+  border: 1px solid #F0F0F7;
 }
 
 .epic-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 12px rgba(73, 75, 203, 0.15);
+  border-color: #494BCB;
 }
 
 .epic-not-found {
@@ -246,25 +255,25 @@ textarea.input-field {
 }
 
 .expand-icon {
-  color: #667eea;
+  color: #494BCB;
   font-size: 0.875rem;
   transition: transform 0.3s;
 }
 
 .epic-title h3 {
-  color: #333;
+  color: #03045E;
   font-size: 1.25rem;
   margin: 0;
 }
 
 .epic-title h3 a {
-  color: #667eea;
+  color: #494BCB;
   text-decoration: none;
   transition: color 0.2s;
 }
 
 .epic-title h3 a:hover {
-  color: #764ba2;
+  color: #3d3eb5;
   text-decoration: underline;
 }
 
@@ -289,8 +298,8 @@ textarea.input-field {
 }
 
 .epic-state-done {
-  background-color: #2f855a;
-  color: white;
+  background-color: #FFDE87;
+  color: #03045E;
 }
 
 .epic-state-default {
@@ -321,14 +330,14 @@ textarea.input-field {
 }
 
 .workflow-status-chart-container h4 {
-  color: #333;
+  color: #03045E;
   margin-bottom: 0.5rem;
   font-size: 1.1rem;
 }
 
 .workflow-status-chart {
   padding: 0rem 1rem 1rem 1rem;
-  background: linear-gradient(135deg, #f8f9fc 0%, #e9ecf5 100%);
+  background: linear-gradient(135deg, #FAFAFA 0%, #F6F6FA 100%);
   border-radius: 12px;
   display: flex;
   gap: 0.5rem;
@@ -340,7 +349,7 @@ textarea.input-field {
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.8),
     0 2px 8px rgba(0, 0, 0, 0.08);
-  border: 1px solid rgba(102, 126, 234, 0.1);
+  border: 1px solid #F0F0F7;
 }
 
 .status-bar-item {
@@ -424,7 +433,7 @@ textarea.input-field {
   left: 0;
   width: 100%;
   height: 12px;
-  background: linear-gradient(135deg, #a5b4fc 0%, #8b9cff 100%);
+  background: linear-gradient(135deg, #6c6ed9 0%, #5a5cc7 100%);
   transform: rotateX(60deg) translateZ(6px);
   transform-origin: top;
   border-radius: 2px 2px 0 0;
@@ -437,11 +446,11 @@ textarea.input-field {
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(to right, #667eea 0%, #7c8df5 50%, #667eea 100%);
+  background: linear-gradient(to right, #494BCB 0%, #5a5cc7 50%, #494BCB 100%);
   box-shadow:
     inset -2px 0 12px rgba(0, 0, 0, 0.15),
     inset 2px 0 8px rgba(255, 255, 255, 0.1),
-    2px 4px 16px rgba(102, 126, 234, 0.25);
+    2px 4px 16px rgba(73, 75, 203, 0.25);
   border-radius: 2px;
 }
 
@@ -451,7 +460,7 @@ textarea.input-field {
   right: -6px;
   width: 6px;
   height: 100%;
-  background: linear-gradient(to bottom, #5468d4 0%, #4a5ab8 100%);
+  background: linear-gradient(to bottom, #3d3eb5 0%, #3234a3 100%);
   transform: skewY(-45deg);
   transform-origin: top left;
   box-shadow:
@@ -463,12 +472,12 @@ textarea.input-field {
 .workflow-status-pie-chart {
   margin-top: 0.5rem;
   padding: 1rem;
-  background: linear-gradient(135deg, #f8f9fc 0%, #e9ecf5 100%);
+  background: linear-gradient(135deg, #FAFAFA 0%, #F6F6FA 100%);
   border-radius: 12px;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.8),
     0 2px 8px rgba(0, 0, 0, 0.08);
-  border: 1px solid rgba(102, 126, 234, 0.1);
+  border: 1px solid #F0F0F7;
 }
 
 .pie-chart-wrapper {
@@ -580,7 +589,7 @@ textarea.input-field {
 
 .story-owners-table h4,
 .email-ticket-counts-table h4 {
-  color: #333;
+  color: #03045E;
   margin-bottom: 1rem;
   font-size: 1.1rem;
 }
@@ -592,12 +601,13 @@ textarea.input-field {
   background: white;
   border-radius: 6px;
   overflow: hidden;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+  border: 1px solid #F0F0F7;
 }
 
 .story-owners-table thead,
 .email-ticket-counts-table thead {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #494BCB;
   color: white;
 }
 
@@ -619,8 +629,8 @@ textarea.input-field {
 .story-owners-table td,
 .email-ticket-counts-table td {
   padding: 0.75rem 1rem;
-  border-bottom: 1px solid #e2e8f0;
-  color: #4a5568;
+  border-bottom: 1px solid #F0F0F7;
+  color: #03045E;
   font-size: 0.875rem;
 }
 
@@ -628,12 +638,12 @@ textarea.input-field {
 .email-ticket-counts-table td:last-child {
   text-align: right;
   font-weight: 600;
-  color: #667eea;
+  color: #494BCB;
 }
 
 .story-owners-table tbody tr:hover,
 .email-ticket-counts-table tbody tr:hover {
-  background-color: #f7fafc;
+  background-color: #F6F6FA;
 }
 
 .story-owners-table tbody tr:last-child td,
@@ -658,7 +668,7 @@ textarea.input-field {
 .chart-toggle-btn {
   background: none;
   border: none;
-  color: #667eea;
+  color: #494BCB;
   cursor: pointer;
   font-size: 1rem;
   padding: 0.25rem 0.5rem;
@@ -667,7 +677,7 @@ textarea.input-field {
 }
 
 .chart-toggle-btn:hover {
-  background-color: rgba(102, 126, 234, 0.1);
+  background-color: rgba(73, 75, 203, 0.1);
   transform: scale(1.1);
 }
 
@@ -682,7 +692,7 @@ textarea.input-field {
 }
 
 .stories-section h4 {
-  color: #333;
+  color: #03045E;
   margin-bottom: 1rem;
   font-size: 1.1rem;
 }
@@ -851,7 +861,7 @@ textarea.input-field {
 }
 
 .modal-content h2 {
-  color: #333;
+  color: #03045E;
   margin-bottom: 1rem;
   font-size: 1.5rem;
 }
@@ -875,12 +885,13 @@ textarea.input-field {
 }
 
 .modal-content a {
-  color: #667eea;
+  color: #494BCB;
   text-decoration: none;
 }
 
 .modal-content a:hover {
   text-decoration: underline;
+  color: #3d3eb5;
 }
 
 .modal-content .form-group {
@@ -894,17 +905,19 @@ textarea.input-field {
 }
 
 .btn-secondary {
-  background: #e2e8f0;
-  color: #4a5568;
-  border: none;
+  background: #F0F0F7;
+  color: #03045E;
+  border: 1px solid #e2e8f0;
   padding: 0.75rem 2rem;
   font-size: 1rem;
   font-weight: 600;
   border-radius: 6px;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.2s;
 }
 
 .btn-secondary:hover {
-  background: #cbd5e0;
+  background: #E6E6ED;
+  border-color: #494BCB;
+  color: #494BCB;
 }
