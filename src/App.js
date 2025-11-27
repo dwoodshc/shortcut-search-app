@@ -1392,38 +1392,53 @@ function App() {
                         {epic.stories.length === 0 ? (
                           <p className="no-stories">No stories found for this epic</p>
                         ) : (
-                          <ul className="stories-list">
-                            {epic.stories.map((story) => (
-                              <li key={story.id} className="story-item">
-                                <div className="story-header">
-                                  <span className="story-name">
-                                    {story.app_url ? (
-                                      <a
-                                        href={story.app_url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                      >
-                                        {story.name}
-                                      </a>
+                          <div className="stories-columns">
+                            {['Backlog', 'Ready for Development', 'In Development', 'In Review', 'Ready for Release', 'Complete'].map((columnState) => {
+                              const storiesInColumn = epic.stories.filter(story => {
+                                const storyState = (workflowStates[story.workflow_state_id] || '').toLowerCase().trim();
+                                const targetState = columnState.toLowerCase().trim();
+                                return storyState === targetState;
+                              });
+
+                              return (
+                                <div key={columnState} className="story-column">
+                                  <div className="story-column-header">
+                                    <h5>{columnState}</h5>
+                                    <span className="story-column-count">{storiesInColumn.length}</span>
+                                  </div>
+                                  <div className="story-column-content">
+                                    {storiesInColumn.length === 0 ? (
+                                      <p className="no-stories-in-column">No stories</p>
                                     ) : (
-                                      story.name
+                                      storiesInColumn.map((story) => (
+                                        <div key={story.id} className="story-card">
+                                          <div className="story-card-name">
+                                            {story.app_url ? (
+                                              <a
+                                                href={story.app_url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                              >
+                                                {story.name}
+                                              </a>
+                                            ) : (
+                                              story.name
+                                            )}
+                                          </div>
+                                          {story.description && (
+                                            <p className="story-card-description">
+                                              {story.description.substring(0, 80)}
+                                              {story.description.length > 80 ? '...' : ''}
+                                            </p>
+                                          )}
+                                        </div>
+                                      ))
                                     )}
-                                  </span>
-                                  <span className={`story-state ${getStateClass(workflowStates[story.workflow_state_id] || '')}`}>
-                                    {workflowStates[story.workflow_state_id] || story.workflow_state_id}
-                                    {(workflowStates[story.workflow_state_id] || '').toLowerCase() === 'complete' && ' ✓'}
-                                    {(workflowStates[story.workflow_state_id] || '').toLowerCase() === 'in review' && ' 🔍'}
-                                  </span>
+                                  </div>
                                 </div>
-                                {story.description && (
-                                  <p className="story-description">
-                                    {story.description.substring(0, 100)}
-                                    {story.description.length > 100 ? '...' : ''}
-                                  </p>
-                                )}
-                              </li>
-                            ))}
-                          </ul>
+                              );
+                            })}
+                          </div>
                         )}
                       </>
                     )}
