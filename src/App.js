@@ -26,12 +26,21 @@ function App() {
   const [epicsList, setEpicsList] = useState([]);
   const [showReadmeModal, setShowReadmeModal] = useState(false);
   const [readmeContent, setReadmeContent] = useState('');
+  const [collapsedTeamMembers, setCollapsedTeamMembers] = useState({});
 
   // Toggle chart collapse state for a specific epic and chart type
   const toggleChart = (epicId, chartType) => {
     setCollapsedCharts(prev => ({
       ...prev,
       [`${epicId}-${chartType}`]: !prev[`${epicId}-${chartType}`]
+    }));
+  };
+
+  // Toggle team members collapse state for a specific epic in the edit modal
+  const toggleTeamMembers = (epicIndex) => {
+    setCollapsedTeamMembers(prev => ({
+      ...prev,
+      [epicIndex]: !prev[epicIndex]
     }));
   };
 
@@ -684,41 +693,56 @@ function App() {
                   </div>
 
                   <div style={{ marginLeft: '1rem', marginTop: '0.75rem' }}>
-                    <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '0.5rem' }}>
-                      Team Members:
-                    </label>
-                    {epic.team && epic.team.map((member, memberIndex) => (
-                      <div key={memberIndex} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                        <input
-                          type="text"
-                          value={member || ''}
-                          onChange={(e) => updateTeamMember(epicIndex, memberIndex, e.target.value)}
-                          className="input-field"
-                          placeholder="Enter team member name"
-                          style={{ flex: 1 }}
-                        />
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                      <label style={{ fontWeight: 'bold', display: 'block', margin: 0 }}>
+                        Team Members {epic.team && epic.team.length > 0 && `(${epic.team.length})`}
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => toggleTeamMembers(epicIndex)}
+                        className="chart-toggle-btn"
+                        aria-label="Toggle team members"
+                        style={{ marginLeft: '0.5rem' }}
+                      >
+                        {collapsedTeamMembers[epicIndex] ? '▼' : '▲'}
+                      </button>
+                    </div>
+                    {!collapsedTeamMembers[epicIndex] && (
+                      <>
+                        {epic.team && epic.team.map((member, memberIndex) => (
+                          <div key={memberIndex} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                            <input
+                              type="text"
+                              value={member || ''}
+                              onChange={(e) => updateTeamMember(epicIndex, memberIndex, e.target.value)}
+                              className="input-field"
+                              placeholder="Enter team member name"
+                              style={{ flex: 1 }}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeTeamMember(epicIndex, memberIndex)}
+                              className="btn-secondary"
+                              style={{
+                                padding: '0.5rem 1rem',
+                                backgroundColor: '#f59e0b',
+                                color: 'white'
+                              }}
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        ))}
                         <button
                           type="button"
-                          onClick={() => removeTeamMember(epicIndex, memberIndex)}
+                          onClick={() => addTeamMember(epicIndex)}
                           className="btn-secondary"
-                          style={{
-                            padding: '0.5rem 1rem',
-                            backgroundColor: '#f59e0b',
-                            color: 'white'
-                          }}
+                          style={{ marginTop: '0.5rem' }}
                         >
-                          Remove
+                          + Add Team Member
                         </button>
-                      </div>
-                    ))}
-                    <button
-                      type="button"
-                      onClick={() => addTeamMember(epicIndex)}
-                      className="btn-secondary"
-                      style={{ marginTop: '0.5rem' }}
-                    >
-                      + Add Team Member
-                    </button>
+                      </>
+                    )}
                   </div>
                 </div>
               ))}
