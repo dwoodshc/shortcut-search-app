@@ -398,7 +398,7 @@ textarea.input-field {
 
 .column-3d-container {
   width: 35px;
-  height: 150px;
+  height: 130px;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;

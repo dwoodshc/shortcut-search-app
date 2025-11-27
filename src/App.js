@@ -462,6 +462,15 @@ function App() {
 
       setEpics(allEpics);
 
+      // Collapse stories by default for all epics
+      const newCollapsedState = {};
+      allEpics.forEach(epic => {
+        if (!epic.notFound) {
+          newCollapsedState[`${epic.id}-stories`] = true;
+        }
+      });
+      setCollapsedCharts(prev => ({ ...prev, ...newCollapsedState }));
+
       if (!filteredEpicsList.length) {
         setError('No epics found from the list in epics.txt');
       }
