@@ -1506,6 +1506,9 @@ function App() {
           </div>
         )}
       </main>
+      <footer className="App-footer">
+        <p>© 2025 | Powered by Dave</p>
+      </footer>
     </div>
   );
 }

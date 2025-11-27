@@ -984,3 +984,18 @@ textarea.input-field {
   border-color: #494BCB;
   color: #494BCB;
 }
+
+.App-footer {
+  background: #03045E;
+  color: #FFDE87;
+  text-align: center;
+  padding: 1.5rem 2rem;
+  margin-top: 2rem;
+  box-shadow: 0 -4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.App-footer p {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
