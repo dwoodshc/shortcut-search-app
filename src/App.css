@@ -1308,6 +1308,21 @@ textarea.input-field {
   background: #EEEEF5;
 }
 
+.sidebar-nav-top {
+  border-bottom: 2px solid #F0F0F7;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.sidebar-nav-top .sidebar-nav-number {
+  background: #FFDE87;
+  color: #03045E;
+}
+
+.sidebar-nav-top:hover .sidebar-nav-number {
+  background: #FFD369;
+}
+
 .sidebar-nav-number {
   background: #494BCB;
   color: white;

@@ -1083,6 +1083,19 @@ function App() {
               </button>
             </div>
             <nav className="sidebar-nav">
+              {/* Top navigation item */}
+              <button
+                className="sidebar-nav-item sidebar-nav-top"
+                onClick={() => {
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                  setShowSidebar(false);
+                }}
+                title="Scroll to top"
+              >
+                <span className="sidebar-nav-number">↑</span>
+                <span className="sidebar-nav-text">Top</span>
+              </button>
+
               {epics.map((epic, index) => (
                 !epic.notFound && (
                   <button
