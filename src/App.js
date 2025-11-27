@@ -696,7 +696,7 @@ function App() {
       {showAboutModal && (
         <div className="modal-overlay" onClick={() => setShowAboutModal(false)}>
           <div className="modal-content modal-content-about" onClick={(e) => e.stopPropagation()}>
-            <h2>About Dave's Shortcut Viewer</h2>
+            <h2>About Shortcut Viewer</h2>
             <p>
               A comprehensive React-based dashboard for visualizing and managing Shortcut.com epics and their associated stories.
             </p>
@@ -718,7 +718,7 @@ function App() {
               <li><strong>API Token Setup:</strong> Secure token management through settings menu</li>
             </ul>
             <p style={{ marginTop: '1rem', fontSize: '0.875rem', color: '#718096' }}>
-              Version 1.0.0 | Powered by Dave
+              Version 1.0.0 | Project D.A.V.E. (Dashboards are Very Effective)
             </p>
             <div className="modal-buttons">
               <button
@@ -998,7 +998,7 @@ function App() {
             className="logo-image"
           />
         </div>
-        <h1>Dave's Shortcut Viewer</h1>
+        <h1>Shortcut Viewer</h1>
         <div className="settings-container">
           <button
             className="settings-icon"
@@ -1841,7 +1841,7 @@ function App() {
         )}
       </main>
       <footer className="App-footer">
-        <p>© 2025 | Powered by Dave</p>
+        <p>© 2025 | Project D.A.V.E. (Dashboards Are Very Effective) </p>
       </footer>
     </div>
   );
