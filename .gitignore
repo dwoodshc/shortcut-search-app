@@ -12,6 +12,8 @@
 /build
 
 # misc
+.env
+epics.yml
 .DS_Store
 .env.local
 .env.development.local
