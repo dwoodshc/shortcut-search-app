@@ -31,6 +31,10 @@ function App() {
   const [dragOverIndex, setDragOverIndex] = useState(null);
   const [showSidebar, setShowSidebar] = useState(false);
   const [apiTokenIssue, setApiTokenIssue] = useState(false);
+  const [showWorkflowModal, setShowWorkflowModal] = useState(false);
+  const [allWorkflows, setAllWorkflows] = useState([]);
+  const [selectedWorkflowId, setSelectedWorkflowId] = useState(null);
+  const [successMessage, setSuccessMessage] = useState(null);
 
   // Helper function to handle API errors and check for token issues
   const handleApiError = useCallback(async (response) => {
@@ -173,6 +177,20 @@ function App() {
       }
     };
 
+    const loadSelectedWorkflow = async () => {
+      try {
+        const response = await fetch('http://localhost:3001/api/state-ids-file');
+        if (response.ok) {
+          const data = await response.json();
+          if (data && data.workflow_id) {
+            setSelectedWorkflowId(data.workflow_id);
+          }
+        }
+      } catch (err) {
+        console.error('Error loading selected workflow:', err);
+      }
+    };
+
     const fetchWorkflows = async () => {
       try {
         const workflowsResponse = await fetch('http://localhost:3001/api/workflows');
@@ -229,6 +247,7 @@ function App() {
     };
 
     checkEpicsFile();
+    loadSelectedWorkflow();
     fetchWorkflows();
     fetchFilteredEpics();
     fetchEpicEmails();
@@ -263,6 +282,8 @@ function App() {
           setShowAboutModal(false);
         } else if (showReadmeModal) {
           setShowReadmeModal(false);
+        } else if (showWorkflowModal) {
+          setShowWorkflowModal(false);
         } else if (showSettingsMenu) {
           setShowSettingsMenu(false);
         } else if (showSidebar) {
@@ -275,7 +296,7 @@ function App() {
     return () => {
       document.removeEventListener('keydown', handleEscKey);
     };
-  }, [showTokenModal, showEpicListModal, showAboutModal, showReadmeModal, showSettingsMenu, showSidebar]);
+  }, [showTokenModal, showEpicListModal, showAboutModal, showReadmeModal, showWorkflowModal, showSettingsMenu, showSidebar]);
 
   // Fetch user name by ID
   // Convert text to title case (initial capitals)
@@ -427,6 +448,62 @@ function App() {
       console.error('Error loading README:', err);
       setReadmeContent('Failed to load README.md file');
       setShowReadmeModal(true);
+    }
+  };
+
+  // Load workflows
+  const handleOpenWorkflows = async () => {
+    try {
+      const response = await fetch('http://localhost:3001/api/workflows');
+      if (response.ok) {
+        const workflows = await response.json();
+        setAllWorkflows(workflows);
+        setShowWorkflowModal(true);
+      } else {
+        await handleApiError(response);
+      }
+    } catch (err) {
+      console.error('Error loading workflows:', err);
+      setError('Failed to load workflows');
+    }
+  };
+
+  // Save selected workflow state IDs to YAML file
+  const handleSelectWorkflow = async (workflow) => {
+    try {
+      // Create YAML content with state IDs and descriptions
+      const states = workflow.states.map(state => ({
+        id: state.id,
+        name: state.name
+      }));
+      const yamlContent = yaml.dump({
+        workflow_name: workflow.name,
+        workflow_id: workflow.id,
+        states: states
+      });
+
+      // Save to state_ids.yml file
+      const response = await fetch('http://localhost:3001/api/state-ids-file', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ content: yamlContent })
+      });
+
+      if (response.ok) {
+        setSelectedWorkflowId(workflow.id);
+        setShowWorkflowModal(false);
+        // Show success message briefly
+        setSuccessMessage(`Workflow "${workflow.name}" selected successfully!`);
+        setTimeout(() => setSuccessMessage(null), 3000);
+      } else {
+        const data = await response.json();
+        setError(data.error || 'Failed to save workflow selection');
+      }
+    } catch (err) {
+      console.error('Error saving workflow:', err);
+      setError(`Failed to save workflow selection: ${err.message}`);
     }
   };
 
@@ -809,6 +886,110 @@ function App() {
         </div>
       )}
 
+      {showWorkflowModal && (
+        <div className="modal-overlay" onClick={() => setShowWorkflowModal(false)}>
+          <div className="modal-content modal-content-large" onClick={(e) => e.stopPropagation()}>
+            <h2>Select Workflow</h2>
+            <p style={{ marginBottom: '1rem' }}>
+              Select a workflow to use for epic tracking. The workflow states will be saved to state_ids.yml:
+            </p>
+            <div
+              style={{
+                maxHeight: '60vh',
+                overflowY: 'auto',
+                marginBottom: '1rem',
+                backgroundColor: '#ffffff',
+                padding: '1.5rem',
+                borderRadius: '6px',
+                border: '1px solid #e2e8f0'
+              }}
+            >
+              {allWorkflows.length === 0 ? (
+                <p style={{ color: '#718096', fontStyle: 'italic' }}>No workflows found</p>
+              ) : (
+                allWorkflows.map((workflow, index) => (
+                  <div
+                    key={workflow.id}
+                    style={{
+                      marginBottom: index < allWorkflows.length - 1 ? '1.5rem' : 0,
+                      paddingBottom: index < allWorkflows.length - 1 ? '1.5rem' : 0,
+                      borderBottom: index < allWorkflows.length - 1 ? '1px solid #e2e8f0' : 'none',
+                      position: 'relative'
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
+                      <div style={{ flex: 1 }}>
+                        <h3 style={{ color: '#494BCB', marginBottom: '0.5rem', fontSize: '1.1rem' }}>
+                          {workflow.name}
+                          {selectedWorkflowId === workflow.id && (
+                            <span style={{
+                              marginLeft: '0.5rem',
+                              color: '#22c55e',
+                              fontSize: '0.875rem',
+                              fontWeight: 'normal'
+                            }}>
+                              ✓ Selected
+                            </span>
+                          )}
+                        </h3>
+                        {workflow.description && (
+                          <p style={{ color: '#4a5568', fontSize: '0.875rem', marginBottom: '0.75rem' }}>
+                            {workflow.description}
+                          </p>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => handleSelectWorkflow(workflow)}
+                        className="btn-primary"
+                        style={{
+                          fontSize: '0.875rem',
+                          padding: '0.5rem 1rem',
+                          marginLeft: '1rem',
+                          flexShrink: 0
+                        }}
+                      >
+                        Select
+                      </button>
+                    </div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.5rem' }}>
+                      {workflow.states && workflow.states.map((state) => (
+                        <div
+                          key={state.id}
+                          style={{
+                            backgroundColor: state.color === 'green' ? '#22c55e' :
+                                           state.color === 'yellow' ? '#fbbf24' :
+                                           state.color === 'red' ? '#ef4444' :
+                                           state.color === 'blue' ? '#3b82f6' :
+                                           '#6b7280',
+                            color: 'white',
+                            padding: '0.25rem 0.75rem',
+                            borderRadius: '12px',
+                            fontSize: '0.875rem',
+                            fontWeight: '500',
+                            display: 'inline-block'
+                          }}
+                        >
+                          {state.name}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+            <div className="modal-buttons">
+              <button
+                type="button"
+                onClick={() => setShowWorkflowModal(false)}
+                className="btn-primary"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showEpicListModal && (
         <div className="modal-overlay" onClick={() => setShowEpicListModal(false)}>
           <div className="modal-content modal-content-large" onClick={(e) => e.stopPropagation()}>
@@ -1085,6 +1266,15 @@ function App() {
                 className="settings-menu-item"
                 onClick={() => {
                   setShowSettingsMenu(false);
+                  handleOpenWorkflows();
+                }}
+              >
+                Select Workflow
+              </button>
+              <button
+                className="settings-menu-item"
+                onClick={() => {
+                  setShowSettingsMenu(false);
                   handleOpenReadme();
                 }}
               >
@@ -1183,6 +1373,19 @@ function App() {
             </button>
           </div>
         </form>
+
+        {successMessage && (
+          <div style={{
+            backgroundColor: '#d1fae5',
+            border: '1px solid #6ee7b7',
+            color: '#065f46',
+            padding: '1rem',
+            borderRadius: '6px',
+            marginBottom: '1rem'
+          }}>
+            <p style={{ margin: 0 }}>{successMessage}</p>
+          </div>
+        )}
 
         {error && (
           <div className="error-message">
