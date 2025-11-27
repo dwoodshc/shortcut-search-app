@@ -975,11 +975,11 @@ function App() {
 
                         // Define colors for each state
                         const stateColors = {
-                          'backlog': '#94a3b8',
+                          'backlog': '#d1d5db',
                           'ready for development': '#fef08a',
                           'in development': '#86efac',
-                          'in review': '#e9d5ff',
-                          'ready for release': '#2f855a',
+                          'in review': '#fca5a5',
+                          'ready for release': '#4ade80',
                           'complete': '#2f855a'
                         };
 
@@ -1118,7 +1118,7 @@ function App() {
                         const typeColors = {
                           'feature': '#86efac',  // Light Green
                           'chore': '#fef08a',    // Light Yellow
-                          'bug': '#ef4444'       // Red
+                          'bug': '#fca5a5'       // Light Red
                         };
 
                         // Calculate cumulative angles for pie segments
