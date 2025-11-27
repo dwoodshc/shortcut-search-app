@@ -234,12 +234,21 @@ function App() {
           const parsedData = yaml.load(data.content);
           if (parsedData && parsedData.epics) {
             setEpicsList(parsedData.epics);
+
+            // Collapse all team member lists by default
+            const collapsedState = {};
+            parsedData.epics.forEach((_epic, index) => {
+              collapsedState[index] = true;
+            });
+            setCollapsedTeamMembers(collapsedState);
           } else {
             setEpicsList([]);
+            setCollapsedTeamMembers({});
           }
         } catch (yamlErr) {
           console.error('Error parsing YAML:', yamlErr);
           setEpicsList([]);
+          setCollapsedTeamMembers({});
         }
 
         setShowEpicListModal(true);
