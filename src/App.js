@@ -867,9 +867,18 @@ function App() {
 
       <main className="container">
         <form onSubmit={searchEpics} className="search-form">
-          <button type="submit" disabled={loading} className="btn-primary">
-            {loading ? 'Searching...' : 'Search Epics'}
-          </button>
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem' }}>
+            <button type="submit" disabled={loading} className="btn-primary">
+              {loading ? 'Searching...' : 'Search Epics'}
+            </button>
+            <button
+              type="button"
+              onClick={handleOpenEpicList}
+              className="btn-primary"
+            >
+              Edit Epic List
+            </button>
+          </div>
         </form>
 
         {error && (
