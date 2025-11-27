@@ -6,7 +6,6 @@ function App() {
   const [epics, setEpics] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [expandedEpics, setExpandedEpics] = useState(new Set());
   const [hoveredPieSegment, setHoveredPieSegment] = useState(null);
   const [hoveredTypeSegment, setHoveredTypeSegment] = useState(null);
   const [workflowStates, setWorkflowStates] = useState({});
@@ -36,7 +35,7 @@ function App() {
   // Toggle all charts and tables collapse state
   const toggleAllCharts = () => {
     const allChartKeys = [];
-    const chartTypes = ['column', 'workflow-pie', 'type-pie', 'owners-table', 'team-tickets'];
+    const chartTypes = ['column', 'workflow-pie', 'type-pie', 'owners-table', 'team-tickets', 'stories'];
 
     epics.forEach(epic => {
       if (!epic.notFound) {
@@ -474,48 +473,6 @@ function App() {
     }
   };
 
-  const toggleEpic = async (epicId) => {
-    const newExpanded = new Set(expandedEpics);
-    
-    if (newExpanded.has(epicId)) {
-      newExpanded.delete(epicId);
-      setExpandedEpics(newExpanded);
-    } else {
-      newExpanded.add(epicId);
-      setExpandedEpics(newExpanded);
-      
-      // Fetch stories for this epic if not already loaded
-      const epic = epics.find(e => e.id === epicId);
-      if (epic && !epic.stories) {
-        await fetchStoriesForEpic(epicId);
-      }
-    }
-  };
-
-  const fetchStoriesForEpic = async (epicId) => {
-    try {
-      const response = await fetch(
-        `http://localhost:3001/api/epics/${epicId}/stories`
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch stories');
-      }
-
-      const stories = await response.json();
-      
-      // Update the epic with its stories
-      setEpics(prevEpics =>
-        prevEpics.map(epic =>
-          epic.id === epicId
-            ? { ...epic, stories: stories }
-            : epic
-        )
-      );
-    } catch (err) {
-      console.error('Error fetching stories:', err);
-    }
-  };
 
   return (
     <div className="App">
@@ -822,7 +779,7 @@ function App() {
               >
                 {(() => {
                   const allChartKeys = [];
-                  const chartTypes = ['column', 'workflow-pie', 'type-pie', 'owners-table', 'team-tickets'];
+                  const chartTypes = ['column', 'workflow-pie', 'type-pie', 'owners-table', 'team-tickets', 'stories'];
                   epics.forEach(epic => {
                     if (!epic.notFound) {
                       chartTypes.forEach(type => {
@@ -831,7 +788,7 @@ function App() {
                     }
                   });
                   const allCollapsed = allChartKeys.every(key => collapsedCharts[key]);
-                  return allCollapsed ? 'Expand All Charts & Tables' : 'Collapse All Charts & Tables';
+                  return allCollapsed ? 'Expand All' : 'Collapse All';
                 })()}
               </button>
             </div>
@@ -843,21 +800,16 @@ function App() {
                 </div>
               ) : (
               <div key={epic.id} className="epic-card">
-                <div 
+                <div
                   className="epic-header"
-                  onClick={() => toggleEpic(epic.id)}
                 >
                   <div className="epic-title">
-                    <span className="expand-icon">
-                      {expandedEpics.has(epic.id) ? '▼' : '▶'}
-                    </span>
                     <h3>
                       {epic.app_url ? (
                         <a
                           href={epic.app_url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
                         >
                           {epic.name}
                         </a>
@@ -1423,46 +1375,57 @@ function App() {
                   </div>
                 )}
 
-                {expandedEpics.has(epic.id) && (
+                {epic.stories && (
                   <div className="stories-section">
-                    <h4>Stories:</h4>
-                    {!epic.stories ? (
-                      <p className="loading-text">Loading stories...</p>
-                    ) : epic.stories.length === 0 ? (
-                      <p className="no-stories">No stories found for this epic</p>
-                    ) : (
-                      <ul className="stories-list">
-                        {epic.stories.map((story) => (
-                          <li key={story.id} className="story-item">
-                            <div className="story-header">
-                              <span className="story-name">
-                                {story.app_url ? (
-                                  <a
-                                    href={story.app_url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                  >
-                                    {story.name}
-                                  </a>
-                                ) : (
-                                  story.name
+                    <h4 style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span>Stories:</span>
+                      <button
+                        onClick={() => toggleChart(epic.id, 'stories')}
+                        className="chart-toggle-btn"
+                        aria-label="Toggle stories list"
+                      >
+                        {collapsedCharts[`${epic.id}-stories`] ? '▼' : '▲'}
+                      </button>
+                    </h4>
+                    {!collapsedCharts[`${epic.id}-stories`] && (
+                      <>
+                        {epic.stories.length === 0 ? (
+                          <p className="no-stories">No stories found for this epic</p>
+                        ) : (
+                          <ul className="stories-list">
+                            {epic.stories.map((story) => (
+                              <li key={story.id} className="story-item">
+                                <div className="story-header">
+                                  <span className="story-name">
+                                    {story.app_url ? (
+                                      <a
+                                        href={story.app_url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                      >
+                                        {story.name}
+                                      </a>
+                                    ) : (
+                                      story.name
+                                    )}
+                                  </span>
+                                  <span className={`story-state ${getStateClass(workflowStates[story.workflow_state_id] || '')}`}>
+                                    {workflowStates[story.workflow_state_id] || story.workflow_state_id}
+                                    {(workflowStates[story.workflow_state_id] || '').toLowerCase() === 'complete' && ' ✓'}
+                                    {(workflowStates[story.workflow_state_id] || '').toLowerCase() === 'in review' && ' 🔍'}
+                                  </span>
+                                </div>
+                                {story.description && (
+                                  <p className="story-description">
+                                    {story.description.substring(0, 100)}
+                                    {story.description.length > 100 ? '...' : ''}
+                                  </p>
                                 )}
-                              </span>
-                              <span className={`story-state ${getStateClass(workflowStates[story.workflow_state_id] || '')}`}>
-                                {workflowStates[story.workflow_state_id] || story.workflow_state_id}
-                                {(workflowStates[story.workflow_state_id] || '').toLowerCase() === 'complete' && ' ✓'}
-                                {(workflowStates[story.workflow_state_id] || '').toLowerCase() === 'in review' && ' 🔍'}
-                              </span>
-                            </div>
-                            {story.description && (
-                              <p className="story-description">
-                                {story.description.substring(0, 100)}
-                                {story.description.length > 100 ? '...' : ''}
-                              </p>
-                            )}
-                          </li>
-                        ))}
-                      </ul>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </>
                     )}
                   </div>
                 )}
