@@ -770,7 +770,7 @@ textarea.input-field {
 
 .story-card {
   background: white;
-  padding: 0.75rem;
+  padding: 0.75rem 0.75rem 0.5rem 0.75rem;
   border-radius: 6px;
   border: 1px solid #e2e8f0;
   transition: all 0.2s;
@@ -787,8 +787,8 @@ textarea.input-field {
   font-weight: 600;
   color: #2d3748;
   font-size: 0.875rem;
-  line-height: 1.4;
-  margin-bottom: 0.5rem;
+  line-height: 1.2;
+  margin-bottom: 0rem;
 }
 
 .story-card-name a {
