@@ -569,23 +569,30 @@ function App() {
 
       {showAboutModal && (
         <div className="modal-overlay" onClick={() => setShowAboutModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-content modal-content-about" onClick={(e) => e.stopPropagation()}>
             <h2>About Shortcut Epic & Story Viewer</h2>
             <p>
-              This application helps you search and view Epics and Stories from Shortcut.com.
+              A comprehensive React-based dashboard for visualizing and managing Shortcut.com epics and their associated stories.
             </p>
             <p>
               <strong>Features:</strong>
             </p>
             <ul>
-              <li>Search epics by team name</li>
-              <li>View ticket status breakdown with interactive charts</li>
-              <li>Track story ownership and assignments</li>
-              <li>Monitor team open tickets</li>
-              <li>Filter to show only epics from your configured list</li>
+              <li><strong>Epic Management:</strong> Track multiple Shortcut epics with team member assignments</li>
+              <li><strong>Interactive Visualizations:</strong>
+                <ul style={{ marginTop: '0.5rem', marginBottom: '0.5rem' }}>
+                  <li>3D Column Chart showing workflow status breakdown</li>
+                  <li>Workflow Status Pie Chart with gradient color scale (Backlog → Complete)</li>
+                  <li>Story Type Breakdown Pie Chart (Feature, Bug, Chore)</li>
+                </ul>
+              </li>
+              <li><strong>Kanban Board:</strong> Six-column workflow view with collapsible stories sections</li>
+              <li><strong>Analytics Tables:</strong> Story owners and team ticket counts with sorting</li>
+              <li><strong>Configuration Management:</strong> Built-in editor for epics.yml with team member management</li>
+              <li><strong>API Token Setup:</strong> Secure token management through settings menu</li>
             </ul>
             <p style={{ marginTop: '1rem', fontSize: '0.875rem', color: '#718096' }}>
-              Version 1.0.0
+              Version 1.0.0 | Powered by Dave
             </p>
             <div className="modal-buttons">
               <button

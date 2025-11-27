@@ -923,6 +923,10 @@ textarea.input-field {
   max-width: 800px;
 }
 
+.modal-content-about {
+  max-width: 750px;
+}
+
 .modal-content h2 {
   color: #03045E;
   margin-bottom: 1rem;
