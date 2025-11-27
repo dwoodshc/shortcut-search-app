@@ -30,6 +30,37 @@ function App() {
   const [draggedEpicIndex, setDraggedEpicIndex] = useState(null);
   const [dragOverIndex, setDragOverIndex] = useState(null);
   const [showSidebar, setShowSidebar] = useState(false);
+  const [apiTokenIssue, setApiTokenIssue] = useState(false);
+
+  // Helper function to handle API errors and check for token issues
+  const handleApiError = useCallback(async (response) => {
+    if (response.status === 401 || response.status === 403) {
+      // Unauthorized or Forbidden - likely token issue
+      setApiTokenIssue(true);
+      setError(`API Token Error: Unable to authenticate with Shortcut API. Please check your API token.`);
+      setLoading(false);
+      return true;
+    }
+
+    // Try to parse error message from response
+    try {
+      const data = await response.json();
+      if (data.error && (
+        data.error.toLowerCase().includes('token') ||
+        data.error.toLowerCase().includes('unauthorized') ||
+        data.error.toLowerCase().includes('authentication')
+      )) {
+        setApiTokenIssue(true);
+        setError(`API Token Error: ${data.error}`);
+        setLoading(false);
+        return true;
+      }
+    } catch (e) {
+      // Response wasn't JSON, continue with generic error
+    }
+
+    return false;
+  }, []);
 
   // Toggle chart collapse state for a specific epic and chart type
   const toggleChart = (epicId, chartType) => {
@@ -164,6 +195,9 @@ function App() {
 
           setWorkflowStates(statesMap);
           setWorkflowStateOrder(stateOrder);
+        } else {
+          // Check if this is a token issue
+          await handleApiError(workflowsResponse);
         }
       } catch (err) {
         console.error('Error fetching workflows:', err);
@@ -198,7 +232,7 @@ function App() {
     fetchWorkflows();
     fetchFilteredEpics();
     fetchEpicEmails();
-  }, []);
+  }, [handleApiError]);
 
   // Close settings menu when clicking outside
   useEffect(() => {
@@ -500,12 +534,15 @@ function App() {
         const userName = user.profile.name;
         setMembers(prev => ({ ...prev, [userId]: userName }));
         return userName;
+      } else {
+        // Check if this is a token issue
+        await handleApiError(response);
       }
     } catch (err) {
       console.error('Error fetching user:', err);
     }
     return userId;
-  }, [members]);
+  }, [members, handleApiError]);
 
   // Fetch owner names for epics and stories when they're loaded
   useEffect(() => {
@@ -546,6 +583,7 @@ function App() {
 
     setLoading(true);
     setError(null);
+    setApiTokenIssue(false);
     setEpics([]);
 
     try {
@@ -559,6 +597,11 @@ function App() {
             );
 
             if (!searchResponse.ok) {
+              // Check if this is a token issue
+              const isTokenIssue = await handleApiError(searchResponse);
+              if (isTokenIssue) {
+                return null;
+              }
               console.error(`Failed to search for epic: ${name}`);
               return null;
             }
@@ -579,6 +622,9 @@ function App() {
               if (storiesResponse.ok) {
                 const stories = await storiesResponse.json();
                 return { ...epic, stories };
+              } else {
+                // Check if this is a token issue
+                await handleApiError(storiesResponse);
               }
             } catch (err) {
               console.error('Error fetching stories for epic:', err);
@@ -1141,6 +1187,17 @@ function App() {
         {error && (
           <div className="error-message">
             <p>{error}</p>
+            {apiTokenIssue && (
+              <p style={{ marginTop: '0.5rem' }}>
+                <button
+                  onClick={() => setShowTokenModal(true)}
+                  className="btn-primary"
+                  style={{ fontSize: '0.875rem', padding: '0.5rem 1rem' }}
+                >
+                  Edit API Token
+                </button>
+              </p>
+            )}
           </div>
         )}
 
