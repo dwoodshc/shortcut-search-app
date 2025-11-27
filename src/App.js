@@ -732,6 +732,13 @@ function App() {
       )}
 
       <header className="App-header">
+        <div className="header-logo">
+          <img
+            src="https://images.squarespace-cdn.com/content/v1/608324e4b63c5e7e1b49aedf/4b87281c-8610-48e1-8f67-b3b3f20b2567/Slice-Logo-Screen_Yellow-BlackType.png?format=1500w"
+            alt="Slice Logo"
+            className="logo-image"
+          />
+        </div>
         <h1>Shortcut Epic & Story Viewer</h1>
         <div className="settings-container">
           <button
