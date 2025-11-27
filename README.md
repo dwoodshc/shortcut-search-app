@@ -1,4 +1,4 @@
-# Shortcut Epic & Story Viewer
+# Dave's Shortcut Viewer
 
 A React-based web application for visualizing and managing Shortcut.com epics and their associated stories. This tool provides comprehensive dashboards with interactive charts, kanban-style workflow visualization, and team analytics.
 

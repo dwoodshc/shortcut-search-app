@@ -575,7 +575,7 @@ function App() {
       {showAboutModal && (
         <div className="modal-overlay" onClick={() => setShowAboutModal(false)}>
           <div className="modal-content modal-content-about" onClick={(e) => e.stopPropagation()}>
-            <h2>About Shortcut Epic & Story Viewer</h2>
+            <h2>About Dave's Shortcut Viewer</h2>
             <p>
               A comprehensive React-based dashboard for visualizing and managing Shortcut.com epics and their associated stories.
             </p>
@@ -781,7 +781,7 @@ function App() {
             className="logo-image"
           />
         </div>
-        <h1>Shortcut Epic & Story Viewer</h1>
+        <h1>Dave's Shortcut Viewer</h1>
         <div className="settings-container">
           <button
             className="settings-icon"
