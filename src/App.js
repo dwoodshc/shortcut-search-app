@@ -35,6 +35,7 @@ function App() {
   const [allWorkflows, setAllWorkflows] = useState([]);
   const [selectedWorkflowId, setSelectedWorkflowId] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
+  const [workflowStateIds, setWorkflowStateIds] = useState({});
 
   // Helper function to handle API errors and check for token issues
   const handleApiError = useCallback(async (response) => {
@@ -184,6 +185,17 @@ function App() {
           const data = await response.json();
           if (data && data.workflow_id) {
             setSelectedWorkflowId(data.workflow_id);
+
+            // Create a mapping of state names to IDs for hyperlinks
+            if (data.states && Array.isArray(data.states)) {
+              const stateMapping = {};
+              data.states.forEach(state => {
+                // Create lowercase key for case-insensitive lookup
+                const key = state.name.toLowerCase().trim();
+                stateMapping[key] = state.id;
+              });
+              setWorkflowStateIds(stateMapping);
+            }
           }
         }
       } catch (err) {
@@ -1712,12 +1724,24 @@ function App() {
                             <div className="pie-chart-legend">
                               {segments.map((seg) => {
                                 const color = stateColors[seg.stateName.toLowerCase()] || '#667eea';
+                                // Get workflow_state_id from state mapping
+                                const stateKey = seg.stateName.toLowerCase().trim();
+                                const workflowStateId = workflowStateIds[stateKey] || seg.stateId;
+                                const epicUrl = `https://app.shortcut.com/slicernd/epic/${epic.id}?workflow_state_ids=${workflowStateId}`;
+
                                 return (
-                                  <div key={seg.stateId} className="legend-item">
+                                  <a
+                                    key={seg.stateId}
+                                    href={epicUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="legend-item"
+                                    style={{ textDecoration: 'none', color: 'inherit' }}
+                                  >
                                     <span className="legend-color" style={{ backgroundColor: color }}></span>
                                     <span className="legend-label">{seg.stateName}</span>
                                     <span className="legend-value">{seg.count} ({seg.percentage.toFixed(1)}%)</span>
-                                  </div>
+                                  </a>
                                 );
                               })}
                             </div>
@@ -1854,9 +1878,9 @@ function App() {
                                   {segments.map((seg) => {
                                     const color = typeColors[seg.type] || '#667eea';
                                     return (
-                                      <div key={seg.type} className="legend-item">
+                                      <div key={seg.type} className="legend-item-static">
                                         <span className="legend-color" style={{ backgroundColor: color }}></span>
-                                        <span className="legend-label">{seg.typeName}</span>
+                                        <span className="legend-label-static">{seg.typeName}</span>
                                         <span className="legend-value">{seg.count} ({seg.percentage.toFixed(1)}%)</span>
                                       </div>
                                     );
