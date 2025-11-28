@@ -818,9 +818,51 @@ function App() {
     setEpics([]);
 
     try {
+      // Reload workflow configuration from shortcut.yml
+      const shortcutResponse = await fetch('http://localhost:3001/api/state-ids-file');
+      if (shortcutResponse.ok) {
+        const data = await shortcutResponse.json();
+        if (data && data.workflow_id) {
+          setSelectedWorkflowId(data.workflow_id);
+          setSavedWorkflowId(data.workflow_id);
+
+          // Load Shortcut Web URL if present
+          if (data.shortcut_web_url) {
+            setShortcutWebUrl(data.shortcut_web_url);
+          }
+
+          // Create a mapping of state names to IDs for hyperlinks
+          if (data.states && Array.isArray(data.states)) {
+            const stateMapping = {};
+            data.states.forEach(state => {
+              // Create lowercase key for case-insensitive lookup
+              const key = state.name.toLowerCase().trim();
+              stateMapping[key] = state.id;
+            });
+            setWorkflowStateIds(stateMapping);
+          }
+        }
+      }
+
+      // Reload epic names from epics.yml
+      let epicNamesToSearch = filteredEpicNames;
+      const epicsResponse = await fetch('http://localhost:3001/api/filtered-epics');
+      if (epicsResponse.ok) {
+        const epicNames = await epicsResponse.json();
+        setFilteredEpicNames(epicNames);
+        epicNamesToSearch = epicNames;
+      }
+
+      // Reload epic emails from epics.yml
+      const emailsResponse = await fetch('http://localhost:3001/api/epic-emails');
+      if (emailsResponse.ok) {
+        const emailsData = await emailsResponse.json();
+        setEpicEmails(emailsData);
+      }
+
       // Search for each epic individually by name
       const epicsWithStories = await Promise.all(
-        filteredEpicNames.map(async (name) => {
+        epicNamesToSearch.map(async (name) => {
           try {
             // Search for this specific epic by name
             const searchResponse = await fetch(
