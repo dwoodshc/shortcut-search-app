@@ -44,13 +44,11 @@ function App() {
   const [members, setMembers] = useState({});
   const [filteredEpicNames, setFilteredEpicNames] = useState([]);
   const [epicEmails, setEpicEmails] = useState({});
-  const [showTokenModal, setShowTokenModal] = useState(false);
   const [apiToken, setApiToken] = useState('');
   const [tokenError, setTokenError] = useState('');
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const [showAboutModal, setShowAboutModal] = useState(false);
   const [hasExistingToken, setHasExistingToken] = useState(false);
-  const [showEpicListModal, setShowEpicListModal] = useState(false);
   const [epicListError, setEpicListError] = useState('');
   const [collapsedCharts, setCollapsedCharts] = useState({});
   const [epicsList, setEpicsList] = useState([]);
@@ -61,13 +59,15 @@ function App() {
   const [dragOverIndex, setDragOverIndex] = useState(null);
   const [showSidebar, setShowSidebar] = useState(false);
   const [apiTokenIssue, setApiTokenIssue] = useState(false);
-  const [showWorkflowModal, setShowWorkflowModal] = useState(false);
   const [allWorkflows, setAllWorkflows] = useState([]);
   const [selectedWorkflowId, setSelectedWorkflowId] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
   const [workflowStateIds, setWorkflowStateIds] = useState({});
-  const [shortcutWebUrl, setShortcutWebUrl] = useState('https://app.shortcut.com/slicernd');
+  const [shortcutWebUrl, setShortcutWebUrl] = useState('https://app.shortcut.com/<workspace>');
   const [savedWorkflowId, setSavedWorkflowId] = useState(null);
+  const [showWipeConfirmModal, setShowWipeConfirmModal] = useState(false);
+  const [showSetupWizard, setShowSetupWizard] = useState(false);
+  const [setupWizardStep, setSetupWizardStep] = useState(1);
 
   // Helper function to generate Shortcut URLs for epics
   const generateShortcutUrl = useCallback((epicId, stateName) => {
@@ -216,16 +216,22 @@ function App() {
         // Create a mapping of state names to IDs for hyperlinks
         if (data.states && Array.isArray(data.states)) {
           const stateMapping = {};
+          const stateOrder = [];
+          const stateIdToName = {};
           data.states.forEach(state => {
             // Create lowercase key for case-insensitive lookup
             const key = state.name.toLowerCase().trim();
             stateMapping[key] = state.id;
+            stateOrder.push(state.id);
+            // Map state ID to state name for chart rendering
+            stateIdToName[state.id] = state.name;
           });
           setWorkflowStateIds(stateMapping);
+          setWorkflowStateOrder(stateOrder);
+          setWorkflowStates(stateIdToName);
         }
       }
     } catch (err) {
-      console.error('Error loading selected workflow:', err);
     }
   }, []);
 
@@ -246,27 +252,22 @@ function App() {
               // Migrate API token if available
               if (migrationData.apiToken && !storage.getApiToken()) {
                 storage.setApiToken(migrationData.apiToken);
-                console.log('Migrated API token from .env');
               }
 
               // Migrate workflow config if available
               if (migrationData.workflowConfig && !storage.getWorkflowConfig()) {
                 storage.setWorkflowConfig(migrationData.workflowConfig);
-                console.log('Migrated workflow config from shortcut.yml');
               }
 
               // Migrate epics config if available
               if (migrationData.epicsConfig && !storage.getEpicsConfig()) {
                 storage.setEpicsConfig(migrationData.epicsConfig);
-                console.log('Migrated epics config from epics.yml');
               }
 
               // Mark migration as complete
               localStorage.setItem('migration_completed', 'true');
-              console.log('Migration completed successfully');
             }
           } catch (migrationErr) {
-            console.error('Migration failed:', migrationErr);
             // Mark migration as complete even if it failed to avoid retrying every load
             localStorage.setItem('migration_completed', 'true');
           }
@@ -276,39 +277,36 @@ function App() {
         const token = storage.getApiToken();
         setHasExistingToken(!!token);
 
-        if (!token) {
-          setShowTokenModal(true);
-          return;
-        }
-
         // Check for workflow configuration
         const workflowConfig = storage.getWorkflowConfig();
-        if (!workflowConfig || !workflowConfig.workflow_id) {
-          // Load workflows before showing modal
-          try {
-            console.log('Loading workflows on initial setup with token:', token ? 'Token exists' : 'No token');
-            const workflowsResponse = await fetch(`${getApiBaseUrl()}/api/workflows`, {
-              headers: {
-                'Authorization': `Bearer ${token}`
-              }
-            });
-            console.log('Initial workflows response status:', workflowsResponse.status);
-            if (workflowsResponse.ok) {
-              const workflows = await workflowsResponse.json();
-              console.log('Initial workflows loaded:', workflows.length, 'workflows');
-              setAllWorkflows(workflows);
-            } else {
-              const errorData = await workflowsResponse.json().catch(() => ({ error: 'Unknown error' }));
-              console.error('Failed to load workflows on initial setup:', workflowsResponse.status, errorData);
-            }
-          } catch (workflowErr) {
-            console.error('Error loading workflows:', workflowErr);
+
+        // Check for epics configuration
+        const epicsConfig = storage.getEpicsConfig();
+
+        // If any required configuration is missing, show setup wizard
+        if (!token || !workflowConfig || !workflowConfig.workflow_id || !epicsConfig || !epicsConfig.epics || epicsConfig.epics.length === 0) {
+          setShowSetupWizard(true);
+
+          // Load existing epics config if available, or start with empty list
+          if (epicsConfig && epicsConfig.epics) {
+            setEpicsList(epicsConfig.epics);
+          } else {
+            setEpicsList([]);
           }
-          setShowWorkflowModal(true);
+
+          // Determine which step to start on based on what's missing
+          if (!token) {
+            setSetupWizardStep(1);
+          } else if (!workflowConfig || !workflowConfig.workflow_id) {
+            setSetupWizardStep(2);
+          } else if (!epicsConfig || !epicsConfig.epics || epicsConfig.epics.length === 0) {
+            setSetupWizardStep(4);
+          }
+          return;
         }
       } catch (err) {
-        console.error('Error checking config:', err);
-        setShowTokenModal(true);
+        setShowSetupWizard(true);
+        setSetupWizardStep(1);
         setHasExistingToken(false);
       }
     };
@@ -318,14 +316,15 @@ function App() {
 
   // Fetch teams, workflow states, and filtered epic names on mount
   useEffect(() => {
+    // Skip individual modal triggers if setup wizard is active
+    if (showSetupWizard) {
+      return;
+    }
+
     const checkEpicsConfig = () => {
       try {
         const epicsConfig = storage.getEpicsConfig();
-        if (!epicsConfig || !epicsConfig.epics) {
-          // If no config exists, open the modal with empty content
-          setEpicsList([]);
-          setShowEpicListModal(true);
-        } else {
+        if (epicsConfig && epicsConfig.epics) {
           // Load epic names and team data from config
           setFilteredEpicNames(epicsConfig.epics.map(e => e.name));
           const emailsData = {};
@@ -335,55 +334,12 @@ function App() {
           setEpicEmails(emailsData);
         }
       } catch (err) {
-        console.error('Error checking epics config:', err);
-      }
-    };
-
-    const fetchWorkflows = async () => {
-      try {
-        const token = storage.getApiToken();
-        if (!token) {
-          // No token available yet, skip workflow fetch
-          return;
-        }
-
-        const workflowsResponse = await fetch(`${getApiBaseUrl()}/api/workflows`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        if (workflowsResponse.ok) {
-          const workflows = await workflowsResponse.json();
-          const statesMap = {};
-          const stateOrder = [];
-
-          // Only use the "RnD Workflow"
-          workflows.forEach(workflow => {
-            if (workflow.name === "RnD Workflow") {
-              workflow.states.forEach(state => {
-                statesMap[state.id] = state.name;
-                if (!stateOrder.includes(state.id)) {
-                  stateOrder.push(state.id);
-                }
-              });
-            }
-          });
-
-          setWorkflowStates(statesMap);
-          setWorkflowStateOrder(stateOrder);
-        } else {
-          // Check if this is a token issue
-          await handleApiError(workflowsResponse);
-        }
-      } catch (err) {
-        console.error('Error fetching workflows:', err);
       }
     };
 
     checkEpicsConfig();
     loadSelectedWorkflow();
-    fetchWorkflows();
-  }, [handleApiError, loadSelectedWorkflow]);
+  }, [showSetupWizard, handleApiError, loadSelectedWorkflow]);
 
   // Close settings menu when clicking outside
   useEffect(() => {
@@ -404,18 +360,12 @@ function App() {
     const handleEscKey = (event) => {
       if (event.key === 'Escape') {
         // Close modals in priority order (close the most recently opened)
-        if (showTokenModal) {
-          setShowTokenModal(false);
-          setTokenError('');
-        } else if (showEpicListModal) {
-          setShowEpicListModal(false);
-          setEpicListError('');
+        if (showSetupWizard) {
+          setShowSetupWizard(false);
         } else if (showAboutModal) {
           setShowAboutModal(false);
         } else if (showReadmeModal) {
           setShowReadmeModal(false);
-        } else if (showWorkflowModal) {
-          setShowWorkflowModal(false);
         } else if (showSettingsMenu) {
           setShowSettingsMenu(false);
         } else if (showSidebar) {
@@ -428,7 +378,7 @@ function App() {
     return () => {
       document.removeEventListener('keydown', handleEscKey);
     };
-  }, [showTokenModal, showEpicListModal, showAboutModal, showReadmeModal, showWorkflowModal, showSettingsMenu, showSidebar]);
+  }, [showSetupWizard, showAboutModal, showReadmeModal, showSettingsMenu, showSidebar]);
 
   // Fetch user name by ID
   // Convert text to title case (initial capitals)
@@ -452,31 +402,6 @@ function App() {
   };
 
   // Load epic list content from localStorage
-  const handleOpenEpicList = () => {
-    setEpicListError('');
-    try {
-      const epicsConfig = storage.getEpicsConfig();
-      if (epicsConfig && epicsConfig.epics) {
-        setEpicsList(epicsConfig.epics);
-
-        // Collapse all team member lists by default
-        const collapsedState = {};
-        epicsConfig.epics.forEach((_epic, index) => {
-          collapsedState[index] = true;
-        });
-        setCollapsedTeamMembers(collapsedState);
-      } else {
-        setEpicsList([]);
-        setCollapsedTeamMembers({});
-      }
-
-      setShowEpicListModal(true);
-    } catch (err) {
-      console.error('Error loading epics config:', err);
-      setEpicListError('Failed to load epics configuration');
-    }
-  };
-
   // Save epic list content
   const handleSaveEpicList = () => {
     setEpicListError('');
@@ -485,8 +410,6 @@ function App() {
       // Save to localStorage
       storage.setEpicsConfig({ epics: epicsList });
 
-      setShowEpicListModal(false);
-
       // Update local state with new data
       setFilteredEpicNames(epicsList.map(e => e.name));
       const emailsData = {};
@@ -494,36 +417,10 @@ function App() {
         emailsData[epic.name] = epic.team || [];
       });
       setEpicEmails(emailsData);
+      return true; // Success
     } catch (err) {
-      console.error('Error saving epics config:', err);
       setEpicListError('Failed to save epics configuration. Please try again.');
-    }
-  };
-
-  // Save API token
-  const handleSaveToken = () => {
-    setTokenError('');
-
-    if (!apiToken.trim()) {
-      setTokenError('Please enter an API token');
-      return;
-    }
-
-    try {
-      storage.setApiToken(apiToken.trim());
-      setApiToken('');
-      setHasExistingToken(true);
-      // Close modal first
-      setShowTokenModal(false);
-      // Then show success message
-      setSuccessMessage('API Token saved successfully!');
-      // Reload after showing success message
-      setTimeout(() => {
-        window.location.reload();
-      }, 2000);
-    } catch (err) {
-      console.error('Error saving token:', err);
-      setTokenError('Failed to save token. Please try again.');
+      return false; // Failure
     }
   };
 
@@ -540,44 +437,8 @@ function App() {
         setShowReadmeModal(true);
       }
     } catch (err) {
-      console.error('Error loading README:', err);
       setReadmeContent('Failed to load README.md file');
       setShowReadmeModal(true);
-    }
-  };
-
-  // Load workflows
-  const handleOpenWorkflows = async () => {
-    try {
-      const token = storage.getApiToken();
-      console.log('Loading workflows with token:', token ? 'Token exists' : 'No token');
-
-      if (!token) {
-        setError('No API token found. Please configure your token first.');
-        return;
-      }
-
-      const response = await fetch(`${getApiBaseUrl()}/api/workflows`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      console.log('Workflows response status:', response.status);
-
-      if (response.ok) {
-        const workflows = await response.json();
-        console.log('Loaded workflows:', workflows.length, 'workflows');
-        setAllWorkflows(workflows);
-        setShowWorkflowModal(true);
-      } else {
-        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-        console.error('Failed to load workflows:', response.status, errorData);
-        await handleApiError(response);
-      }
-    } catch (err) {
-      console.error('Error loading workflows:', err);
-      setError('Failed to load workflows: ' + err.message);
     }
   };
 
@@ -609,16 +470,13 @@ function App() {
           });
 
           setError(null); // Clear any existing error messages
-          setSuccessMessage('Shortcut Web URL saved successfully!');
-          setTimeout(() => setSuccessMessage(null), 3000);
+          // Note: Success message display is handled within the setup wizard UI
         }
       } catch (err) {
-        console.error('Error saving shortcut URL:', err);
         setError('Failed to save Shortcut Web URL');
       }
-    } else {
-      setError('Please select a workflow first before saving the URL');
     }
+    // Note: Validation for "workflow must be selected first" is handled within the wizard
   };
 
   // Save selected workflow state IDs to localStorage
@@ -641,22 +499,59 @@ function App() {
       setSelectedWorkflowId(workflow.id);
       setSavedWorkflowId(workflow.id);
 
-      // Populate workflowStateIds mapping immediately
+      // Populate workflow state mappings immediately
       const stateMapping = {};
+      const stateOrder = [];
+      const stateIdToName = {};
       workflow.states.forEach(state => {
         const key = state.name.toLowerCase().trim();
         stateMapping[key] = state.id;
+        stateOrder.push(state.id);
+        stateIdToName[state.id] = state.name;
       });
       setWorkflowStateIds(stateMapping);
+      setWorkflowStateOrder(stateOrder);
+      setWorkflowStates(stateIdToName);
 
-      setShowWorkflowModal(false);
-      // Show success message briefly
-      setSuccessMessage(`Workflow "${workflow.name}" selected successfully!`);
-      setTimeout(() => setSuccessMessage(null), 3000);
+      // Note: Success message display is handled within the setup wizard UI
     } catch (err) {
-      console.error('Error saving workflow:', err);
-      setError(`Failed to save workflow selection: ${err.message}`);
+      // Note: Error display is handled within the setup wizard UI
     }
+  };
+
+  // Handle wiping all settings
+  const handleWipeSettings = () => {
+    // Clear all localStorage data
+    localStorage.clear();
+
+    // Reset all state to defaults
+    setEpics([]);
+    setFilteredEpicNames([]);
+    setEpicEmails({});
+    setEpicsList([]);
+    setWorkflowStates({});
+    setWorkflowStateOrder([]);
+    setWorkflowStateIds({});
+    setMembers({});
+    setApiToken('');
+    setHasExistingToken(false);
+    setShortcutWebUrl('');
+    setAllWorkflows([]);
+    setSelectedWorkflowId(null);
+    setSavedWorkflowId(null);
+    setError(null);
+    setSuccessMessage(null);
+
+    // Close the modal
+    setShowWipeConfirmModal(false);
+
+    // Show success message
+    setSuccessMessage('All settings have been wiped successfully!');
+    setTimeout(() => {
+      setSuccessMessage(null);
+      // Reload the page to ensure clean state
+      window.location.reload();
+    }, 2000);
   };
 
   // Epic management helper functions
@@ -778,7 +673,6 @@ function App() {
         await handleApiError(response);
       }
     } catch (err) {
-      console.error('Error fetching user:', err);
     }
     return userId;
   }, [members, handleApiError]);
@@ -866,7 +760,6 @@ function App() {
               if (isTokenIssue) {
                 return null;
               }
-              console.error(`Failed to search for epic: ${name}`);
               return null;
             }
 
@@ -905,7 +798,6 @@ function App() {
                     await handleApiError(storiesResponse);
                   }
                 } catch (err) {
-                  console.error('Error fetching stories for epic:', err);
                 }
 
                 return epic;
@@ -913,12 +805,10 @@ function App() {
                 await handleApiError(epicResponse);
               }
             } catch (err) {
-              console.error('Error fetching epic details:', err);
             }
 
             return searchEpic;
           } catch (err) {
-            console.error(`Error searching for epic "${name}":`, err);
             return null;
           }
         })
@@ -949,14 +839,8 @@ function App() {
         }
       });
       setCollapsedCharts(prev => ({ ...prev, ...newCollapsedState }));
-
-      const foundCount = allEpics.filter(e => !e.notFound).length;
-      if (foundCount === 0) {
-        setError('No epics found from the list in epics.yml');
-      }
     } catch (err) {
       setError(err.message);
-      console.error('Error searching epics:', err);
     } finally {
       setLoading(false);
     }
@@ -965,74 +849,577 @@ function App() {
 
   return (
     <div className="App">
-      {showTokenModal && (
+      {showSetupWizard && (
         <div className="modal-overlay">
-          <div className="modal-content">
-            <h2>{hasExistingToken ? 'Edit API Token' : 'Shortcut API Token Required'}</h2>
-            <p>To use this application, you need to provide a Shortcut API token.</p>
+          <div className="modal-content modal-content-large">
+            <h2>Setup Wizard</h2>
+            <p style={{ color: '#718096', marginBottom: '1.5rem' }}>
+              Configure your Shortcut connection and epic tracking
+            </p>
 
-            <p><strong>How to get your API token:</strong></p>
-            <ol>
-              <li>Go to <a href="https://app.shortcut.com/settings/account/api-tokens" target="_blank" rel="noopener noreferrer">Shortcut Settings → API Tokens</a></li>
-              <li>Give it a name (e.g., "Epic Viewer")</li>
-              <li>Click "Generate Token"</li>
-              <li>Copy the generated token</li>
-              <li>Paste it below</li>
-            </ol>
+            {/* Step Indicator */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              marginBottom: '2rem',
+              position: 'relative'
+            }}>
+              {[1, 2, 3, 4].map((stepNum) => (
+                <div
+                  key={stepNum}
+                  style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative', cursor: 'pointer' }}
+                  onClick={() => setSetupWizardStep(stepNum)}
+                >
+                  <div style={{
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '50%',
+                    backgroundColor: setupWizardStep === stepNum ? '#494BCB' : setupWizardStep > stepNum ? '#22c55e' : '#e2e8f0',
+                    color: setupWizardStep >= stepNum ? 'white' : '#94a3b8',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 'bold',
+                    fontSize: '1rem',
+                    transition: 'all 0.3s ease',
+                    zIndex: 1,
+                    border: setupWizardStep === stepNum ? '2px solid #494BCB' : '2px solid transparent'
+                  }}>
+                    {setupWizardStep > stepNum ? '✓' : stepNum}
+                  </div>
+                  <div style={{
+                    marginTop: '0.5rem',
+                    fontSize: '0.75rem',
+                    color: setupWizardStep === stepNum ? '#494BCB' : '#64748b',
+                    fontWeight: setupWizardStep === stepNum ? '600' : 'normal',
+                    textAlign: 'center',
+                    userSelect: 'none'
+                  }}>
+                    {stepNum === 1 && 'API Token'}
+                    {stepNum === 2 && 'Shortcut URL'}
+                    {stepNum === 3 && 'Select Workflow'}
+                    {stepNum === 4 && 'Epic List'}
+                  </div>
+                  {stepNum < 4 && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '20px',
+                      left: '60%',
+                      width: 'calc(100% - 20px)',
+                      height: '2px',
+                      backgroundColor: setupWizardStep > stepNum ? '#22c55e' : '#e2e8f0',
+                      transition: 'all 0.3s ease',
+                      zIndex: 0
+                    }} />
+                  )}
+                </div>
+              ))}
+            </div>
 
-            <div className="form-group">
-              <label htmlFor="apiToken">API Token:</label>
-              <input
-                type="text"
-                id="apiToken"
-                value={apiToken}
-                onChange={(e) => setApiToken(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSaveToken()}
-                className="input-field"
-                placeholder="Enter your Shortcut API token"
-                autoFocus
-              />
-              {tokenError && (
-                <div style={{ color: '#c33', marginTop: '0.5rem', fontSize: '0.875rem' }}>
-                  {tokenError}
+            {/* Step Content */}
+            <div style={{ height: '450px', overflowY: 'auto' }}>
+              {/* Step 1: API Token */}
+              {setupWizardStep === 1 && (
+                <div>
+                  <h3 style={{ color: '#1e293b', marginBottom: '1rem' }}>Step 1: API Token</h3>
+                  <p>To use this application, you need to provide a Shortcut API token.</p>
+
+                  <ol>
+                    <li>Go to <a href="https://app.shortcut.com/settings/account/api-tokens" target="_blank" rel="noopener noreferrer">Shortcut Settings → API Tokens</a></li>
+                    <li>Give it a name (e.g., "Epic Viewer")</li>
+                    <li>Click "Generate Token"</li>
+                    <li>Copy the generated token</li>
+                    <li>Paste it below</li>
+                  </ol>
+
+                  <div className="form-group">
+                    <label htmlFor="apiToken">API Token:</label>
+                    <input
+                      type="text"
+                      id="apiToken"
+                      value={hasExistingToken && !apiToken ? '*'.repeat(storage.getApiToken()?.length || 0) : apiToken}
+                      onChange={(e) => {
+                        // Clear the asterisk display once user starts typing
+                        if (hasExistingToken && !apiToken) {
+                          setHasExistingToken(false);
+                        }
+                        setApiToken(e.target.value);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          // Save token silently without verification messages
+                          if (apiToken.trim()) {
+                            storage.setApiToken(apiToken.trim());
+                            setHasExistingToken(true);
+                          }
+                        }
+                      }}
+                      className="input-field"
+                      placeholder={hasExistingToken ? "Enter new API token to replace existing" : "Enter your Shortcut API token"}
+                      autoFocus
+                    />
+                    {hasExistingToken && (
+                      <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.5rem', marginBottom: 0 }}>
+                        Token is currently set. Enter a new token to replace it.
+                      </p>
+                    )}
+                    {tokenError && (
+                      <div style={{ color: '#c33', marginTop: '0.5rem', fontSize: '0.875rem' }}>
+                        {tokenError}
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
-              {successMessage && (
-                <div style={{
-                  color: '#065f46',
-                  backgroundColor: '#d1fae5',
-                  border: '1px solid #6ee7b7',
-                  padding: '0.5rem',
-                  borderRadius: '4px',
-                  marginTop: '0.5rem',
-                  fontSize: '0.875rem'
-                }}>
-                  {successMessage}
+
+              {/* Step 2: Shortcut URL */}
+              {setupWizardStep === 2 && (
+                <div>
+                  <h3 style={{ color: '#1e293b', marginBottom: '1rem' }}>Step 2: Shortcut URL</h3>
+                  <p style={{ marginBottom: '1.5rem' }}>Enter your Shortcut workspace URL. This will be used to generate hyperlinks to your epics.</p>
+
+                  <div className="form-group">
+                    <label htmlFor="shortcutWebUrl">Shortcut URL:</label>
+                    <input
+                      type="text"
+                      id="shortcutWebUrl"
+                      value={shortcutWebUrl}
+                      onChange={(e) => setShortcutWebUrl(e.target.value)}
+                      className="input-field"
+                      placeholder="https://app.shortcut.com/your-workspace"
+                    />
+                    <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.5rem' }}>
+                      Example: https://app.shortcut.com/your-workspace
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Step 3: Select Workflow */}
+              {setupWizardStep === 3 && (
+                <div>
+                  <h3 style={{ color: '#1e293b', marginBottom: '1rem' }}>Step 3: Select Workflow</h3>
+                  <p style={{ marginBottom: '1.5rem' }}>Choose the workflow you want to use for tracking epic progress.</p>
+
+                  {error && (
+                    <div style={{
+                      backgroundColor: '#fef2f2',
+                      border: '1px solid #fecaca',
+                      color: '#dc2626',
+                      padding: '0.75rem',
+                      borderRadius: '8px',
+                      marginBottom: '1rem',
+                      fontSize: '0.875rem'
+                    }}>
+                      {error}
+                    </div>
+                  )}
+
+                  <div>
+                    {allWorkflows.length === 0 ? (
+                      <div style={{ textAlign: 'center', padding: '2rem 0' }}>
+                        <p style={{ color: '#94a3b8', fontStyle: 'italic' }}>
+                          {loading ? 'Loading workflows...' : 'No workflows found'}
+                        </p>
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                        {allWorkflows.map((workflow) => (
+                          <div
+                            key={workflow.id}
+                            style={{
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: '0.75rem',
+                              padding: '1rem',
+                              backgroundColor: selectedWorkflowId === workflow.id ? '#eff6ff' : '#ffffff',
+                              border: selectedWorkflowId === workflow.id ? '2px solid #494BCB' : '1px solid #e2e8f0',
+                              borderRadius: '8px',
+                              transition: 'all 0.2s ease',
+                              cursor: 'pointer'
+                            }}
+                            onClick={() => setSelectedWorkflowId(workflow.id)}
+                          >
+                            <div style={{ flex: 1 }}>
+                              <h4 style={{
+                                color: '#494BCB',
+                                marginBottom: '0.5rem',
+                                fontSize: '1rem',
+                                fontWeight: '600',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem'
+                              }}>
+                                {workflow.name}
+                                {selectedWorkflowId === workflow.id && (
+                                  <span style={{ color: '#22c55e', fontSize: '0.875rem', fontWeight: 'normal' }}>
+                                    ✓ Selected
+                                  </span>
+                                )}
+                              </h4>
+                              {workflow.description && (
+                                <p style={{ color: '#64748b', fontSize: '0.875rem', marginBottom: '0.75rem', lineHeight: '1.4' }}>
+                                  {workflow.description}
+                                </p>
+                              )}
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                {workflow.states && workflow.states.map((state) => (
+                                  <div
+                                    key={state.id}
+                                    style={{
+                                      backgroundColor: state.color === 'green' ? '#22c55e' :
+                                                     state.color === 'yellow' ? '#fbbf24' :
+                                                     state.color === 'red' ? '#ef4444' :
+                                                     state.color === 'blue' ? '#3b82f6' : '#6b7280',
+                                      color: 'white',
+                                      padding: '0.25rem 0.75rem',
+                                      borderRadius: '12px',
+                                      fontSize: '0.75rem',
+                                      fontWeight: '600',
+                                      display: 'inline-block',
+                                      whiteSpace: 'nowrap'
+                                    }}
+                                  >
+                                    {state.name}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Step 4: Epic List */}
+              {setupWizardStep === 4 && (
+                <div>
+                  <h3 style={{ color: '#1e293b', marginBottom: '1rem' }}>Step 4: Epic List</h3>
+                  <p style={{ marginBottom: '1rem' }}>Add the epics you want to track and their team members.</p>
+
+                  <div style={{ marginBottom: '1rem' }}>
+                    {/* Drop zone at the top for first position */}
+                    <div
+                      onDragOver={(e) => handleDragOver(e, 0)}
+                      onDragLeave={handleDragLeave}
+                      onDrop={(e) => handleDrop(e, 0)}
+                      style={{
+                        minHeight: dragOverIndex === 0 ? '40px' : '20px',
+                        transition: 'min-height 0.2s ease',
+                        position: 'relative',
+                        marginBottom: '0.5rem'
+                      }}
+                    >
+                      {dragOverIndex === 0 && (
+                        <div style={{
+                          height: '3px',
+                          backgroundColor: '#494BCB',
+                          borderRadius: '2px',
+                          margin: '8px 0',
+                          boxShadow: '0 0 4px rgba(73, 75, 203, 0.5)'
+                        }} />
+                      )}
+                    </div>
+
+                    {epicsList.map((epic, epicIndex) => (
+                      <React.Fragment key={epicIndex}>
+                        <div
+                          onDragOver={(e) => handleDragOver(e, epicIndex + 1)}
+                          onDragLeave={handleDragLeave}
+                          onDrop={(e) => handleDrop(e, epicIndex + 1)}
+                          style={{
+                            border: '1px solid #e2e8f0',
+                            borderRadius: '8px',
+                            padding: '1rem',
+                            marginBottom: '1rem',
+                            backgroundColor: draggedEpicIndex === epicIndex ? '#f0f0f0' : '#f7fafc',
+                            opacity: draggedEpicIndex === epicIndex ? 0.5 : 1,
+                            position: 'relative'
+                          }}
+                        >
+                          {dragOverIndex === epicIndex + 1 && draggedEpicIndex !== epicIndex && (
+                            <div style={{
+                              position: 'absolute',
+                              bottom: '-8px',
+                              left: 0,
+                              right: 0,
+                              height: '3px',
+                              backgroundColor: '#494BCB',
+                              borderRadius: '2px',
+                              zIndex: 10,
+                              boxShadow: '0 0 4px rgba(73, 75, 203, 0.5)'
+                            }} />
+                          )}
+
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                            <div
+                              draggable
+                              onDragStart={(e) => handleDragStart(e, epicIndex)}
+                              onDragEnd={handleDragEnd}
+                              style={{
+                                cursor: 'grab',
+                                padding: '0.25rem',
+                                color: '#666',
+                                fontSize: '1.2rem',
+                                lineHeight: 1,
+                                userSelect: 'none'
+                              }}
+                              title="Drag to reorder"
+                            >
+                              ⋮⋮
+                            </div>
+
+                            <div style={{
+                              backgroundColor: '#494BCB',
+                              color: 'white',
+                              borderRadius: '50%',
+                              width: '28px',
+                              height: '28px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontWeight: 'bold',
+                              fontSize: '0.875rem'
+                            }}>
+                              {epicIndex + 1}
+                            </div>
+
+                            <label style={{ fontWeight: 'bold', minWidth: '80px' }}>Epic Name:</label>
+                            <input
+                              type="text"
+                              value={epic.name || ''}
+                              onChange={(e) => updateEpicName(epicIndex, e.target.value)}
+                              className="input-field"
+                              placeholder="Enter epic name"
+                              style={{ flex: 1 }}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeEpic(epicIndex)}
+                              className="btn-secondary"
+                              style={{
+                                padding: '0.5rem 1rem',
+                                backgroundColor: '#ef4444',
+                                color: 'white'
+                              }}
+                            >
+                              Remove
+                            </button>
+                          </div>
+
+                          <div style={{ marginLeft: '1rem', marginTop: '0.75rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.5rem' }}>
+                              <button
+                                type="button"
+                                onClick={() => toggleTeamMembers(epicIndex)}
+                                className="chart-toggle-btn"
+                                aria-label="Toggle team members"
+                                style={{ marginRight: '0.5rem' }}
+                              >
+                                {collapsedTeamMembers[epicIndex] ? '▼' : '▲'}
+                              </button>
+                              <label style={{ fontWeight: 'bold', display: 'block', margin: 0 }}>
+                                Team Members {epic.team && epic.team.length > 0 && `(${epic.team.length})`}
+                              </label>
+                            </div>
+                            {!collapsedTeamMembers[epicIndex] && (
+                              <>
+                                {epic.team && epic.team.map((member, memberIndex) => (
+                                  <div key={memberIndex} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                                    <input
+                                      type="text"
+                                      value={member || ''}
+                                      onChange={(e) => updateTeamMember(epicIndex, memberIndex, e.target.value)}
+                                      className="input-field"
+                                      placeholder="Enter team member name"
+                                      style={{ flex: 1 }}
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={() => removeTeamMember(epicIndex, memberIndex)}
+                                      className="btn-secondary"
+                                      style={{
+                                        padding: '0.5rem 1rem',
+                                        backgroundColor: '#f59e0b',
+                                        color: 'white'
+                                      }}
+                                    >
+                                      Remove
+                                    </button>
+                                  </div>
+                                ))}
+                                <button
+                                  type="button"
+                                  onClick={() => addTeamMember(epicIndex)}
+                                  className="btn-secondary"
+                                  style={{ marginTop: '0.5rem' }}
+                                >
+                                  + Add Team Member
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </React.Fragment>
+                    ))}
+
+                    <button
+                      type="button"
+                      onClick={addEpic}
+                      className="btn-secondary"
+                      style={{ width: '100%', padding: '0.75rem' }}
+                    >
+                      + Add New Epic
+                    </button>
+                  </div>
+
+                  {epicListError && (
+                    <div style={{
+                      color: '#c33',
+                      marginTop: '0.5rem',
+                      fontSize: '0.875rem',
+                      backgroundColor: '#fee',
+                      border: '1px solid #fcc',
+                      padding: '0.75rem',
+                      borderRadius: '6px',
+                      whiteSpace: 'pre-line',
+                      maxHeight: '150px',
+                      overflowY: 'auto'
+                    }}>
+                      {epicListError}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
 
-            <div className="modal-buttons">
-              {hasExistingToken && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowTokenModal(false);
-                    setApiToken('');
-                    setTokenError('');
-                  }}
-                  className="btn-secondary"
-                >
-                  Cancel
-                </button>
-              )}
+            {/* Success message display */}
+            {successMessage && (
+              <div style={{
+                backgroundColor: '#d1fae5',
+                border: '1px solid #6ee7b7',
+                color: '#065f46',
+                padding: '0.75rem',
+                borderRadius: '8px',
+                marginTop: '1rem',
+                fontSize: '0.875rem'
+              }}>
+                {successMessage}
+              </div>
+            )}
+
+            {/* Navigation Buttons */}
+            <div className="modal-buttons" style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'space-between' }}>
               <button
                 type="button"
-                onClick={handleSaveToken}
-                className="btn-primary"
+                onClick={() => {
+                  setShowSetupWizard(false);
+                  setSetupWizardStep(1);
+                  setApiToken('');
+                  setTokenError('');
+                  setEpicListError('');
+                }}
+                className="btn-secondary"
               >
-                Save Token
+                Cancel
               </button>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                {setupWizardStep > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => setSetupWizardStep(setupWizardStep - 1)}
+                    className="btn-secondary"
+                  >
+                    Back
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (setupWizardStep === 1) {
+                      // Save token and verify it before moving to step 2
+                      const existingToken = storage.getApiToken();
+                      if (!apiToken.trim() && !existingToken) {
+                        setTokenError('Please enter an API token');
+                        return;
+                      }
+
+                      // Determine which token to verify
+                      const tokenToVerify = apiToken.trim() || existingToken;
+
+                      // Only save if a new token was entered
+                      if (apiToken.trim()) {
+                        storage.setApiToken(apiToken);
+                      }
+
+                      // Verify the token by making a test API call
+                      try {
+                        setTokenError('Verifying token...');
+                        const response = await fetch(`${getApiBaseUrl()}/api/workflows`, {
+                          headers: { 'Authorization': `Bearer ${tokenToVerify}` }
+                        });
+
+                        if (!response.ok) {
+                          if (response.status === 401 || response.status === 403) {
+                            setTokenError('Invalid API token. Please check your token and try again.');
+                          } else {
+                            setTokenError('Failed to verify token. Please check your connection and try again.');
+                          }
+                          return;
+                        }
+
+                        // Token is valid, proceed to step 2
+                        setTokenError('');
+                        setSetupWizardStep(2);
+                      } catch (err) {
+                        setTokenError('Failed to verify token. Please check your connection and try again.');
+                        return;
+                      }
+                    } else if (setupWizardStep === 2) {
+                      // Save URL and move to step 3
+                      const savedUrl = await handleSaveShortcutUrl();
+                      if (savedUrl !== false) {
+                        // Load workflows for step 3
+                        try {
+                          const token = storage.getApiToken();
+                          const workflowsResponse = await fetch(`${getApiBaseUrl()}/api/workflows`, {
+                            headers: { 'Authorization': `Bearer ${token}` }
+                          });
+                          if (workflowsResponse.ok) {
+                            const workflows = await workflowsResponse.json();
+                            setAllWorkflows(workflows);
+                          }
+                        } catch (err) {
+                        }
+                        setSetupWizardStep(3);
+                      }
+                    } else if (setupWizardStep === 3) {
+                      // Save workflow and move to step 4
+                      if (!selectedWorkflowId) {
+                        setError('Please select a workflow');
+                        return;
+                      }
+                      const selectedWorkflow = allWorkflows.find(w => w.id === selectedWorkflowId);
+                      if (selectedWorkflow) {
+                        await handleSelectWorkflow(selectedWorkflow);
+                        setSetupWizardStep(4);
+                      }
+                    } else if (setupWizardStep === 4) {
+                      // Save epic list and close wizard
+                      const saved = handleSaveEpicList();
+                      if (saved) {
+                        setShowSetupWizard(false);
+                        setSetupWizardStep(1);
+                      }
+                    }
+                  }}
+                  className="btn-primary"
+                >
+                  {setupWizardStep < 4 ? 'Next' : 'Finish'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -1059,7 +1446,7 @@ function App() {
               </li>
               <li><strong>Kanban Board:</strong> Six-column workflow view with collapsible stories sections</li>
               <li><strong>Analytics Tables:</strong> Story owners and team ticket counts with sorting</li>
-              <li><strong>Configuration Management:</strong> Built-in editor for epics.yml with team member management</li>
+              <li><strong>Configuration Management:</strong> Built-in editor for epic configuration with team member management</li>
               <li><strong>API Token Setup:</strong> Secure token management through settings menu</li>
             </ul>
             <p style={{ marginTop: '1rem', fontSize: '0.875rem', color: '#718096' }}>
@@ -1072,6 +1459,51 @@ function App() {
                 className="btn-primary"
               >
                 Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showWipeConfirmModal && (
+        <div className="modal-overlay" onClick={() => setShowWipeConfirmModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h2 style={{ color: '#dc2626' }}>Wipe All Settings?</h2>
+            <p style={{ marginBottom: '1.5rem' }}>
+              This action will permanently delete all stored data including:
+            </p>
+            <ul style={{ marginBottom: '1.5rem', textAlign: 'left', paddingLeft: '2rem' }}>
+              <li>API Token</li>
+              <li>Workflow Configuration</li>
+              <li>Epic List and Team Members</li>
+              <li>All other settings</li>
+            </ul>
+            <p style={{ marginBottom: '1.5rem', fontWeight: 'bold', color: '#dc2626' }}>
+              This action cannot be undone. Are you sure you want to continue?
+            </p>
+            <div className="modal-buttons">
+              <button
+                type="button"
+                onClick={() => setShowWipeConfirmModal(false)}
+                className="btn-secondary"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleWipeSettings}
+                style={{
+                  backgroundColor: '#dc2626',
+                  color: 'white',
+                  padding: '0.5rem 1rem',
+                  border: 'none',
+                  borderRadius: '0.375rem',
+                  cursor: 'pointer',
+                  fontSize: '0.875rem',
+                  fontWeight: '500'
+                }}
+              >
+                Yes, Wipe All Settings
               </button>
             </div>
           </div>
@@ -1108,459 +1540,7 @@ function App() {
         </div>
       )}
 
-      {showWorkflowModal && (
-        <div className="modal-overlay" onClick={() => setShowWorkflowModal(false)}>
-          <div className="modal-content modal-content-large" onClick={(e) => e.stopPropagation()}>
-            <h2 style={{ marginBottom: '0.5rem' }}>Setup Shortcut</h2>
-            <p style={{ marginBottom: '2rem', color: '#718096' }}>
-              Configure your Shortcut workspace and workflow for epic tracking
-            </p>
-
-            {/* Error message display within modal */}
-            {error && (
-              <div style={{
-                backgroundColor: '#fef2f2',
-                border: '1px solid #fecaca',
-                color: '#dc2626',
-                padding: '0.75rem',
-                borderRadius: '8px',
-                marginBottom: '1.5rem',
-                fontSize: '0.875rem'
-              }}>
-                {error}
-              </div>
-            )}
-
-            {/* Success message display within modal */}
-            {successMessage && (
-              <div style={{
-                backgroundColor: '#d1fae5',
-                border: '1px solid #6ee7b7',
-                color: '#065f46',
-                padding: '0.75rem',
-                borderRadius: '8px',
-                marginBottom: '1.5rem',
-                fontSize: '0.875rem'
-              }}>
-                {successMessage}
-              </div>
-            )}
-
-            {/* Workspace URL Section */}
-            <div style={{
-              backgroundColor: '#f8fafc',
-              padding: '1.5rem',
-              borderRadius: '8px',
-              marginBottom: '1.5rem',
-              border: '1px solid #e2e8f0'
-            }}>
-              <h3 style={{
-                fontSize: '1rem',
-                fontWeight: '600',
-                marginBottom: '1rem',
-                color: '#1e293b'
-              }}>
-                Workspace URL
-              </h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                <input
-                  type="text"
-                  id="shortcutWebUrl"
-                  value={shortcutWebUrl}
-                  onChange={(e) => setShortcutWebUrl(e.target.value)}
-                  className="input-field"
-                  placeholder="https://app.shortcut.com/your-workspace"
-                  style={{ width: '100%' }}
-                />
-                <button
-                  onClick={handleSaveShortcutUrl}
-                  className="btn-primary"
-                  style={{
-                    fontSize: '0.875rem',
-                    padding: '0.75rem 1.5rem',
-                    width: '100%',
-                    marginTop: 0
-                  }}
-                >
-                  Save URL
-                </button>
-              </div>
-              <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.5rem', marginBottom: 0 }}>
-                This URL will be used to generate hyperlinks to your epics
-              </p>
-            </div>
-
-            {/* Workflow Selection Section */}
-            <div style={{
-              backgroundColor: '#f8fafc',
-              padding: '1.5rem',
-              borderRadius: '8px',
-              border: '1px solid #e2e8f0'
-            }}>
-              <h3 style={{
-                fontSize: '1rem',
-                fontWeight: '600',
-                marginBottom: '1rem',
-                color: '#1e293b'
-              }}>
-                Select Workflow
-              </h3>
-              <div
-                style={{
-                  maxHeight: '400px',
-                  overflowY: 'auto',
-                  marginRight: '-0.5rem',
-                  paddingRight: '0.5rem'
-                }}
-              >
-                {allWorkflows.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '2rem 0' }}>
-                    <p style={{ color: '#94a3b8', fontStyle: 'italic', marginBottom: '1rem' }}>
-                      {loading ? 'Loading workflows...' : 'No workflows found'}
-                    </p>
-                    {!loading && (
-                      <div>
-                        <p style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: '0.5rem' }}>
-                          Make sure your API token is valid and you have access to workflows in your Shortcut workspace.
-                        </p>
-                        <p style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '1rem' }}>
-                          Debug: Token exists: {storage.getApiToken() ? 'Yes' : 'No'} |
-                          Workflows count: {allWorkflows.length}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                    {allWorkflows.map((workflow) => (
-                      <div
-                        key={workflow.id}
-                        style={{
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: '0.75rem',
-                          padding: '1rem',
-                          backgroundColor: selectedWorkflowId === workflow.id ? '#eff6ff' : '#ffffff',
-                          border: selectedWorkflowId === workflow.id ? '2px solid #494BCB' : '1px solid #e2e8f0',
-                          borderRadius: '8px',
-                          transition: 'all 0.2s ease'
-                        }}
-                      >
-                        <div style={{ flex: 1 }}>
-                          <h4 style={{
-                            color: '#494BCB',
-                            marginBottom: '0.5rem',
-                            fontSize: '1rem',
-                            fontWeight: '600',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.5rem'
-                          }}>
-                            {workflow.name}
-                            {selectedWorkflowId === workflow.id && (
-                              <span style={{
-                                color: '#22c55e',
-                                fontSize: '0.875rem',
-                                fontWeight: 'normal'
-                              }}>
-                                ✓ Selected
-                              </span>
-                            )}
-                          </h4>
-                          {workflow.description && (
-                            <p style={{
-                              color: '#64748b',
-                              fontSize: '0.875rem',
-                              marginBottom: '0.75rem',
-                              lineHeight: '1.4'
-                            }}>
-                              {workflow.description}
-                            </p>
-                          )}
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                            {workflow.states && workflow.states.map((state) => (
-                              <div
-                                key={state.id}
-                                style={{
-                                  backgroundColor: state.color === 'green' ? '#22c55e' :
-                                                 state.color === 'yellow' ? '#fbbf24' :
-                                                 state.color === 'red' ? '#ef4444' :
-                                                 state.color === 'blue' ? '#3b82f6' :
-                                                 '#6b7280',
-                                  color: 'white',
-                                  padding: '0.25rem 0.75rem',
-                                  borderRadius: '12px',
-                                  fontSize: '0.75rem',
-                                  fontWeight: '600',
-                                  display: 'inline-block',
-                                  whiteSpace: 'nowrap'
-                                }}
-                              >
-                                {state.name}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                        <button
-                          onClick={() => handleSelectWorkflow(workflow)}
-                          disabled={selectedWorkflowId === workflow.id}
-                          className="btn-primary"
-                          style={{
-                            fontSize: '0.875rem',
-                            padding: '0.75rem 1.25rem',
-                            width: '100%',
-                            opacity: selectedWorkflowId === workflow.id ? 0.5 : 1,
-                            cursor: selectedWorkflowId === workflow.id ? 'default' : 'pointer'
-                          }}
-                        >
-                          {selectedWorkflowId === workflow.id ? 'Selected' : 'Select'}
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="modal-buttons" style={{ marginTop: '1.5rem' }}>
-              <button
-                type="button"
-                onClick={() => setShowWorkflowModal(false)}
-                className="btn-primary"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showEpicListModal && (
-        <div className="modal-overlay" onClick={() => setShowEpicListModal(false)}>
-          <div className="modal-content modal-content-large" onClick={(e) => e.stopPropagation()}>
-            <h2>Edit Epic List</h2>
-            <p>
-              Add or remove epics and their team members:
-            </p>
-
-            <div className="form-group" style={{ maxHeight: '60vh', overflowY: 'auto', marginBottom: '1rem' }}>
-              {/* Drop zone at the top for first position */}
-              <div
-                onDragOver={(e) => handleDragOver(e, 0)}
-                onDragLeave={handleDragLeave}
-                onDrop={(e) => handleDrop(e, 0)}
-                style={{
-                  minHeight: dragOverIndex === 0 ? '40px' : '20px',
-                  transition: 'min-height 0.2s ease',
-                  position: 'relative',
-                  marginBottom: '0.5rem'
-                }}
-              >
-                {dragOverIndex === 0 && (
-                  <div style={{
-                    height: '3px',
-                    backgroundColor: '#494BCB',
-                    borderRadius: '2px',
-                    margin: '8px 0',
-                    boxShadow: '0 0 4px rgba(73, 75, 203, 0.5)'
-                  }} />
-                )}
-              </div>
-
-              {epicsList.map((epic, epicIndex) => (
-                <React.Fragment key={epicIndex}>
-                  <div
-                    onDragOver={(e) => handleDragOver(e, epicIndex + 1)}
-                    onDragLeave={handleDragLeave}
-                    onDrop={(e) => handleDrop(e, epicIndex + 1)}
-                    style={{
-                      border: '1px solid #e2e8f0',
-                      borderRadius: '8px',
-                      padding: '1rem',
-                      marginBottom: '1rem',
-                      backgroundColor: draggedEpicIndex === epicIndex ? '#f0f0f0' : '#f7fafc',
-                      opacity: draggedEpicIndex === epicIndex ? 0.5 : 1,
-                      position: 'relative'
-                    }}
-                  >
-                    {/* Drop indicator line */}
-                    {dragOverIndex === epicIndex + 1 && draggedEpicIndex !== epicIndex && (
-                      <div style={{
-                        position: 'absolute',
-                        bottom: '-8px',
-                        left: 0,
-                        right: 0,
-                        height: '3px',
-                        backgroundColor: '#494BCB',
-                        borderRadius: '2px',
-                        zIndex: 10,
-                        boxShadow: '0 0 4px rgba(73, 75, 203, 0.5)'
-                      }} />
-                    )}
-
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
-                      {/* Drag handle */}
-                      <div
-                        draggable
-                        onDragStart={(e) => handleDragStart(e, epicIndex)}
-                        onDragEnd={handleDragEnd}
-                        style={{
-                          cursor: 'grab',
-                          padding: '0.25rem',
-                          color: '#666',
-                          fontSize: '1.2rem',
-                          lineHeight: 1,
-                          userSelect: 'none'
-                        }}
-                        title="Drag to reorder"
-                      >
-                        ⋮⋮
-                      </div>
-
-                      {/* Position badge */}
-                      <div style={{
-                        backgroundColor: '#494BCB',
-                        color: 'white',
-                        borderRadius: '50%',
-                        width: '28px',
-                        height: '28px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontWeight: 'bold',
-                        fontSize: '0.875rem'
-                      }}>
-                        {epicIndex + 1}
-                      </div>
-
-                      <label style={{ fontWeight: 'bold', minWidth: '80px' }}>Epic Name:</label>
-                      <input
-                        type="text"
-                        value={epic.name || ''}
-                        onChange={(e) => updateEpicName(epicIndex, e.target.value)}
-                        className="input-field"
-                        placeholder="Enter epic name"
-                        style={{ flex: 1 }}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeEpic(epicIndex)}
-                        className="btn-secondary"
-                        style={{
-                          padding: '0.5rem 1rem',
-                          backgroundColor: '#ef4444',
-                          color: 'white'
-                        }}
-                      >
-                        Remove Epic
-                      </button>
-                    </div>
-
-                    <div style={{ marginLeft: '1rem', marginTop: '0.75rem' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.5rem' }}>
-                        <button
-                          type="button"
-                          onClick={() => toggleTeamMembers(epicIndex)}
-                          className="chart-toggle-btn"
-                          aria-label="Toggle team members"
-                          style={{ marginRight: '0.5rem' }}
-                        >
-                          {collapsedTeamMembers[epicIndex] ? '▼' : '▲'}
-                        </button>
-                        <label style={{ fontWeight: 'bold', display: 'block', margin: 0 }}>
-                          Team Members {epic.team && epic.team.length > 0 && `(${epic.team.length})`}
-                        </label>
-                      </div>
-                      {!collapsedTeamMembers[epicIndex] && (
-                        <>
-                          {epic.team && epic.team.map((member, memberIndex) => (
-                            <div key={memberIndex} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                              <input
-                                type="text"
-                                value={member || ''}
-                                onChange={(e) => updateTeamMember(epicIndex, memberIndex, e.target.value)}
-                                className="input-field"
-                                placeholder="Enter team member name"
-                                style={{ flex: 1 }}
-                              />
-                              <button
-                                type="button"
-                                onClick={() => removeTeamMember(epicIndex, memberIndex)}
-                                className="btn-secondary"
-                                style={{
-                                  padding: '0.5rem 1rem',
-                                  backgroundColor: '#f59e0b',
-                                  color: 'white'
-                                }}
-                              >
-                                Remove
-                              </button>
-                            </div>
-                          ))}
-                          <button
-                            type="button"
-                            onClick={() => addTeamMember(epicIndex)}
-                            className="btn-secondary"
-                            style={{ marginTop: '0.5rem' }}
-                          >
-                            + Add Team Member
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </React.Fragment>
-              ))}
-
-              <button
-                type="button"
-                onClick={addEpic}
-                className="btn-secondary"
-                style={{ width: '100%', padding: '0.75rem' }}
-              >
-                + Add New Epic
-              </button>
-            </div>
-
-            {epicListError && (
-              <div style={{
-                color: '#c33',
-                marginTop: '0.5rem',
-                fontSize: '0.875rem',
-                backgroundColor: '#fee',
-                border: '1px solid #fcc',
-                padding: '0.75rem',
-                borderRadius: '6px',
-                whiteSpace: 'pre-line',
-                maxHeight: '200px',
-                overflowY: 'auto'
-              }}>
-                {epicListError}
-              </div>
-            )}
-
-            <div className="modal-buttons">
-              <button
-                type="button"
-                onClick={() => {
-                  setShowEpicListModal(false);
-                  setEpicListError('');
-                }}
-                className="btn-secondary"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleSaveEpicList}
-                className="btn-primary"
-              >
-                Save
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Epic list modal removed - now using setup wizard step 4 */}
 
       <header className="App-header">
         <div className="header-logo">
@@ -1593,28 +1573,17 @@ function App() {
                 className="settings-menu-item"
                 onClick={() => {
                   setShowSettingsMenu(false);
-                  handleOpenEpicList();
+                  // Load existing token to show masked placeholder
+                  const existingToken = storage.getApiToken();
+                  if (existingToken) {
+                    setApiToken(''); // Don't populate with real token for security
+                    setHasExistingToken(true);
+                  }
+                  setShowSetupWizard(true);
+                  setSetupWizardStep(1);
                 }}
               >
-                Edit Epic List
-              </button>
-              <button
-                className="settings-menu-item"
-                onClick={() => {
-                  setShowSettingsMenu(false);
-                  setShowTokenModal(true);
-                }}
-              >
-                Edit API Token
-              </button>
-              <button
-                className="settings-menu-item"
-                onClick={() => {
-                  setShowSettingsMenu(false);
-                  handleOpenWorkflows();
-                }}
-              >
-                Setup Shortcut
+                Setup
               </button>
               <button
                 className="settings-menu-item"
@@ -1624,6 +1593,16 @@ function App() {
                 }}
               >
                 README.md
+              </button>
+              <button
+                className="settings-menu-item"
+                onClick={() => {
+                  setShowSettingsMenu(false);
+                  setShowWipeConfirmModal(true);
+                }}
+                style={{ color: '#dc2626' }}
+              >
+                Wipe Settings
               </button>
               <button
                 className="settings-menu-item"
@@ -1725,7 +1704,17 @@ function App() {
             </button>
             <button
               type="button"
-              onClick={handleOpenEpicList}
+              onClick={() => {
+                // Load existing epics config
+                const epicsConfig = storage.getEpicsConfig();
+                if (epicsConfig && epicsConfig.epics) {
+                  setEpicsList(epicsConfig.epics);
+                } else {
+                  setEpicsList([]);
+                }
+                setShowSetupWizard(true);
+                setSetupWizardStep(4);
+              }}
               className="btn-primary"
             >
               Edit Epic List
@@ -1733,7 +1722,7 @@ function App() {
           </div>
         </form>
 
-        {successMessage && !showWorkflowModal && (
+        {successMessage && (
           <div style={{
             backgroundColor: '#d1fae5',
             border: '1px solid #6ee7b7',
@@ -1746,17 +1735,26 @@ function App() {
           </div>
         )}
 
-        {error && !showWorkflowModal && (
+        {error && (
           <div className="error-message">
             <p>{error}</p>
             {apiTokenIssue && (
               <p style={{ marginTop: '0.5rem' }}>
                 <button
-                  onClick={() => setShowTokenModal(true)}
+                  onClick={() => {
+                    // Load existing token to show masked placeholder
+                    const existingToken = storage.getApiToken();
+                    if (existingToken) {
+                      setApiToken(''); // Don't populate with real token for security
+                      setHasExistingToken(true);
+                    }
+                    setShowSetupWizard(true);
+                    setSetupWizardStep(1);
+                  }}
                   className="btn-primary"
                   style={{ fontSize: '0.875rem', padding: '0.5rem 1rem' }}
                 >
-                  Edit API Token
+                  Open Setup
                 </button>
               </p>
             )}
