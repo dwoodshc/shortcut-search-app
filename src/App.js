@@ -39,6 +39,33 @@ function App() {
   const [shortcutWebUrl, setShortcutWebUrl] = useState('https://app.shortcut.com/slicernd');
   const [savedWorkflowId, setSavedWorkflowId] = useState(null);
 
+  // Helper function to generate Shortcut URLs for epics
+  const generateShortcutUrl = useCallback((epicId, stateName) => {
+    if (!epicId) return '#';
+
+    // Get workflow_state_id from state mapping
+    const stateKey = stateName?.toLowerCase().trim();
+    const workflowStateId = stateKey ? workflowStateIds[stateKey] : null;
+
+    // Build base URL
+    let url = `${shortcutWebUrl}/epic/${epicId}`;
+
+    // Add query parameters if available
+    const params = [];
+    if (savedWorkflowId) {
+      params.push(`workflow_id=${savedWorkflowId}`);
+    }
+    if (workflowStateId) {
+      params.push(`workflow_state_ids=${workflowStateId}`);
+    }
+
+    if (params.length > 0) {
+      url += '?' + params.join('&');
+    }
+
+    return url;
+  }, [shortcutWebUrl, savedWorkflowId, workflowStateIds]);
+
   // Helper function to handle API errors and check for token issues
   const handleApiError = useCallback(async (response) => {
     if (response.status === 401 || response.status === 403) {
@@ -490,6 +517,17 @@ function App() {
 
   // Save Shortcut Web URL to YAML file
   const handleSaveShortcutUrl = async () => {
+    // Validate URL format
+    const urlPattern = /^https?:\/\/.+/;
+    if (!shortcutWebUrl || !urlPattern.test(shortcutWebUrl)) {
+      setError('Please enter a valid URL starting with http:// or https://');
+      return;
+    }
+
+    // Remove trailing slash if present
+    const cleanUrl = shortcutWebUrl.replace(/\/$/, '');
+    setShortcutWebUrl(cleanUrl);
+
     // If we have a selected workflow, save the URL
     if (selectedWorkflowId) {
       try {
@@ -502,7 +540,7 @@ function App() {
             const yamlContent = yaml.dump({
               workflow_name: data.workflow_name,
               workflow_id: data.workflow_id,
-              shortcut_web_url: shortcutWebUrl,
+              shortcut_web_url: cleanUrl,
               states: data.states
             });
 
@@ -515,6 +553,7 @@ function App() {
             });
 
             if (saveResponse.ok) {
+              setError(null); // Clear any existing error messages
               setSuccessMessage('Shortcut Web URL saved successfully!');
               setTimeout(() => setSuccessMessage(null), 3000);
             }
@@ -985,6 +1024,36 @@ function App() {
                 This URL will be used to generate hyperlinks to your epics
               </p>
             </div>
+
+            {/* Error message display within modal */}
+            {error && (
+              <div style={{
+                backgroundColor: '#fee',
+                border: '1px solid #fcc',
+                color: '#c33',
+                padding: '0.75rem',
+                borderRadius: '6px',
+                marginBottom: '1rem',
+                fontSize: '0.875rem'
+              }}>
+                {error}
+              </div>
+            )}
+
+            {/* Success message display within modal */}
+            {successMessage && (
+              <div style={{
+                backgroundColor: '#d1fae5',
+                border: '1px solid #6ee7b7',
+                color: '#065f46',
+                padding: '0.75rem',
+                borderRadius: '6px',
+                marginBottom: '1rem',
+                fontSize: '0.875rem'
+              }}>
+                {successMessage}
+              </div>
+            )}
 
             <div
               style={{
@@ -1467,7 +1536,7 @@ function App() {
           </div>
         </form>
 
-        {successMessage && (
+        {successMessage && !showWorkflowModal && (
           <div style={{
             backgroundColor: '#d1fae5',
             border: '1px solid #6ee7b7',
@@ -1480,7 +1549,7 @@ function App() {
           </div>
         )}
 
-        {error && (
+        {error && !showWorkflowModal && (
           <div className="error-message">
             <p>{error}</p>
             {apiTokenIssue && (
@@ -1805,13 +1874,7 @@ function App() {
                             <div className="pie-chart-legend">
                               {segments.map((seg) => {
                                 const color = stateColors[seg.stateName.toLowerCase()] || '#667eea';
-                                // Get workflow_state_id from state mapping
-                                const stateKey = seg.stateName.toLowerCase().trim();
-                                const workflowStateId = workflowStateIds[stateKey] || seg.stateId;
-                                // Build URL with workflow_id and workflow_state_ids from shortcut.yml
-                                const epicUrl = savedWorkflowId
-                                  ? `${shortcutWebUrl}/epic/${epic.id}?workflow_id=${savedWorkflowId}&workflow_state_ids=${workflowStateId}`
-                                  : `${shortcutWebUrl}/epic/${epic.id}?workflow_state_ids=${workflowStateId}`;
+                                const epicUrl = generateShortcutUrl(epic.id, seg.stateName);
 
                                 return (
                                   <a
@@ -1821,6 +1884,7 @@ function App() {
                                     rel="noopener noreferrer"
                                     className="legend-item"
                                     style={{ textDecoration: 'none', color: 'inherit' }}
+                                    title={`View ${epic.name} filtered by ${seg.stateName} in Shortcut`}
                                   >
                                     <span className="legend-color" style={{ backgroundColor: color }}></span>
                                     <span className="legend-label">{seg.stateName}</span>
