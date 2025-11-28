@@ -8,10 +8,12 @@ A React-based web application for visualizing and managing Shortcut.com epics an
 
 ### Epic Management
 - Search and display multiple epics from your Shortcut workspace
-- Configure tracked epics via YAML file with built-in editor
+- Configure tracked epics via built-in editor with localStorage persistence
 - Track team members assigned to each epic
 - Sidebar navigation for quick jumping between epics
 - Drag-and-drop reordering of epics in the configuration editor
+- Collapsible team member sections for cleaner interface
+- Export/Import configuration for backup and portability
 
 ### Interactive Visualizations
 
@@ -58,21 +60,26 @@ A React-based web application for visualizing and managing Shortcut.com epics an
 
 ### Setup & Configuration
 
-#### Initial Setup Modal
-- Automatically appears on first launch if no token or workflow is configured
-- **Workspace URL Configuration**: Set your Shortcut workspace URL for generating hyperlinks
-- **Workflow Selection**: Choose from all available workflows in your workspace
+#### Initial Setup Wizard
+- **4-Step Guided Setup**: Automatically launches on first use or when configuration is incomplete
+  - Step 1: Enter Shortcut API token
+  - Step 2: Set workspace URL for generating hyperlinks
+  - Step 3: Select workflow from all available workflows in your workspace
+  - Step 4: Configure epic list with team members (collapsible by default)
 - Visual workflow preview showing all states with color-coded badges
 - Selected workflow highlighted with visual feedback
-- Settings saved to `shortcut.yml` for persistence
+- Drag-and-drop epic reordering in Step 4
+- Settings saved to browser localStorage for persistence
 
 #### Settings Menu
 - Access via gear icon in header
-- **Edit Epic List**: Manage tracked epics and team members
+- **Edit Epic List**: Manage tracked epics and team members with drag-and-drop reordering
 - **Edit API Token**: Update your Shortcut API token
 - **Setup Shortcut**: Change workspace URL or workflow
+- **Export/Import**: Backup and restore your configuration as JSON files
+- **Wipe Settings**: Clear all stored configuration data
 - **View README.md**: Access documentation
-- **About**: View application information
+- **About**: View application information and features
 
 ### Navigation Features
 - **Sidebar Navigation**: Quick jump to any epic with slide-out panel
@@ -261,10 +268,13 @@ These endpoints were used for file-based storage and are no longer needed:
 
 ### First-Time Setup
 1. Launch the application using `npm run dev`
-2. Enter your Shortcut API token when prompted (or configure manually in .env)
-3. Set your Shortcut workspace URL
-4. Select a workflow from your workspace
-5. Configure epics to track using the "Edit Epic List" option
+2. The Setup Wizard will automatically appear on first launch
+3. Follow the 4-step guided setup:
+   - Step 1: Enter your Shortcut API token
+   - Step 2: Set your Shortcut workspace URL
+   - Step 3: Select a workflow from your workspace
+   - Step 4: Configure epics to track with team members
+4. All settings are saved to browser localStorage automatically
 
 ### Daily Use
 1. Click "Search Epics" to load data for configured epics
@@ -278,6 +288,11 @@ These endpoints were used for file-based storage and are no longer needed:
 - **Edit Epic List**: Add/remove epics, manage team members, reorder via drag-and-drop
 - **Setup Shortcut**: Change workspace URL or select a different workflow
 - **Edit API Token**: Update if your token expires or changes
+- **Export/Import**: Backup your configuration to a JSON file or restore from a previous backup
+  - Export: Downloads current configuration as `shortcut-viewer-config-YYYY-MM-DD.json`
+  - Import: Upload a previously exported JSON file to restore settings
+  - Useful for moving between browsers, backing up settings, or sharing configurations
+- **Wipe Settings**: Clear all localStorage data to start fresh
 
 ## Interactive Features
 

@@ -1539,17 +1539,18 @@ function App() {
               <li><strong>Interactive Visualizations:</strong>
                 <ul style={{ marginTop: '0.5rem', marginBottom: '0.5rem' }}>
                   <li>3D Column Chart showing workflow status breakdown</li>
-                  <li>Workflow Status Pie Chart with gradient color scale (Backlog → Complete)</li>
-                  <li>Story Type Breakdown Pie Chart (Feature, Bug, Chore)</li>
+                  <li>Workflow Status Pie Chart with clickable legend items that link to filtered Shortcut views</li>
+                  <li>Story Type Breakdown Pie Chart with clickable legend items</li>
                 </ul>
               </li>
               <li><strong>Kanban Board:</strong> Six-column workflow view with collapsible stories sections</li>
               <li><strong>Analytics Tables:</strong> Story owners and team ticket counts with sorting</li>
-              <li><strong>Configuration Management:</strong> Built-in editor for epic configuration with team member management</li>
-              <li><strong>API Token Setup:</strong> Secure token management through settings menu</li>
+              <li><strong>Setup Wizard:</strong> Guided 4-step setup for first-time configuration</li>
+              <li><strong>Configuration Management:</strong> Uses localStorage with Export/Import functionality</li>
+              <li><strong>Sidebar Navigation:</strong> Quick jump to any epic with slide-out panel</li>
             </ul>
             <p style={{ marginTop: '1rem', fontSize: '0.875rem', color: '#718096' }}>
-              Version 1.0.0 | Project D.A.V.E. (Dashboards are Very Effective)
+              Version 1.0.0 | Project D.A.V.E. (Dashboards Are Very Effective)
             </p>
             <div className="modal-buttons">
               <button
