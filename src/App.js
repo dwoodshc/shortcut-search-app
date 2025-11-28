@@ -1636,6 +1636,20 @@ function App() {
                   </button>
                 )
               ))}
+
+              {/* Refresh Button */}
+              <button
+                className="sidebar-nav-item sidebar-nav-top"
+                onClick={(e) => {
+                  setShowSidebar(false);
+                  searchEpics(e);
+                }}
+                title="Refresh epics data"
+                style={{ marginTop: '1rem', paddingTop: '1rem', borderBottom: 'none', borderTop: '2px solid #F0F0F7' }}
+              >
+                <span className="sidebar-nav-number">↻</span>
+                <span className="sidebar-nav-text">Refresh Epics</span>
+              </button>
             </nav>
           </div>
 
