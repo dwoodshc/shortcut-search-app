@@ -180,6 +180,44 @@ function App() {
           setHasExistingToken(data.hasToken);
           if (!data.hasToken) {
             setShowTokenModal(true);
+            return; // Don't check for shortcut.yml if token is missing
+          }
+
+          // If token exists, check for shortcut.yml
+          try {
+            const shortcutResponse = await fetch('http://localhost:3001/api/state-ids-file');
+            if (shortcutResponse.ok) {
+              const shortcutData = await shortcutResponse.json();
+              // If shortcut.yml is empty or doesn't have workflow_id, show setup modal
+              if (!shortcutData || !shortcutData.workflow_id) {
+                // Load workflows before showing modal
+                try {
+                  const workflowsResponse = await fetch('http://localhost:3001/api/workflows');
+                  if (workflowsResponse.ok) {
+                    const workflows = await workflowsResponse.json();
+                    setAllWorkflows(workflows);
+                  }
+                } catch (workflowErr) {
+                  console.error('Error loading workflows:', workflowErr);
+                }
+                setShowWorkflowModal(true);
+              }
+            } else {
+              // If shortcut.yml doesn't exist, show setup modal
+              // Load workflows before showing modal
+              try {
+                const workflowsResponse = await fetch('http://localhost:3001/api/workflows');
+                if (workflowsResponse.ok) {
+                  const workflows = await workflowsResponse.json();
+                  setAllWorkflows(workflows);
+                }
+              } catch (workflowErr) {
+                console.error('Error loading workflows:', workflowErr);
+              }
+              setShowWorkflowModal(true);
+            }
+          } catch (err) {
+            console.error('Error checking shortcut.yml:', err);
           }
         }
       } catch (err) {
@@ -464,11 +502,16 @@ function App() {
       });
 
       if (response.ok) {
-        setShowTokenModal(false);
         setApiToken('');
         setHasExistingToken(true);
-        // Reload the page to reinitialize with the new token
-        window.location.reload();
+        // Close modal first
+        setShowTokenModal(false);
+        // Then show success message
+        setSuccessMessage('API Token saved successfully!');
+        // Reload after showing success message
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
       } else {
         const data = await response.json();
         setTokenError(data.error || 'Failed to save token');
@@ -594,6 +637,16 @@ function App() {
 
       if (response.ok) {
         setSelectedWorkflowId(workflow.id);
+        setSavedWorkflowId(workflow.id);
+
+        // Populate workflowStateIds mapping immediately
+        const stateMapping = {};
+        workflow.states.forEach(state => {
+          const key = state.name.toLowerCase().trim();
+          stateMapping[key] = state.id;
+        });
+        setWorkflowStateIds(stateMapping);
+
         setShowWorkflowModal(false);
         // Show success message briefly
         setSuccessMessage(`Workflow "${workflow.name}" selected successfully!`);
@@ -887,6 +940,19 @@ function App() {
               {tokenError && (
                 <div style={{ color: '#c33', marginTop: '0.5rem', fontSize: '0.875rem' }}>
                   {tokenError}
+                </div>
+              )}
+              {successMessage && (
+                <div style={{
+                  color: '#065f46',
+                  backgroundColor: '#d1fae5',
+                  border: '1px solid #6ee7b7',
+                  padding: '0.5rem',
+                  borderRadius: '4px',
+                  marginTop: '0.5rem',
+                  fontSize: '0.875rem'
+                }}>
+                  {successMessage}
                 </div>
               )}
             </div>
