@@ -293,6 +293,12 @@ function App() {
           // Load existing epics config if available, or start with empty list
           if (epicsConfig && epicsConfig.epics) {
             setEpicsList(epicsConfig.epics);
+            // Collapse all team members by default
+            const collapsed = {};
+            epicsConfig.epics.forEach((_, index) => {
+              collapsed[index] = true;
+            });
+            setCollapsedTeamMembers(collapsed);
           } else {
             setEpicsList([]);
           }
@@ -647,7 +653,9 @@ function App() {
 
   // Epic management helper functions
   const addEpic = () => {
+    const newIndex = epicsList.length;
     setEpicsList([...epicsList, { name: '', team: [] }]);
+    setCollapsedTeamMembers({ ...collapsedTeamMembers, [newIndex]: true });
   };
 
   const removeEpic = (index) => {
@@ -1894,6 +1902,12 @@ function App() {
                 const epicsConfig = storage.getEpicsConfig();
                 if (epicsConfig && epicsConfig.epics) {
                   setEpicsList(epicsConfig.epics);
+                  // Collapse all team members by default
+                  const collapsed = {};
+                  epicsConfig.epics.forEach((_, index) => {
+                    collapsed[index] = true;
+                  });
+                  setCollapsedTeamMembers(collapsed);
                 } else {
                   setEpicsList([]);
                 }
