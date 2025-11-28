@@ -841,27 +841,41 @@ function App() {
             const epicsList = searchData.data || [];
 
             // Find exact match (case-insensitive)
-            const epic = epicsList.find(e => e.name.toLowerCase() === name.toLowerCase());
+            const searchEpic = epicsList.find(e => e.name.toLowerCase() === name.toLowerCase());
 
-            if (!epic) {
+            if (!searchEpic) {
               return null;
             }
 
-            // Fetch stories for this epic
+            // Fetch full epic details to get all fields including internal IDs
             try {
-              const storiesResponse = await fetch(`http://localhost:3001/api/epics/${epic.id}/stories`);
-              if (storiesResponse.ok) {
-                const stories = await storiesResponse.json();
-                return { ...epic, stories };
+              const epicResponse = await fetch(`http://localhost:3001/api/epics/${searchEpic.id}`);
+              if (epicResponse.ok) {
+                const epic = await epicResponse.json();
+
+                // Fetch stories for this epic
+                try {
+                  const storiesResponse = await fetch(`http://localhost:3001/api/epics/${epic.id}/stories`);
+                  if (storiesResponse.ok) {
+                    const stories = await storiesResponse.json();
+                    return { ...epic, stories };
+                  } else {
+                    // Check if this is a token issue
+                    await handleApiError(storiesResponse);
+                  }
+                } catch (err) {
+                  console.error('Error fetching stories for epic:', err);
+                }
+
+                return epic;
               } else {
-                // Check if this is a token issue
-                await handleApiError(storiesResponse);
+                await handleApiError(epicResponse);
               }
             } catch (err) {
-              console.error('Error fetching stories for epic:', err);
+              console.error('Error fetching epic details:', err);
             }
 
-            return epic;
+            return searchEpic;
           } catch (err) {
             console.error(`Error searching for epic "${name}":`, err);
             return null;
@@ -1056,13 +1070,57 @@ function App() {
       {showWorkflowModal && (
         <div className="modal-overlay" onClick={() => setShowWorkflowModal(false)}>
           <div className="modal-content modal-content-large" onClick={(e) => e.stopPropagation()}>
-            <h2>Setup Shortcut</h2>
-            <p style={{ marginBottom: '1rem' }}>
-              Configure your Shortcut workspace URL and select a workflow for epic tracking. Settings will be saved to shortcut.yml:
+            <h2 style={{ marginBottom: '0.5rem' }}>Setup Shortcut</h2>
+            <p style={{ marginBottom: '2rem', color: '#718096' }}>
+              Configure your Shortcut workspace and workflow for epic tracking
             </p>
 
-            <div className="form-group" style={{ marginBottom: '1rem' }}>
-              <label htmlFor="shortcutWebUrl">Shortcut Web URL:</label>
+            {/* Error message display within modal */}
+            {error && (
+              <div style={{
+                backgroundColor: '#fef2f2',
+                border: '1px solid #fecaca',
+                color: '#dc2626',
+                padding: '0.75rem',
+                borderRadius: '8px',
+                marginBottom: '1.5rem',
+                fontSize: '0.875rem'
+              }}>
+                {error}
+              </div>
+            )}
+
+            {/* Success message display within modal */}
+            {successMessage && (
+              <div style={{
+                backgroundColor: '#d1fae5',
+                border: '1px solid #6ee7b7',
+                color: '#065f46',
+                padding: '0.75rem',
+                borderRadius: '8px',
+                marginBottom: '1.5rem',
+                fontSize: '0.875rem'
+              }}>
+                {successMessage}
+              </div>
+            )}
+
+            {/* Workspace URL Section */}
+            <div style={{
+              backgroundColor: '#f8fafc',
+              padding: '1.5rem',
+              borderRadius: '8px',
+              marginBottom: '1.5rem',
+              border: '1px solid #e2e8f0'
+            }}>
+              <h3 style={{
+                fontSize: '1rem',
+                fontWeight: '600',
+                marginBottom: '1rem',
+                color: '#1e293b'
+              }}>
+                Workspace URL
+              </h3>
               <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
                 <input
                   type="text"
@@ -1086,126 +1144,131 @@ function App() {
                   Save URL
                 </button>
               </div>
-              <p style={{ fontSize: '0.75rem', color: '#718096', marginTop: '0.25rem' }}>
+              <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.5rem', marginBottom: 0 }}>
                 This URL will be used to generate hyperlinks to your epics
               </p>
             </div>
 
-            {/* Error message display within modal */}
-            {error && (
-              <div style={{
-                backgroundColor: '#fee',
-                border: '1px solid #fcc',
-                color: '#c33',
-                padding: '0.75rem',
-                borderRadius: '6px',
+            {/* Workflow Selection Section */}
+            <div style={{
+              backgroundColor: '#f8fafc',
+              padding: '1.5rem',
+              borderRadius: '8px',
+              border: '1px solid #e2e8f0'
+            }}>
+              <h3 style={{
+                fontSize: '1rem',
+                fontWeight: '600',
                 marginBottom: '1rem',
-                fontSize: '0.875rem'
+                color: '#1e293b'
               }}>
-                {error}
-              </div>
-            )}
-
-            {/* Success message display within modal */}
-            {successMessage && (
-              <div style={{
-                backgroundColor: '#d1fae5',
-                border: '1px solid #6ee7b7',
-                color: '#065f46',
-                padding: '0.75rem',
-                borderRadius: '6px',
-                marginBottom: '1rem',
-                fontSize: '0.875rem'
-              }}>
-                {successMessage}
-              </div>
-            )}
-
-            <div
-              style={{
-                maxHeight: '60vh',
-                overflowY: 'auto',
-                marginBottom: '1rem',
-                backgroundColor: '#ffffff',
-                padding: '1.5rem',
-                borderRadius: '6px',
-                border: '1px solid #e2e8f0'
-              }}
-            >
-              {allWorkflows.length === 0 ? (
-                <p style={{ color: '#718096', fontStyle: 'italic' }}>No workflows found</p>
-              ) : (
-                allWorkflows.map((workflow, index) => (
-                  <div
-                    key={workflow.id}
-                    style={{
-                      marginBottom: index < allWorkflows.length - 1 ? '1.5rem' : 0,
-                      paddingBottom: index < allWorkflows.length - 1 ? '1.5rem' : 0,
-                      borderBottom: index < allWorkflows.length - 1 ? '1px solid #e2e8f0' : 'none',
-                      position: 'relative'
-                    }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
-                      <div style={{ flex: 1 }}>
-                        <h3 style={{ color: '#494BCB', marginBottom: '0.5rem', fontSize: '1.1rem' }}>
-                          {workflow.name}
-                          {selectedWorkflowId === workflow.id && (
-                            <span style={{
-                              marginLeft: '0.5rem',
-                              color: '#22c55e',
-                              fontSize: '0.875rem',
-                              fontWeight: 'normal'
-                            }}>
-                              ✓ Selected
-                            </span>
-                          )}
-                        </h3>
-                        {workflow.description && (
-                          <p style={{ color: '#4a5568', fontSize: '0.875rem', marginBottom: '0.75rem' }}>
-                            {workflow.description}
-                          </p>
-                        )}
-                      </div>
-                      <button
-                        onClick={() => handleSelectWorkflow(workflow)}
-                        className="btn-primary"
+                Select Workflow
+              </h3>
+              <div
+                style={{
+                  maxHeight: '400px',
+                  overflowY: 'auto',
+                  marginRight: '-0.5rem',
+                  paddingRight: '0.5rem'
+                }}
+              >
+                {allWorkflows.length === 0 ? (
+                  <p style={{ color: '#94a3b8', fontStyle: 'italic', textAlign: 'center', padding: '2rem 0' }}>
+                    No workflows found
+                  </p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    {allWorkflows.map((workflow) => (
+                      <div
+                        key={workflow.id}
                         style={{
-                          fontSize: '0.875rem',
-                          padding: '0.5rem 1rem',
-                          marginLeft: '1rem',
-                          flexShrink: 0
+                          display: 'flex',
+                          gap: '0.75rem',
+                          padding: '1rem',
+                          backgroundColor: selectedWorkflowId === workflow.id ? '#eff6ff' : '#ffffff',
+                          border: selectedWorkflowId === workflow.id ? '2px solid #494BCB' : '1px solid #e2e8f0',
+                          borderRadius: '8px',
+                          transition: 'all 0.2s ease'
                         }}
                       >
-                        Select
-                      </button>
-                    </div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.5rem' }}>
-                      {workflow.states && workflow.states.map((state) => (
-                        <div
-                          key={state.id}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <h4 style={{
+                            color: '#494BCB',
+                            marginBottom: '0.5rem',
+                            fontSize: '1rem',
+                            fontWeight: '600',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem'
+                          }}>
+                            {workflow.name}
+                            {selectedWorkflowId === workflow.id && (
+                              <span style={{
+                                color: '#22c55e',
+                                fontSize: '0.875rem',
+                                fontWeight: 'normal'
+                              }}>
+                                ✓ Selected
+                              </span>
+                            )}
+                          </h4>
+                          {workflow.description && (
+                            <p style={{
+                              color: '#64748b',
+                              fontSize: '0.875rem',
+                              marginBottom: '0.75rem',
+                              lineHeight: '1.4'
+                            }}>
+                              {workflow.description}
+                            </p>
+                          )}
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                            {workflow.states && workflow.states.map((state) => (
+                              <div
+                                key={state.id}
+                                style={{
+                                  backgroundColor: state.color === 'green' ? '#22c55e' :
+                                                 state.color === 'yellow' ? '#fbbf24' :
+                                                 state.color === 'red' ? '#ef4444' :
+                                                 state.color === 'blue' ? '#3b82f6' :
+                                                 '#6b7280',
+                                  color: 'white',
+                                  padding: '0.25rem 0.75rem',
+                                  borderRadius: '12px',
+                                  fontSize: '0.75rem',
+                                  fontWeight: '600',
+                                  display: 'inline-block',
+                                  whiteSpace: 'nowrap'
+                                }}
+                              >
+                                {state.name}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => handleSelectWorkflow(workflow)}
+                          disabled={selectedWorkflowId === workflow.id}
+                          className="btn-primary"
                           style={{
-                            backgroundColor: state.color === 'green' ? '#22c55e' :
-                                           state.color === 'yellow' ? '#fbbf24' :
-                                           state.color === 'red' ? '#ef4444' :
-                                           state.color === 'blue' ? '#3b82f6' :
-                                           '#6b7280',
-                            color: 'white',
-                            padding: '0.25rem 0.75rem',
-                            borderRadius: '12px',
                             fontSize: '0.875rem',
-                            fontWeight: '500',
-                            display: 'inline-block'
+                            padding: '0.5rem 1.25rem',
+                            flexShrink: 0,
+                            alignSelf: 'flex-start',
+                            opacity: selectedWorkflowId === workflow.id ? 0.5 : 1,
+                            cursor: selectedWorkflowId === workflow.id ? 'default' : 'pointer'
                           }}
                         >
-                          {state.name}
-                        </div>
-                      ))}
-                    </div>
+                          {selectedWorkflowId === workflow.id ? 'Selected' : 'Select'}
+                        </button>
+                      </div>
+                    ))}
                   </div>
-                ))
-              )}
+                )}
+              </div>
             </div>
-            <div className="modal-buttons">
+
+            <div className="modal-buttons" style={{ marginTop: '1.5rem' }}>
               <button
                 type="button"
                 onClick={() => setShowWorkflowModal(false)}
@@ -2091,12 +2154,21 @@ function App() {
                                 <div className="pie-chart-legend">
                                   {segments.map((seg) => {
                                     const color = typeColors[seg.type] || '#667eea';
+                                    const storyTypeUrl = `${shortcutWebUrl}/backlog/?epic_ids=${epic.global_id}&story_type=${seg.type}`;
                                     return (
-                                      <div key={seg.type} className="legend-item-static">
+                                      <a
+                                        key={seg.type}
+                                        href={storyTypeUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="legend-item"
+                                        style={{ textDecoration: 'none', color: 'inherit' }}
+                                        title={`View ${epic.name} filtered by ${seg.typeName} in Shortcut`}
+                                      >
                                         <span className="legend-color" style={{ backgroundColor: color }}></span>
-                                        <span className="legend-label-static">{seg.typeName}</span>
+                                        <span className="legend-label">{seg.typeName}</span>
                                         <span className="legend-value">{seg.count} ({seg.percentage.toFixed(1)}%)</span>
-                                      </div>
+                                      </a>
                                     );
                                   })}
                                 </div>
