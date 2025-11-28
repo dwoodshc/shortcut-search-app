@@ -1788,16 +1788,16 @@ function App() {
                 {epic.stories && workflowStateOrder.length > 0 && (
                   <div className="epic-stats-container">
                     <div className="workflow-status-chart-container">
-                      <h4 style={{ display: 'flex', alignItems: 'center' }}>
+                      <h4>
                         <button
                           onClick={() => toggleChart(epic.id, 'column')}
                           className="chart-toggle-btn"
                           aria-label="Toggle column chart"
-                          style={{ marginRight: '0.5rem' }}
+                          style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%', justifyContent: 'flex-start' }}
                         >
-                          {collapsedCharts[`${epic.id}-column`] ? '▼' : '▲'}
+                          <span>{collapsedCharts[`${epic.id}-column`] ? '▼' : '▲'}</span>
+                          <span>Ticket Status Breakdown</span>
                         </button>
-                        <span>Ticket Status Breakdown</span>
                       </h4>
                       {!collapsedCharts[`${epic.id}-column`] && (
                       <div className="workflow-status-chart">
@@ -1863,16 +1863,16 @@ function App() {
 
                       {/* Pie Chart */}
                       <div>
-                      <h4 style={{ display: 'flex', alignItems: 'center', marginTop: '1rem' }}>
+                      <h4 style={{ marginTop: '1rem' }}>
                         <button
                           onClick={() => toggleChart(epic.id, 'workflow-pie')}
                           className="chart-toggle-btn"
                           aria-label="Toggle workflow pie chart"
-                          style={{ marginRight: '0.5rem' }}
+                          style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%', justifyContent: 'flex-start' }}
                         >
-                          {collapsedCharts[`${epic.id}-workflow-pie`] ? '▼' : '▲'}
+                          <span>{collapsedCharts[`${epic.id}-workflow-pie`] ? '▼' : '▲'}</span>
+                          <span>Workflow Status Pie Chart</span>
                         </button>
-                        <span>Workflow Status Pie Chart</span>
                       </h4>
                       {!collapsedCharts[`${epic.id}-workflow-pie`] && (
                       <div className="workflow-status-pie-chart">
@@ -2031,16 +2031,16 @@ function App() {
 
                       {/* Story Type Pie Chart */}
                       <div>
-                      <h4 style={{ display: 'flex', alignItems: 'center', marginTop: '1rem' }}>
+                      <h4 style={{ marginTop: '1rem' }}>
                         <button
                           onClick={() => toggleChart(epic.id, 'type-pie')}
                           className="chart-toggle-btn"
                           aria-label="Toggle story type pie chart"
-                          style={{ marginRight: '0.5rem' }}
+                          style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%', justifyContent: 'flex-start' }}
                         >
-                          {collapsedCharts[`${epic.id}-type-pie`] ? '▼' : '▲'}
+                          <span>{collapsedCharts[`${epic.id}-type-pie`] ? '▼' : '▲'}</span>
+                          <span>Story Type Breakdown</span>
                         </button>
-                        <span>Story Type Breakdown</span>
                       </h4>
                       {!collapsedCharts[`${epic.id}-type-pie`] && (
                       <div>
@@ -2211,16 +2211,16 @@ function App() {
 
                         return sortedOwners.length > 0 || unassignedCount > 0 ? (
                           <>
-                            <h4 style={{ display: 'flex', alignItems: 'center' }}>
+                            <h4>
                               <button
                                 onClick={() => toggleChart(epic.id, 'owners-table')}
                                 className="chart-toggle-btn"
                                 aria-label="Toggle story owners table"
-                                style={{ marginRight: '0.5rem' }}
+                                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%', justifyContent: 'flex-start' }}
                               >
-                                {collapsedCharts[`${epic.id}-owners-table`] ? '▼' : '▲'}
+                                <span>{collapsedCharts[`${epic.id}-owners-table`] ? '▼' : '▲'}</span>
+                                <span>Story Owners</span>
                               </button>
-                              <span>Story Owners</span>
                             </h4>
                             {!collapsedCharts[`${epic.id}-owners-table`] && (
                             <>
@@ -2312,16 +2312,16 @@ function App() {
 
                         return (
                           <>
-                            <h4 style={{ display: 'flex', alignItems: 'center' }}>
+                            <h4>
                               <button
                                 onClick={() => toggleChart(epic.id, 'team-tickets')}
                                 className="chart-toggle-btn"
                                 aria-label="Toggle team open tickets table"
-                                style={{ marginRight: '0.5rem' }}
+                                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%', justifyContent: 'flex-start' }}
                               >
-                                {collapsedCharts[`${epic.id}-team-tickets`] ? '▼' : '▲'}
+                                <span>{collapsedCharts[`${epic.id}-team-tickets`] ? '▼' : '▲'}</span>
+                                <span>Team Open Tickets</span>
                               </button>
-                              <span>Team Open Tickets</span>
                             </h4>
                             {!collapsedCharts[`${epic.id}-team-tickets`] && (
                             <>
@@ -2355,16 +2355,16 @@ function App() {
 
                 {epic.stories && (
                   <div className="stories-section">
-                    <h4 style={{ display: 'flex', alignItems: 'center' }}>
+                    <h4>
                       <button
                         onClick={() => toggleChart(epic.id, 'stories')}
                         className="chart-toggle-btn"
                         aria-label="Toggle stories list"
-                        style={{ marginRight: '0.5rem' }}
+                        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%', justifyContent: 'flex-start' }}
                       >
-                        {collapsedCharts[`${epic.id}-stories`] ? '▼' : '▲'}
+                        <span>{collapsedCharts[`${epic.id}-stories`] ? '▼' : '▲'}</span>
+                        <span>Stories:</span>
                       </button>
-                      <span>Stories:</span>
                     </h4>
                     {!collapsedCharts[`${epic.id}-stories`] && (
                       <>
