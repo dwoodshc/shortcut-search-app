@@ -12,9 +12,6 @@
 /build
 
 # misc
-.env
-epics.yml
-state_ids.yml
 .DS_Store
 .env.local
 .env.development.local
@@ -24,3 +21,8 @@ state_ids.yml
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# App Related
+.env
+epics.yml
+shortcut.yml
