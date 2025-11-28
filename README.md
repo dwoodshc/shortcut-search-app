@@ -108,26 +108,21 @@ A React-based web application for visualizing and managing Shortcut.com epics an
    npm install
    ```
 
-3. Configure your Shortcut API token:
-   - Option A: Use the built-in setup interface on first launch
-   - Option B: Create a `.env` file manually:
-     ```
-     SHORTCUT_API_TOKEN=your-token-here
-     ```
+3. Configuration is stored in browser localStorage:
+   - On first launch, the app will automatically migrate any existing configuration from `.env`, `shortcut.yml`, and `epics.yml` files to localStorage
+   - After migration, all settings are managed through the app's built-in interface
+   - No manual file editing is required
 
-4. Create an `epics.yml` file (or use the built-in editor):
-   ```yaml
-   epics:
-     - name: Your Epic Name
-       team:
-         - Team Member 1
-         - Team Member 2
-     - name: Another Epic
-       team:
-         - Team Member 3
-   ```
+4. First-time setup:
+   - Launch the app and enter your Shortcut API token when prompted
+   - Set your Shortcut workspace URL
+   - Select a workflow from your workspace
+   - Configure epics to track using the "Edit Epic List" option
 
-5. The app will guide you through workflow setup on first launch
+5. Data migration:
+   - If you have existing configuration files (`.env`, `shortcut.yml`, `epics.yml`), they will be automatically migrated to localStorage on first load
+   - After migration, you can safely archive or delete the old configuration files
+   - All future changes are saved to browser localStorage only
 
 ## Running the Application
 
@@ -157,20 +152,27 @@ npm start
 ```
 shortcut-search-app/
 ├── src/
-│   ├── App.js          # Main React component
+│   ├── App.js          # Main React component with localStorage integration
 │   ├── App.css         # Application styles
 │   └── index.js        # React entry point
-├── server.js           # Express proxy server
-├── epics.yml           # Epic and team configuration
-├── shortcut.yml        # Workflow and URL configuration (auto-generated)
-├── .env                # API token (auto-generated or manual)
+├── server.js           # Express proxy server (handles Shortcut API calls)
 ├── package.json        # Dependencies and scripts
 └── README.md           # This file
 ```
 
-## Configuration Files
+## Configuration Storage
 
-### epics.yml Format
+All configuration is stored in **browser localStorage** (client-side) for security and portability:
+
+- **API Token**: Stored in localStorage key `shortcut_api_token`
+- **Workflow Configuration**: Stored in localStorage key `shortcut_workflow_config` (includes workflow ID, name, URL, and states)
+- **Epics Configuration**: Stored in localStorage key `shortcut_epics_config` (includes epic names and team members)
+
+### Legacy File Format (For Migration Reference)
+
+If you have existing configuration files from an older version, they will be automatically migrated:
+
+**epics.yml Format:**
 ```yaml
 epics:
   - name: Epic Name (must match Shortcut exactly)
@@ -179,7 +181,7 @@ epics:
       - Full Name 2
 ```
 
-### shortcut.yml Format (Auto-Generated)
+**shortcut.yml Format:**
 ```yaml
 workflow_name: RnD Workflow
 workflow_id: 500376257
@@ -189,30 +191,33 @@ states:
     name: Backlog
   - id: 500376259
     name: Ready for Development
-  # ... additional states
 ```
 
 ## API Endpoints
 
-The Express server provides these proxy endpoints:
+The Express server provides these proxy endpoints (all Shortcut API calls require `Authorization: Bearer <token>` header):
 
-### Configuration
-- `GET /api/check-token` - Verify API token exists
-- `POST /api/save-token` - Save API token to .env
-- `GET /api/state-ids-file` - Get workflow configuration from shortcut.yml
-- `POST /api/state-ids-file` - Save workflow configuration
-- `GET /api/epics-file` - Get epics.yml content
-- `POST /api/epics-file` - Update epics.yml content
-- `GET /api/readme` - Get README.md content
+### Migration & Utilities
+- `GET /api/migrate-data` - One-time migration endpoint to read legacy files (.env, shortcut.yml, epics.yml) and return data for localStorage migration
+- `GET /api/readme` - Get README.md content (no auth required)
 
-### Shortcut API Proxies
+### Shortcut API Proxies (Require Authorization Header)
 - `GET /api/search/epics?query=` - Search for epics
 - `GET /api/epics/:id` - Get full epic details
 - `GET /api/epics/:id/stories` - Get stories for an epic (excluding archived)
 - `GET /api/workflows` - Get all workflows with states
 - `GET /api/users/:id` - Get user/member details
-- `GET /api/filtered-epics` - Get epic names from epics.yml
-- `GET /api/epic-emails` - Get team members by epic
+
+### Legacy Endpoints (Deprecated)
+These endpoints were used for file-based storage and are no longer needed:
+- `GET /api/check-token` - ~~Verify API token exists~~ (use localStorage)
+- `POST /api/save-token` - ~~Save API token to .env~~ (use localStorage)
+- `GET /api/state-ids-file` - ~~Get workflow configuration~~ (use localStorage)
+- `POST /api/state-ids-file` - ~~Save workflow configuration~~ (use localStorage)
+- `GET /api/epics-file` - ~~Get epics.yml content~~ (use localStorage)
+- `POST /api/epics-file` - ~~Update epics.yml content~~ (use localStorage)
+- `GET /api/filtered-epics` - ~~Get epic names from file~~ (use localStorage)
+- `GET /api/epic-emails` - ~~Get team members from file~~ (use localStorage)
 
 ## Technologies Used
 

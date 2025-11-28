@@ -11,66 +11,26 @@ const PORT = 3001;
 app.use(cors());
 app.use(express.json());
 
-// Load token only from .env file, not from environment variables
-let SHORTCUT_API_TOKEN = null;
 const SHORTCUT_API_BASE = 'https://api.app.shortcut.com/api/v3';
 
-// Function to load token from .env file
-async function loadTokenFromEnvFile() {
-  try {
-    const envPath = path.join(__dirname, '.env');
-    const envContent = await fs.readFile(envPath, 'utf-8');
-    const match = envContent.match(/SHORTCUT_API_TOKEN=(.+)/);
-    if (match && match[1]) {
-      SHORTCUT_API_TOKEN = match[1].trim();
-      console.log('API token loaded from .env file');
-    } else {
-      console.log('No API token found in .env file');
-    }
-  } catch (error) {
-    if (error.code === 'ENOENT') {
-      console.log('.env file does not exist - API token not configured');
-    } else {
-      console.error('Error reading .env file:', error.message);
-    }
+// Middleware to extract token from Authorization header
+function getTokenFromHeader(req) {
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    return authHeader.substring(7);
   }
+  return null;
 }
-
-// Load token on server startup
-loadTokenFromEnvFile();
-
-// Check if API token is configured
-app.get('/api/check-token', async (_req, res) => {
-  res.json({ hasToken: !!SHORTCUT_API_TOKEN });
-});
-
-// Save API token to .env file
-app.post('/api/save-token', async (req, res) => {
-  try {
-    const { token } = req.body;
-
-    if (!token || !token.trim()) {
-      return res.status(400).json({ error: 'Token is required' });
-    }
-
-    const envPath = path.join(__dirname, '.env');
-    const envContent = `SHORTCUT_API_TOKEN=${token.trim()}\n`;
-
-    await fs.writeFile(envPath, envContent, 'utf-8');
-    SHORTCUT_API_TOKEN = token.trim();
-
-    res.json({ success: true });
-  } catch (error) {
-    console.error('Error saving token:', error.message);
-    res.status(500).json({ error: 'Failed to save token' });
-  }
-});
 
 // Search epics endpoint
 app.get('/api/search/epics', async (req, res) => {
   try {
-    const { query } = req.query;
+    const token = getTokenFromHeader(req);
+    if (!token) {
+      return res.status(401).json({ error: 'Authorization token required' });
+    }
 
+    const { query } = req.query;
     const params = {
       query: query || '',
       page_size: 25
@@ -79,7 +39,7 @@ app.get('/api/search/epics', async (req, res) => {
     const response = await axios.get(`${SHORTCUT_API_BASE}/search/epics`, {
       params,
       headers: {
-        'Shortcut-Token': SHORTCUT_API_TOKEN,
+        'Shortcut-Token': token,
         'Content-Type': 'application/json'
       }
     });
@@ -97,18 +57,23 @@ app.get('/api/search/epics', async (req, res) => {
 // Get epic by ID
 app.get('/api/epics/:id', async (req, res) => {
   try {
+    const token = getTokenFromHeader(req);
+    if (!token) {
+      return res.status(401).json({ error: 'Authorization token required' });
+    }
+
     const { id } = req.params;
     const response = await axios.get(`${SHORTCUT_API_BASE}/epics/${id}`, {
       headers: {
-        'Shortcut-Token': SHORTCUT_API_TOKEN,
+        'Shortcut-Token': token,
         'Content-Type': 'application/json'
       }
     });
     res.json(response.data);
   } catch (error) {
     console.error('Error fetching epic:', error.response?.data || error.message);
-    res.status(error.response?.status || 500).json({ 
-      error: error.response?.data || 'Failed to fetch epic' 
+    res.status(error.response?.status || 500).json({
+      error: error.response?.data || 'Failed to fetch epic'
     });
   }
 });
@@ -116,9 +81,14 @@ app.get('/api/epics/:id', async (req, res) => {
 // Get workflows with states
 app.get('/api/workflows', async (req, res) => {
   try {
+    const token = getTokenFromHeader(req);
+    if (!token) {
+      return res.status(401).json({ error: 'Authorization token required' });
+    }
+
     const response = await axios.get(`${SHORTCUT_API_BASE}/workflows`, {
       headers: {
-        'Shortcut-Token': SHORTCUT_API_TOKEN,
+        'Shortcut-Token': token,
         'Content-Type': 'application/json'
       }
     });
@@ -134,10 +104,15 @@ app.get('/api/workflows', async (req, res) => {
 // Get user/member by ID
 app.get('/api/users/:id', async (req, res) => {
   try {
+    const token = getTokenFromHeader(req);
+    if (!token) {
+      return res.status(401).json({ error: 'Authorization token required' });
+    }
+
     const { id } = req.params;
     const response = await axios.get(`${SHORTCUT_API_BASE}/members/${id}`, {
       headers: {
-        'Shortcut-Token': SHORTCUT_API_TOKEN,
+        'Shortcut-Token': token,
         'Content-Type': 'application/json'
       }
     });
@@ -153,10 +128,15 @@ app.get('/api/users/:id', async (req, res) => {
 // Get stories for an epic
 app.get('/api/epics/:id/stories', async (req, res) => {
   try {
+    const token = getTokenFromHeader(req);
+    if (!token) {
+      return res.status(401).json({ error: 'Authorization token required' });
+    }
+
     const { id } = req.params;
     const response = await axios.get(`${SHORTCUT_API_BASE}/epics/${id}/stories`, {
       headers: {
-        'Shortcut-Token': SHORTCUT_API_TOKEN,
+        'Shortcut-Token': token,
         'Content-Type': 'application/json'
       }
     });
@@ -300,6 +280,56 @@ app.post('/api/state-ids-file', async (req, res) => {
   } catch (error) {
     console.error('Error writing shortcut.yml:', error.message);
     res.status(500).json({ error: 'Failed to save shortcut.yml file' });
+  }
+});
+
+// Migration endpoint - read legacy files for one-time migration to localStorage
+app.get('/api/migrate-data', async (_req, res) => {
+  try {
+    const migrationData = {};
+
+    // Read .env file for API token
+    try {
+      const envPath = path.join(__dirname, '.env');
+      const envContent = await fs.readFile(envPath, 'utf-8');
+      const tokenMatch = envContent.match(/SHORTCUT_API_TOKEN=(.+)/);
+      if (tokenMatch) {
+        migrationData.apiToken = tokenMatch[1].trim();
+      }
+    } catch (error) {
+      if (error.code !== 'ENOENT') {
+        console.error('Error reading .env:', error.message);
+      }
+    }
+
+    // Read shortcut.yml for workflow config
+    try {
+      const shortcutPath = path.join(__dirname, 'shortcut.yml');
+      const shortcutContent = await fs.readFile(shortcutPath, 'utf-8');
+      migrationData.workflowConfig = yaml.load(shortcutContent);
+    } catch (error) {
+      if (error.code !== 'ENOENT') {
+        console.error('Error reading shortcut.yml:', error.message);
+      }
+    }
+
+    // Read epics.yml for epics config
+    try {
+      const epicsPath = path.join(__dirname, 'epics.yml');
+      const epicsContent = await fs.readFile(epicsPath, 'utf-8');
+      migrationData.epicsConfig = yaml.load(epicsContent);
+    } catch (error) {
+      if (error.code !== 'ENOENT') {
+        console.error('Error reading epics.yml:', error.message);
+      }
+    }
+
+    res.json(migrationData);
+  } catch (error) {
+    console.error('Error during migration:', error.message);
+    res.status(500).json({
+      error: 'Failed to read legacy files for migration'
+    });
   }
 });
 

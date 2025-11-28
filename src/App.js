@@ -1,7 +1,37 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import yaml from 'js-yaml';
 import { marked } from 'marked';
 import './App.css';
+
+// LocalStorage utility functions
+const STORAGE_KEYS = {
+  API_TOKEN: 'shortcut_api_token',
+  WORKFLOW_CONFIG: 'shortcut_workflow_config',
+  EPICS_CONFIG: 'shortcut_epics_config'
+};
+
+const storage = {
+  getApiToken: () => localStorage.getItem(STORAGE_KEYS.API_TOKEN),
+  setApiToken: (token) => localStorage.setItem(STORAGE_KEYS.API_TOKEN, token),
+
+  getWorkflowConfig: () => {
+    const data = localStorage.getItem(STORAGE_KEYS.WORKFLOW_CONFIG);
+    return data ? JSON.parse(data) : null;
+  },
+  setWorkflowConfig: (config) => localStorage.setItem(STORAGE_KEYS.WORKFLOW_CONFIG, JSON.stringify(config)),
+
+  getEpicsConfig: () => {
+    const data = localStorage.getItem(STORAGE_KEYS.EPICS_CONFIG);
+    return data ? JSON.parse(data) : null;
+  },
+  setEpicsConfig: (config) => localStorage.setItem(STORAGE_KEYS.EPICS_CONFIG, JSON.stringify(config))
+};
+
+// API Base URL - dynamically uses the current hostname
+// This allows the app to work on both desktop (localhost) and mobile devices (IP address)
+const getApiBaseUrl = () => {
+  const hostname = window.location.hostname;
+  return `http://${hostname}:3001`;
+};
 
 function App() {
   const [epics, setEpics] = useState([]);
@@ -170,115 +200,158 @@ function App() {
     setCollapsedCharts(newState);
   };
 
-  // Check if API token exists on mount
-  useEffect(() => {
-    const checkToken = async () => {
-      try {
-        const response = await fetch('http://localhost:3001/api/check-token');
-        if (response.ok) {
-          const data = await response.json();
-          setHasExistingToken(data.hasToken);
-          if (!data.hasToken) {
-            setShowTokenModal(true);
-            return; // Don't check for shortcut.yml if token is missing
-          }
+  // Shared function to load workflow configuration from localStorage
+  const loadSelectedWorkflow = useCallback(() => {
+    try {
+      const data = storage.getWorkflowConfig();
+      if (data && data.workflow_id) {
+        setSelectedWorkflowId(data.workflow_id);
+        setSavedWorkflowId(data.workflow_id);
 
-          // If token exists, check for shortcut.yml
+        // Load Shortcut Web URL if present
+        if (data.shortcut_web_url) {
+          setShortcutWebUrl(data.shortcut_web_url);
+        }
+
+        // Create a mapping of state names to IDs for hyperlinks
+        if (data.states && Array.isArray(data.states)) {
+          const stateMapping = {};
+          data.states.forEach(state => {
+            // Create lowercase key for case-insensitive lookup
+            const key = state.name.toLowerCase().trim();
+            stateMapping[key] = state.id;
+          });
+          setWorkflowStateIds(stateMapping);
+        }
+      }
+    } catch (err) {
+      console.error('Error loading selected workflow:', err);
+    }
+  }, []);
+
+  // Check if API token and config exist on mount
+  useEffect(() => {
+    const checkConfig = async () => {
+      try {
+        // Check if migration has been done before
+        const migrationDone = localStorage.getItem('migration_completed');
+
+        // If no migration flag and no data in localStorage, attempt migration
+        if (!migrationDone) {
           try {
-            const shortcutResponse = await fetch('http://localhost:3001/api/state-ids-file');
-            if (shortcutResponse.ok) {
-              const shortcutData = await shortcutResponse.json();
-              // If shortcut.yml is empty or doesn't have workflow_id, show setup modal
-              if (!shortcutData || !shortcutData.workflow_id) {
-                // Load workflows before showing modal
-                try {
-                  const workflowsResponse = await fetch('http://localhost:3001/api/workflows');
-                  if (workflowsResponse.ok) {
-                    const workflows = await workflowsResponse.json();
-                    setAllWorkflows(workflows);
-                  }
-                } catch (workflowErr) {
-                  console.error('Error loading workflows:', workflowErr);
-                }
-                setShowWorkflowModal(true);
+            const migrationResponse = await fetch(`${getApiBaseUrl()}/api/migrate-data`);
+            if (migrationResponse.ok) {
+              const migrationData = await migrationResponse.json();
+
+              // Migrate API token if available
+              if (migrationData.apiToken && !storage.getApiToken()) {
+                storage.setApiToken(migrationData.apiToken);
+                console.log('Migrated API token from .env');
               }
-            } else {
-              // If shortcut.yml doesn't exist, show setup modal
-              // Load workflows before showing modal
-              try {
-                const workflowsResponse = await fetch('http://localhost:3001/api/workflows');
-                if (workflowsResponse.ok) {
-                  const workflows = await workflowsResponse.json();
-                  setAllWorkflows(workflows);
-                }
-              } catch (workflowErr) {
-                console.error('Error loading workflows:', workflowErr);
+
+              // Migrate workflow config if available
+              if (migrationData.workflowConfig && !storage.getWorkflowConfig()) {
+                storage.setWorkflowConfig(migrationData.workflowConfig);
+                console.log('Migrated workflow config from shortcut.yml');
               }
-              setShowWorkflowModal(true);
+
+              // Migrate epics config if available
+              if (migrationData.epicsConfig && !storage.getEpicsConfig()) {
+                storage.setEpicsConfig(migrationData.epicsConfig);
+                console.log('Migrated epics config from epics.yml');
+              }
+
+              // Mark migration as complete
+              localStorage.setItem('migration_completed', 'true');
+              console.log('Migration completed successfully');
             }
-          } catch (err) {
-            console.error('Error checking shortcut.yml:', err);
+          } catch (migrationErr) {
+            console.error('Migration failed:', migrationErr);
+            // Mark migration as complete even if it failed to avoid retrying every load
+            localStorage.setItem('migration_completed', 'true');
           }
         }
+
+        // Check for API token in localStorage
+        const token = storage.getApiToken();
+        setHasExistingToken(!!token);
+
+        if (!token) {
+          setShowTokenModal(true);
+          return;
+        }
+
+        // Check for workflow configuration
+        const workflowConfig = storage.getWorkflowConfig();
+        if (!workflowConfig || !workflowConfig.workflow_id) {
+          // Load workflows before showing modal
+          try {
+            console.log('Loading workflows on initial setup with token:', token ? 'Token exists' : 'No token');
+            const workflowsResponse = await fetch(`${getApiBaseUrl()}/api/workflows`, {
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            });
+            console.log('Initial workflows response status:', workflowsResponse.status);
+            if (workflowsResponse.ok) {
+              const workflows = await workflowsResponse.json();
+              console.log('Initial workflows loaded:', workflows.length, 'workflows');
+              setAllWorkflows(workflows);
+            } else {
+              const errorData = await workflowsResponse.json().catch(() => ({ error: 'Unknown error' }));
+              console.error('Failed to load workflows on initial setup:', workflowsResponse.status, errorData);
+            }
+          } catch (workflowErr) {
+            console.error('Error loading workflows:', workflowErr);
+          }
+          setShowWorkflowModal(true);
+        }
       } catch (err) {
-        console.error('Error checking token:', err);
+        console.error('Error checking config:', err);
         setShowTokenModal(true);
         setHasExistingToken(false);
       }
     };
 
-    checkToken();
+    checkConfig();
   }, []);
 
   // Fetch teams, workflow states, and filtered epic names on mount
   useEffect(() => {
-    const checkEpicsFile = async () => {
+    const checkEpicsConfig = () => {
       try {
-        const response = await fetch('http://localhost:3001/api/epics-file');
-        if (!response.ok) {
-          // If epics.yml doesn't exist, open the modal with empty content
+        const epicsConfig = storage.getEpicsConfig();
+        if (!epicsConfig || !epicsConfig.epics) {
+          // If no config exists, open the modal with empty content
           setEpicsList([]);
           setShowEpicListModal(true);
+        } else {
+          // Load epic names and team data from config
+          setFilteredEpicNames(epicsConfig.epics.map(e => e.name));
+          const emailsData = {};
+          epicsConfig.epics.forEach(epic => {
+            emailsData[epic.name] = epic.team || [];
+          });
+          setEpicEmails(emailsData);
         }
       } catch (err) {
-        console.error('Error checking epics file:', err);
-      }
-    };
-
-    const loadSelectedWorkflow = async () => {
-      try {
-        const response = await fetch('http://localhost:3001/api/state-ids-file');
-        if (response.ok) {
-          const data = await response.json();
-          if (data && data.workflow_id) {
-            setSelectedWorkflowId(data.workflow_id);
-            setSavedWorkflowId(data.workflow_id);
-
-            // Load Shortcut Web URL if present
-            if (data.shortcut_web_url) {
-              setShortcutWebUrl(data.shortcut_web_url);
-            }
-
-            // Create a mapping of state names to IDs for hyperlinks
-            if (data.states && Array.isArray(data.states)) {
-              const stateMapping = {};
-              data.states.forEach(state => {
-                // Create lowercase key for case-insensitive lookup
-                const key = state.name.toLowerCase().trim();
-                stateMapping[key] = state.id;
-              });
-              setWorkflowStateIds(stateMapping);
-            }
-          }
-        }
-      } catch (err) {
-        console.error('Error loading selected workflow:', err);
+        console.error('Error checking epics config:', err);
       }
     };
 
     const fetchWorkflows = async () => {
       try {
-        const workflowsResponse = await fetch('http://localhost:3001/api/workflows');
+        const token = storage.getApiToken();
+        if (!token) {
+          // No token available yet, skip workflow fetch
+          return;
+        }
+
+        const workflowsResponse = await fetch(`${getApiBaseUrl()}/api/workflows`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
         if (workflowsResponse.ok) {
           const workflows = await workflowsResponse.json();
           const statesMap = {};
@@ -307,36 +380,10 @@ function App() {
       }
     };
 
-    const fetchFilteredEpics = async () => {
-      try {
-        const response = await fetch('http://localhost:3001/api/filtered-epics');
-        if (response.ok) {
-          const epicNames = await response.json();
-          setFilteredEpicNames(epicNames);
-        }
-      } catch (err) {
-        console.error('Error fetching filtered epics:', err);
-      }
-    };
-
-    const fetchEpicEmails = async () => {
-      try {
-        const response = await fetch('http://localhost:3001/api/epic-emails');
-        if (response.ok) {
-          const emailsData = await response.json();
-          setEpicEmails(emailsData);
-        }
-      } catch (err) {
-        console.error('Error fetching epic emails:', err);
-      }
-    };
-
-    checkEpicsFile();
+    checkEpicsConfig();
     loadSelectedWorkflow();
     fetchWorkflows();
-    fetchFilteredEpics();
-    fetchEpicEmails();
-  }, [handleApiError]);
+  }, [handleApiError, loadSelectedWorkflow]);
 
   // Close settings menu when clicking outside
   useEffect(() => {
@@ -404,87 +451,57 @@ function App() {
     return 'epic-state-default';
   };
 
-  // Load epic list content
-  const handleOpenEpicList = async () => {
+  // Load epic list content from localStorage
+  const handleOpenEpicList = () => {
     setEpicListError('');
     try {
-      const response = await fetch('http://localhost:3001/api/epics-file');
-      if (response.ok) {
-        const data = await response.json();
+      const epicsConfig = storage.getEpicsConfig();
+      if (epicsConfig && epicsConfig.epics) {
+        setEpicsList(epicsConfig.epics);
 
-        // Parse YAML into structured data
-        try {
-          const parsedData = yaml.load(data.content);
-          if (parsedData && parsedData.epics) {
-            setEpicsList(parsedData.epics);
-
-            // Collapse all team member lists by default
-            const collapsedState = {};
-            parsedData.epics.forEach((_epic, index) => {
-              collapsedState[index] = true;
-            });
-            setCollapsedTeamMembers(collapsedState);
-          } else {
-            setEpicsList([]);
-            setCollapsedTeamMembers({});
-          }
-        } catch (yamlErr) {
-          console.error('Error parsing YAML:', yamlErr);
-          setEpicsList([]);
-          setCollapsedTeamMembers({});
-        }
-
-        setShowEpicListModal(true);
+        // Collapse all team member lists by default
+        const collapsedState = {};
+        epicsConfig.epics.forEach((_epic, index) => {
+          collapsedState[index] = true;
+        });
+        setCollapsedTeamMembers(collapsedState);
       } else {
-        setEpicListError('Failed to load epics.yml file');
+        setEpicsList([]);
+        setCollapsedTeamMembers({});
       }
+
+      setShowEpicListModal(true);
     } catch (err) {
-      console.error('Error loading epics file:', err);
-      setEpicListError('Failed to load epics.yml file');
+      console.error('Error loading epics config:', err);
+      setEpicListError('Failed to load epics configuration');
     }
   };
 
   // Save epic list content
-  const handleSaveEpicList = async () => {
+  const handleSaveEpicList = () => {
     setEpicListError('');
 
     try {
-      // Convert structured data back to YAML
-      const yamlContent = yaml.dump({ epics: epicsList });
+      // Save to localStorage
+      storage.setEpicsConfig({ epics: epicsList });
 
-      const response = await fetch('http://localhost:3001/api/epics-file', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ content: yamlContent })
+      setShowEpicListModal(false);
+
+      // Update local state with new data
+      setFilteredEpicNames(epicsList.map(e => e.name));
+      const emailsData = {};
+      epicsList.forEach(epic => {
+        emailsData[epic.name] = epic.team || [];
       });
-
-      if (response.ok) {
-        setShowEpicListModal(false);
-        // Reload the epic emails and filtered epic names
-        const emailsResponse = await fetch('http://localhost:3001/api/epic-emails');
-        if (emailsResponse.ok) {
-          const emailsData = await emailsResponse.json();
-          setEpicEmails(emailsData);
-        }
-        const filteredResponse = await fetch('http://localhost:3001/api/filtered-epics');
-        if (filteredResponse.ok) {
-          const epicNames = await filteredResponse.json();
-          setFilteredEpicNames(epicNames);
-        }
-      } else {
-        const data = await response.json();
-        setEpicListError(data.error || 'Failed to save epics.yml file');
-      }
+      setEpicEmails(emailsData);
     } catch (err) {
-      console.error('Error saving epics file:', err);
-      setEpicListError('Failed to save epics.yml file. Please try again.');
+      console.error('Error saving epics config:', err);
+      setEpicListError('Failed to save epics configuration. Please try again.');
     }
   };
 
   // Save API token
-  const handleSaveToken = async () => {
+  const handleSaveToken = () => {
     setTokenError('');
 
     if (!apiToken.trim()) {
@@ -493,29 +510,17 @@ function App() {
     }
 
     try {
-      const response = await fetch('http://localhost:3001/api/save-token', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ token: apiToken.trim() })
-      });
-
-      if (response.ok) {
-        setApiToken('');
-        setHasExistingToken(true);
-        // Close modal first
-        setShowTokenModal(false);
-        // Then show success message
-        setSuccessMessage('API Token saved successfully!');
-        // Reload after showing success message
-        setTimeout(() => {
-          window.location.reload();
-        }, 2000);
-      } else {
-        const data = await response.json();
-        setTokenError(data.error || 'Failed to save token');
-      }
+      storage.setApiToken(apiToken.trim());
+      setApiToken('');
+      setHasExistingToken(true);
+      // Close modal first
+      setShowTokenModal(false);
+      // Then show success message
+      setSuccessMessage('API Token saved successfully!');
+      // Reload after showing success message
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
     } catch (err) {
       console.error('Error saving token:', err);
       setTokenError('Failed to save token. Please try again.');
@@ -525,7 +530,7 @@ function App() {
   // Load README content
   const handleOpenReadme = async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/readme');
+      const response = await fetch(`${getApiBaseUrl()}/api/readme`);
       if (response.ok) {
         const data = await response.json();
         setReadmeContent(data.content);
@@ -544,22 +549,40 @@ function App() {
   // Load workflows
   const handleOpenWorkflows = async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/workflows');
+      const token = storage.getApiToken();
+      console.log('Loading workflows with token:', token ? 'Token exists' : 'No token');
+
+      if (!token) {
+        setError('No API token found. Please configure your token first.');
+        return;
+      }
+
+      const response = await fetch(`${getApiBaseUrl()}/api/workflows`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      console.log('Workflows response status:', response.status);
+
       if (response.ok) {
         const workflows = await response.json();
+        console.log('Loaded workflows:', workflows.length, 'workflows');
         setAllWorkflows(workflows);
         setShowWorkflowModal(true);
       } else {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('Failed to load workflows:', response.status, errorData);
         await handleApiError(response);
       }
     } catch (err) {
       console.error('Error loading workflows:', err);
-      setError('Failed to load workflows');
+      setError('Failed to load workflows: ' + err.message);
     }
   };
 
-  // Save Shortcut Web URL to YAML file
-  const handleSaveShortcutUrl = async () => {
+  // Save Shortcut Web URL to localStorage
+  const handleSaveShortcutUrl = () => {
     // Validate URL format
     const urlPattern = /^https?:\/\/.+/;
     if (!shortcutWebUrl || !urlPattern.test(shortcutWebUrl)) {
@@ -574,33 +597,20 @@ function App() {
     // If we have a selected workflow, save the URL
     if (selectedWorkflowId) {
       try {
-        // Read current shortcut.yml to get existing data
-        const response = await fetch('http://localhost:3001/api/state-ids-file');
-        if (response.ok) {
-          const data = await response.json();
-          if (data && data.workflow_id) {
-            // Update the URL and save back
-            const yamlContent = yaml.dump({
-              workflow_name: data.workflow_name,
-              workflow_id: data.workflow_id,
-              shortcut_web_url: cleanUrl,
-              states: data.states
-            });
+        // Read current workflow config
+        const data = storage.getWorkflowConfig();
+        if (data && data.workflow_id) {
+          // Update the URL and save back
+          storage.setWorkflowConfig({
+            workflow_name: data.workflow_name,
+            workflow_id: data.workflow_id,
+            shortcut_web_url: cleanUrl,
+            states: data.states
+          });
 
-            const saveResponse = await fetch('http://localhost:3001/api/state-ids-file', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({ content: yamlContent })
-            });
-
-            if (saveResponse.ok) {
-              setError(null); // Clear any existing error messages
-              setSuccessMessage('Shortcut Web URL saved successfully!');
-              setTimeout(() => setSuccessMessage(null), 3000);
-            }
-          }
+          setError(null); // Clear any existing error messages
+          setSuccessMessage('Shortcut Web URL saved successfully!');
+          setTimeout(() => setSuccessMessage(null), 3000);
         }
       } catch (err) {
         console.error('Error saving shortcut URL:', err);
@@ -611,50 +621,38 @@ function App() {
     }
   };
 
-  // Save selected workflow state IDs to YAML file
-  const handleSelectWorkflow = async (workflow) => {
+  // Save selected workflow state IDs to localStorage
+  const handleSelectWorkflow = (workflow) => {
     try {
-      // Create YAML content with state IDs and descriptions
+      // Create state mapping
       const states = workflow.states.map(state => ({
         id: state.id,
         name: state.name
       }));
-      const yamlContent = yaml.dump({
+
+      // Save to localStorage
+      storage.setWorkflowConfig({
         workflow_name: workflow.name,
         workflow_id: workflow.id,
         shortcut_web_url: shortcutWebUrl,
         states: states
       });
 
-      // Save to shortcut.yml file
-      const response = await fetch('http://localhost:3001/api/state-ids-file', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ content: yamlContent })
+      setSelectedWorkflowId(workflow.id);
+      setSavedWorkflowId(workflow.id);
+
+      // Populate workflowStateIds mapping immediately
+      const stateMapping = {};
+      workflow.states.forEach(state => {
+        const key = state.name.toLowerCase().trim();
+        stateMapping[key] = state.id;
       });
+      setWorkflowStateIds(stateMapping);
 
-      if (response.ok) {
-        setSelectedWorkflowId(workflow.id);
-        setSavedWorkflowId(workflow.id);
-
-        // Populate workflowStateIds mapping immediately
-        const stateMapping = {};
-        workflow.states.forEach(state => {
-          const key = state.name.toLowerCase().trim();
-          stateMapping[key] = state.id;
-        });
-        setWorkflowStateIds(stateMapping);
-
-        setShowWorkflowModal(false);
-        // Show success message briefly
-        setSuccessMessage(`Workflow "${workflow.name}" selected successfully!`);
-        setTimeout(() => setSuccessMessage(null), 3000);
-      } else {
-        const data = await response.json();
-        setError(data.error || 'Failed to save workflow selection');
-      }
+      setShowWorkflowModal(false);
+      // Show success message briefly
+      setSuccessMessage(`Workflow "${workflow.name}" selected successfully!`);
+      setTimeout(() => setSuccessMessage(null), 3000);
     } catch (err) {
       console.error('Error saving workflow:', err);
       setError(`Failed to save workflow selection: ${err.message}`);
@@ -759,7 +757,17 @@ function App() {
     }
 
     try {
-      const response = await fetch(`http://localhost:3001/api/users/${userId}`);
+      const token = storage.getApiToken();
+      if (!token) {
+        // No token available, return userId as fallback
+        return userId;
+      }
+
+      const response = await fetch(`${getApiBaseUrl()}/api/users/${userId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       if (response.ok) {
         const user = await response.json();
         const userName = user.profile.name;
@@ -818,47 +826,25 @@ function App() {
     setEpics([]);
 
     try {
-      // Reload workflow configuration from shortcut.yml
-      const shortcutResponse = await fetch('http://localhost:3001/api/state-ids-file');
-      if (shortcutResponse.ok) {
-        const data = await shortcutResponse.json();
-        if (data && data.workflow_id) {
-          setSelectedWorkflowId(data.workflow_id);
-          setSavedWorkflowId(data.workflow_id);
+      // Reload workflow configuration from localStorage
+      loadSelectedWorkflow();
 
-          // Load Shortcut Web URL if present
-          if (data.shortcut_web_url) {
-            setShortcutWebUrl(data.shortcut_web_url);
-          }
-
-          // Create a mapping of state names to IDs for hyperlinks
-          if (data.states && Array.isArray(data.states)) {
-            const stateMapping = {};
-            data.states.forEach(state => {
-              // Create lowercase key for case-insensitive lookup
-              const key = state.name.toLowerCase().trim();
-              stateMapping[key] = state.id;
-            });
-            setWorkflowStateIds(stateMapping);
-          }
-        }
-      }
-
-      // Reload epic names from epics.yml
+      // Reload epic names from localStorage
       let epicNamesToSearch = filteredEpicNames;
-      const epicsResponse = await fetch('http://localhost:3001/api/filtered-epics');
-      if (epicsResponse.ok) {
-        const epicNames = await epicsResponse.json();
-        setFilteredEpicNames(epicNames);
-        epicNamesToSearch = epicNames;
-      }
+      const epicsConfig = storage.getEpicsConfig();
+      if (epicsConfig && epicsConfig.epics) {
+        epicNamesToSearch = epicsConfig.epics.map(e => e.name);
+        setFilteredEpicNames(epicNamesToSearch);
 
-      // Reload epic emails from epics.yml
-      const emailsResponse = await fetch('http://localhost:3001/api/epic-emails');
-      if (emailsResponse.ok) {
-        const emailsData = await emailsResponse.json();
+        const emailsData = {};
+        epicsConfig.epics.forEach(epic => {
+          emailsData[epic.name] = epic.team || [];
+        });
         setEpicEmails(emailsData);
       }
+
+      // Get token from localStorage for API calls
+      const token = storage.getApiToken();
 
       // Search for each epic individually by name
       const epicsWithStories = await Promise.all(
@@ -866,7 +852,12 @@ function App() {
           try {
             // Search for this specific epic by name
             const searchResponse = await fetch(
-              `http://localhost:3001/api/search/epics?query=${encodeURIComponent(name)}`
+              `${getApiBaseUrl()}/api/search/epics?query=${encodeURIComponent(name)}`,
+              {
+                headers: {
+                  'Authorization': `Bearer ${token}`
+                }
+              }
             );
 
             if (!searchResponse.ok) {
@@ -891,13 +882,21 @@ function App() {
 
             // Fetch full epic details to get all fields including internal IDs
             try {
-              const epicResponse = await fetch(`http://localhost:3001/api/epics/${searchEpic.id}`);
+              const epicResponse = await fetch(`${getApiBaseUrl()}/api/epics/${searchEpic.id}`, {
+                headers: {
+                  'Authorization': `Bearer ${token}`
+                }
+              });
               if (epicResponse.ok) {
                 const epic = await epicResponse.json();
 
                 // Fetch stories for this epic
                 try {
-                  const storiesResponse = await fetch(`http://localhost:3001/api/epics/${epic.id}/stories`);
+                  const storiesResponse = await fetch(`${getApiBaseUrl()}/api/epics/${epic.id}/stories`, {
+                    headers: {
+                      'Authorization': `Bearer ${token}`
+                    }
+                  });
                   if (storiesResponse.ok) {
                     const stories = await storiesResponse.json();
                     return { ...epic, stories };
@@ -1163,7 +1162,7 @@ function App() {
               }}>
                 Workspace URL
               </h3>
-              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                 <input
                   type="text"
                   id="shortcutWebUrl"
@@ -1171,7 +1170,7 @@ function App() {
                   onChange={(e) => setShortcutWebUrl(e.target.value)}
                   className="input-field"
                   placeholder="https://app.shortcut.com/your-workspace"
-                  style={{ flex: 1 }}
+                  style={{ width: '100%' }}
                 />
                 <button
                   onClick={handleSaveShortcutUrl}
@@ -1179,7 +1178,7 @@ function App() {
                   style={{
                     fontSize: '0.875rem',
                     padding: '0.75rem 1.5rem',
-                    whiteSpace: 'nowrap',
+                    width: '100%',
                     marginTop: 0
                   }}
                 >
@@ -1215,9 +1214,22 @@ function App() {
                 }}
               >
                 {allWorkflows.length === 0 ? (
-                  <p style={{ color: '#94a3b8', fontStyle: 'italic', textAlign: 'center', padding: '2rem 0' }}>
-                    No workflows found
-                  </p>
+                  <div style={{ textAlign: 'center', padding: '2rem 0' }}>
+                    <p style={{ color: '#94a3b8', fontStyle: 'italic', marginBottom: '1rem' }}>
+                      {loading ? 'Loading workflows...' : 'No workflows found'}
+                    </p>
+                    {!loading && (
+                      <div>
+                        <p style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: '0.5rem' }}>
+                          Make sure your API token is valid and you have access to workflows in your Shortcut workspace.
+                        </p>
+                        <p style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '1rem' }}>
+                          Debug: Token exists: {storage.getApiToken() ? 'Yes' : 'No'} |
+                          Workflows count: {allWorkflows.length}
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                     {allWorkflows.map((workflow) => (
@@ -1225,6 +1237,7 @@ function App() {
                         key={workflow.id}
                         style={{
                           display: 'flex',
+                          flexDirection: 'column',
                           gap: '0.75rem',
                           padding: '1rem',
                           backgroundColor: selectedWorkflowId === workflow.id ? '#eff6ff' : '#ffffff',
@@ -1233,7 +1246,7 @@ function App() {
                           transition: 'all 0.2s ease'
                         }}
                       >
-                        <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ flex: 1 }}>
                           <h4 style={{
                             color: '#494BCB',
                             marginBottom: '0.5rem',
@@ -1294,9 +1307,8 @@ function App() {
                           className="btn-primary"
                           style={{
                             fontSize: '0.875rem',
-                            padding: '0.5rem 1.25rem',
-                            flexShrink: 0,
-                            alignSelf: 'flex-start',
+                            padding: '0.75rem 1.25rem',
+                            width: '100%',
                             opacity: selectedWorkflowId === workflow.id ? 0.5 : 1,
                             cursor: selectedWorkflowId === workflow.id ? 'default' : 'pointer'
                           }}
