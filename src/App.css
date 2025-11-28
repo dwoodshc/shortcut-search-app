@@ -988,6 +988,10 @@ textarea.input-field {
   max-width: 750px;
 }
 
+.modal-content-export-import {
+  max-width: 600px;
+}
+
 .modal-content h2 {
   color: #03045E;
   margin-bottom: 1rem;

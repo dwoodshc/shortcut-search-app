@@ -55,6 +55,9 @@ function App() {
   const [showReadmeModal, setShowReadmeModal] = useState(false);
   const [readmeContent, setReadmeContent] = useState('');
   const [collapsedTeamMembers, setCollapsedTeamMembers] = useState({});
+  const [showExportImportModal, setShowExportImportModal] = useState(false);
+  const [importError, setImportError] = useState('');
+  const [importSuccess, setImportSuccess] = useState('');
   const [draggedEpicIndex, setDraggedEpicIndex] = useState(null);
   const [dragOverIndex, setDragOverIndex] = useState(null);
   const [showSidebar, setShowSidebar] = useState(false);
@@ -366,6 +369,8 @@ function App() {
           setShowAboutModal(false);
         } else if (showReadmeModal) {
           setShowReadmeModal(false);
+        } else if (showExportImportModal) {
+          setShowExportImportModal(false);
         } else if (showSettingsMenu) {
           setShowSettingsMenu(false);
         } else if (showSidebar) {
@@ -378,7 +383,7 @@ function App() {
     return () => {
       document.removeEventListener('keydown', handleEscKey);
     };
-  }, [showSetupWizard, showAboutModal, showReadmeModal, showSettingsMenu, showSidebar]);
+  }, [showSetupWizard, showAboutModal, showReadmeModal, showExportImportModal, showSettingsMenu, showSidebar]);
 
   // Fetch user name by ID
   // Convert text to title case (initial capitals)
@@ -552,6 +557,92 @@ function App() {
       // Reload the page to ensure clean state
       window.location.reload();
     }, 2000);
+  };
+
+  // Export localStorage data to a JSON file
+  const handleExportData = () => {
+    try {
+      // Collect all localStorage data
+      const exportData = {
+        apiToken: storage.getApiToken(),
+        workflowConfig: storage.getWorkflowConfig(),
+        epicsConfig: storage.getEpicsConfig(),
+        migrationCompleted: localStorage.getItem('migration_completed'),
+        exportDate: new Date().toISOString(),
+        version: '1.0'
+      };
+
+      // Convert to JSON string with pretty printing
+      const jsonString = JSON.stringify(exportData, null, 2);
+
+      // Create a blob and download link
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `shortcut-viewer-config-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      setImportSuccess('Configuration exported successfully!');
+      setTimeout(() => setImportSuccess(''), 3000);
+    } catch (err) {
+      setImportError('Failed to export configuration. Please try again.');
+      setTimeout(() => setImportError(''), 3000);
+    }
+  };
+
+  // Import localStorage data from a JSON file
+  const handleImportData = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const importData = JSON.parse(e.target.result);
+
+        // Validate the import data structure
+        if (!importData.version) {
+          setImportError('Invalid configuration file format.');
+          setTimeout(() => setImportError(''), 3000);
+          return;
+        }
+
+        // Import data to localStorage
+        if (importData.apiToken) {
+          storage.setApiToken(importData.apiToken);
+        }
+        if (importData.workflowConfig) {
+          storage.setWorkflowConfig(importData.workflowConfig);
+        }
+        if (importData.epicsConfig) {
+          storage.setEpicsConfig(importData.epicsConfig);
+        }
+        if (importData.migrationCompleted) {
+          localStorage.setItem('migration_completed', importData.migrationCompleted);
+        }
+
+        setImportSuccess('Configuration imported successfully! Reloading page...');
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
+      } catch (err) {
+        setImportError('Failed to import configuration. Please ensure the file is valid.');
+        setTimeout(() => setImportError(''), 3000);
+      }
+    };
+
+    reader.onerror = () => {
+      setImportError('Failed to read file. Please try again.');
+      setTimeout(() => setImportError(''), 3000);
+    };
+
+    reader.readAsText(file);
+    // Reset the file input
+    event.target.value = '';
   };
 
   // Epic management helper functions
@@ -1465,6 +1556,91 @@ function App() {
         </div>
       )}
 
+      {showExportImportModal && (
+        <div className="modal-overlay" onClick={() => setShowExportImportModal(false)}>
+          <div className="modal-content modal-content-export-import" onClick={(e) => e.stopPropagation()}>
+            <h2>Export/Import Configuration</h2>
+
+            {/* Success/Error Messages */}
+            {importSuccess && (
+              <div style={{
+                padding: '0.75rem',
+                marginBottom: '1rem',
+                backgroundColor: '#d1fae5',
+                border: '1px solid #6ee7b7',
+                borderRadius: '0.375rem',
+                color: '#065f46'
+              }}>
+                {importSuccess}
+              </div>
+            )}
+
+            {importError && (
+              <div style={{
+                padding: '0.75rem',
+                marginBottom: '1rem',
+                backgroundColor: '#fef2f2',
+                border: '1px solid #fca5a5',
+                borderRadius: '0.375rem',
+                color: '#dc2626'
+              }}>
+                {importError}
+              </div>
+            )}
+
+            {/* Export Section */}
+            <div style={{ marginBottom: '2rem' }}>
+              <h3 style={{ marginBottom: '0.5rem' }}>Export Configuration</h3>
+              <p style={{ marginBottom: '1rem', color: '#64748b' }}>
+                Download your current configuration as a JSON file for backup.
+              </p>
+              <button
+                type="button"
+                onClick={handleExportData}
+                className="btn-primary"
+              >
+                Download Configuration
+              </button>
+            </div>
+
+            {/* Import Section */}
+            <div style={{ marginBottom: '1.5rem' }}>
+              <h3 style={{ marginBottom: '0.5rem' }}>Import Configuration</h3>
+              <p style={{ marginBottom: '1rem', color: '#64748b' }}>
+                Upload a previously exported configuration file to restore your settings.
+              </p>
+              <input
+                type="file"
+                id="import-file-input"
+                accept=".json"
+                onChange={handleImportData}
+                style={{ display: 'none' }}
+              />
+              <label
+                htmlFor="import-file-input"
+                className="btn-secondary"
+                style={{
+                  display: 'inline-block',
+                  textAlign: 'center'
+                }}
+              >
+                Choose File
+              </label>
+            </div>
+
+            <div className="modal-buttons">
+              <button
+                type="button"
+                onClick={() => setShowExportImportModal(false)}
+                className="btn-secondary"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showWipeConfirmModal && (
         <div className="modal-overlay" onClick={() => setShowWipeConfirmModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -1593,6 +1769,15 @@ function App() {
                 }}
               >
                 README.md
+              </button>
+              <button
+                className="settings-menu-item"
+                onClick={() => {
+                  setShowSettingsMenu(false);
+                  setShowExportImportModal(true);
+                }}
+              >
+                Export/Import
               </button>
               <button
                 className="settings-menu-item"
