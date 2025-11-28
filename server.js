@@ -4,7 +4,6 @@ const axios = require('axios');
 const fs = require('fs').promises;
 const path = require('path');
 const yaml = require('js-yaml');
-require('dotenv').config({ override: true });
 
 const app = express();
 const PORT = 3001;
@@ -12,8 +11,33 @@ const PORT = 3001;
 app.use(cors());
 app.use(express.json());
 
-let SHORTCUT_API_TOKEN = process.env.SHORTCUT_API_TOKEN;
+// Load token only from .env file, not from environment variables
+let SHORTCUT_API_TOKEN = null;
 const SHORTCUT_API_BASE = 'https://api.app.shortcut.com/api/v3';
+
+// Function to load token from .env file
+async function loadTokenFromEnvFile() {
+  try {
+    const envPath = path.join(__dirname, '.env');
+    const envContent = await fs.readFile(envPath, 'utf-8');
+    const match = envContent.match(/SHORTCUT_API_TOKEN=(.+)/);
+    if (match && match[1]) {
+      SHORTCUT_API_TOKEN = match[1].trim();
+      console.log('API token loaded from .env file');
+    } else {
+      console.log('No API token found in .env file');
+    }
+  } catch (error) {
+    if (error.code === 'ENOENT') {
+      console.log('.env file does not exist - API token not configured');
+    } else {
+      console.error('Error reading .env file:', error.message);
+    }
+  }
+}
+
+// Load token on server startup
+loadTokenFromEnvFile();
 
 // Check if API token is configured
 app.get('/api/check-token', async (_req, res) => {
