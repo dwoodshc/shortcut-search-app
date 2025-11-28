@@ -207,7 +207,7 @@ The Express server provides these proxy endpoints:
 
 ### Shortcut API Proxies
 - `GET /api/search/epics?query=` - Search for epics
-- `GET /api/epics/:id` - Get full epic details (includes global_id)
+- `GET /api/epics/:id` - Get full epic details
 - `GET /api/epics/:id/stories` - Get stories for an epic (excluding archived)
 - `GET /api/workflows` - Get all workflows with states
 - `GET /api/users/:id` - Get user/member details
@@ -296,8 +296,8 @@ The Express server provides these proxy endpoints:
 - Responsive design with flexbox and grid layouts
 - Case-insensitive workflow state matching
 - Filters out archived stories automatically
-- Epic data fetched includes full details (id, global_id, states, etc.)
-- Global IDs used for Shortcut backlog URLs
+- Epic data fetched includes full details (id, name, states, stories, etc.)
+- Direct links to epic pages with grouping parameters
 - Modal overlays with click-outside-to-close behavior
 - Drag-and-drop with visual feedback
 - Collapsible sections with expand/collapse all controls

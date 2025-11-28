@@ -2047,7 +2047,6 @@ function App() {
                       {(() => {
                         // Calculate story type counts
                         const typeCounts = {};
-                        let total = epic.stories.length || 0;
                         epic.stories.forEach(story => {
                           const storyType = story.story_type || 'unknown';
                           typeCounts[storyType] = (typeCounts[storyType] || 0) + 1;
@@ -2060,11 +2059,18 @@ function App() {
                         const segments = targetTypes
                           .map((type) => {
                             const count = typeCounts[type] || 0;
-                            const percentage = total > 0 ? (count / total) * 100 : 0;
                             const typeName = type.charAt(0).toUpperCase() + type.slice(1);
-                            return { type, typeName, count, percentage };
+                            return { type, typeName, count };
                           })
                           .filter(seg => seg.count > 0);
+
+                        // Calculate total only from displayed story types
+                        const total = segments.reduce((sum, seg) => sum + seg.count, 0);
+
+                        // Add percentages based on the filtered total
+                        segments.forEach(seg => {
+                          seg.percentage = total > 0 ? (seg.count / total) * 100 : 0;
+                        });
 
                         // Define colors for each story type
                         const typeColors = {
@@ -2154,7 +2160,7 @@ function App() {
                                 <div className="pie-chart-legend">
                                   {segments.map((seg) => {
                                     const color = typeColors[seg.type] || '#667eea';
-                                    const storyTypeUrl = `${shortcutWebUrl}/backlog/?epic_ids=${epic.global_id}&story_type=${seg.type}`;
+                                    const storyTypeUrl = `${shortcutWebUrl}/epic/${epic.id}?group_by=story_type`;
                                     return (
                                       <a
                                         key={seg.type}
@@ -2163,7 +2169,7 @@ function App() {
                                         rel="noopener noreferrer"
                                         className="legend-item"
                                         style={{ textDecoration: 'none', color: 'inherit' }}
-                                        title={`View ${epic.name} filtered by ${seg.typeName} in Shortcut`}
+                                        title={`View ${epic.name} grouped by story type in Shortcut`}
                                       >
                                         <span className="legend-color" style={{ backgroundColor: color }}></span>
                                         <span className="legend-label">{seg.typeName}</span>
