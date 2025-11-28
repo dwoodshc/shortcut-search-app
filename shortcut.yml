@@ -1,0 +1,16 @@
+workflow_name: RnD Workflow
+workflow_id: 500376257
+shortcut_web_url: https://app.shortcut.com/slicernd
+states:
+  - id: 500376258
+    name: Backlog
+  - id: 500376259
+    name: Ready for Development
+  - id: 500376260
+    name: In Development
+  - id: 500376261
+    name: In Review
+  - id: 500381103
+    name: Ready for Release
+  - id: 500376262
+    name: Complete

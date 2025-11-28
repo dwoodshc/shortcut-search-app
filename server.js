@@ -235,10 +235,10 @@ app.post('/api/epics-file', async (req, res) => {
   }
 });
 
-// Get state_ids.yml content
+// Get shortcut.yml content
 app.get('/api/state-ids-file', async (_req, res) => {
   try {
-    const filePath = path.join(__dirname, 'state_ids.yml');
+    const filePath = path.join(__dirname, 'shortcut.yml');
     const fileContent = await fs.readFile(filePath, 'utf-8');
     const data = yaml.load(fileContent);
     res.json(data);
@@ -247,14 +247,14 @@ app.get('/api/state-ids-file', async (_req, res) => {
     if (error.code === 'ENOENT') {
       return res.json(null);
     }
-    console.error('Error reading state_ids.yml:', error.message);
+    console.error('Error reading shortcut.yml:', error.message);
     res.status(500).json({
-      error: 'Failed to read state_ids.yml file'
+      error: 'Failed to read shortcut.yml file'
     });
   }
 });
 
-// Save state_ids.yml content
+// Save shortcut.yml content
 app.post('/api/state-ids-file', async (req, res) => {
   try {
     const { content } = req.body;
@@ -270,12 +270,12 @@ app.post('/api/state-ids-file', async (req, res) => {
       return res.status(400).json({ error: `Invalid YAML format: ${yamlError.message}` });
     }
 
-    const filePath = path.join(__dirname, 'state_ids.yml');
+    const filePath = path.join(__dirname, 'shortcut.yml');
     await fs.writeFile(filePath, content, 'utf-8');
     res.json({ success: true });
   } catch (error) {
-    console.error('Error writing state_ids.yml:', error.message);
-    res.status(500).json({ error: 'Failed to save state_ids.yml file' });
+    console.error('Error writing shortcut.yml:', error.message);
+    res.status(500).json({ error: 'Failed to save shortcut.yml file' });
   }
 });
 

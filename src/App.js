@@ -36,6 +36,8 @@ function App() {
   const [selectedWorkflowId, setSelectedWorkflowId] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
   const [workflowStateIds, setWorkflowStateIds] = useState({});
+  const [shortcutWebUrl, setShortcutWebUrl] = useState('https://app.shortcut.com/slicernd');
+  const [savedWorkflowId, setSavedWorkflowId] = useState(null);
 
   // Helper function to handle API errors and check for token issues
   const handleApiError = useCallback(async (response) => {
@@ -185,6 +187,12 @@ function App() {
           const data = await response.json();
           if (data && data.workflow_id) {
             setSelectedWorkflowId(data.workflow_id);
+            setSavedWorkflowId(data.workflow_id);
+
+            // Load Shortcut Web URL if present
+            if (data.shortcut_web_url) {
+              setShortcutWebUrl(data.shortcut_web_url);
+            }
 
             // Create a mapping of state names to IDs for hyperlinks
             if (data.states && Array.isArray(data.states)) {
@@ -480,6 +488,47 @@ function App() {
     }
   };
 
+  // Save Shortcut Web URL to YAML file
+  const handleSaveShortcutUrl = async () => {
+    // If we have a selected workflow, save the URL
+    if (selectedWorkflowId) {
+      try {
+        // Read current shortcut.yml to get existing data
+        const response = await fetch('http://localhost:3001/api/state-ids-file');
+        if (response.ok) {
+          const data = await response.json();
+          if (data && data.workflow_id) {
+            // Update the URL and save back
+            const yamlContent = yaml.dump({
+              workflow_name: data.workflow_name,
+              workflow_id: data.workflow_id,
+              shortcut_web_url: shortcutWebUrl,
+              states: data.states
+            });
+
+            const saveResponse = await fetch('http://localhost:3001/api/state-ids-file', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ content: yamlContent })
+            });
+
+            if (saveResponse.ok) {
+              setSuccessMessage('Shortcut Web URL saved successfully!');
+              setTimeout(() => setSuccessMessage(null), 3000);
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Error saving shortcut URL:', err);
+        setError('Failed to save Shortcut Web URL');
+      }
+    } else {
+      setError('Please select a workflow first before saving the URL');
+    }
+  };
+
   // Save selected workflow state IDs to YAML file
   const handleSelectWorkflow = async (workflow) => {
     try {
@@ -491,10 +540,11 @@ function App() {
       const yamlContent = yaml.dump({
         workflow_name: workflow.name,
         workflow_id: workflow.id,
+        shortcut_web_url: shortcutWebUrl,
         states: states
       });
 
-      // Save to state_ids.yml file
+      // Save to shortcut.yml file
       const response = await fetch('http://localhost:3001/api/state-ids-file', {
         method: 'POST',
         headers: {
@@ -901,10 +951,41 @@ function App() {
       {showWorkflowModal && (
         <div className="modal-overlay" onClick={() => setShowWorkflowModal(false)}>
           <div className="modal-content modal-content-large" onClick={(e) => e.stopPropagation()}>
-            <h2>Select Workflow</h2>
+            <h2>Setup Shortcut</h2>
             <p style={{ marginBottom: '1rem' }}>
-              Select a workflow to use for epic tracking. The workflow states will be saved to state_ids.yml:
+              Configure your Shortcut workspace URL and select a workflow for epic tracking. Settings will be saved to shortcut.yml:
             </p>
+
+            <div className="form-group" style={{ marginBottom: '1rem' }}>
+              <label htmlFor="shortcutWebUrl">Shortcut Web URL:</label>
+              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
+                <input
+                  type="text"
+                  id="shortcutWebUrl"
+                  value={shortcutWebUrl}
+                  onChange={(e) => setShortcutWebUrl(e.target.value)}
+                  className="input-field"
+                  placeholder="https://app.shortcut.com/your-workspace"
+                  style={{ flex: 1 }}
+                />
+                <button
+                  onClick={handleSaveShortcutUrl}
+                  className="btn-primary"
+                  style={{
+                    fontSize: '0.875rem',
+                    padding: '0.75rem 1.5rem',
+                    whiteSpace: 'nowrap',
+                    marginTop: 0
+                  }}
+                >
+                  Save URL
+                </button>
+              </div>
+              <p style={{ fontSize: '0.75rem', color: '#718096', marginTop: '0.25rem' }}>
+                This URL will be used to generate hyperlinks to your epics
+              </p>
+            </div>
+
             <div
               style={{
                 maxHeight: '60vh',
@@ -1281,7 +1362,7 @@ function App() {
                   handleOpenWorkflows();
                 }}
               >
-                Select Workflow
+                Setup Shortcut
               </button>
               <button
                 className="settings-menu-item"
@@ -1727,7 +1808,10 @@ function App() {
                                 // Get workflow_state_id from state mapping
                                 const stateKey = seg.stateName.toLowerCase().trim();
                                 const workflowStateId = workflowStateIds[stateKey] || seg.stateId;
-                                const epicUrl = `https://app.shortcut.com/slicernd/epic/${epic.id}?workflow_state_ids=${workflowStateId}`;
+                                // Build URL with workflow_id and workflow_state_ids from shortcut.yml
+                                const epicUrl = savedWorkflowId
+                                  ? `${shortcutWebUrl}/epic/${epic.id}?workflow_id=${savedWorkflowId}&workflow_state_ids=${workflowStateId}`
+                                  : `${shortcutWebUrl}/epic/${epic.id}?workflow_state_ids=${workflowStateId}`;
 
                                 return (
                                   <a
