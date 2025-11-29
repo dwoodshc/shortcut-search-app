@@ -336,13 +336,23 @@ textarea.input-field {
 }
 
 .story-count {
-  color: #718096;
+  color: #494BCB;
   font-size: 0.875rem;
+  background: linear-gradient(135deg, #e8e9fc 0%, #f0f1fd 100%);
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-weight: 600;
+  border: 1px solid #d0d2f7;
 }
 
 .epic-owner {
-  color: #718096;
+  color: #64748b;
   font-size: 0.875rem;
+  background: linear-gradient(135deg, #f1f5f9 0%, #f8fafc 100%);
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-weight: 500;
+  border: 1px solid #e2e8f0;
 }
 
 .epic-stats-container {
