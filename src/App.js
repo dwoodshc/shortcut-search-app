@@ -2392,7 +2392,7 @@ function App() {
 
                         return total > 0 ? (
                           <div>
-                            <div className="workflow-status-pie-chart" style={{ marginTop: '0.5rem' }}>
+                            <div className="workflow-status-pie-chart" >
                               <div className="pie-chart-wrapper">
                                 <div style={{ position: 'relative' }}>
                                   <svg viewBox="0 0 200 200" className="pie-chart-svg">

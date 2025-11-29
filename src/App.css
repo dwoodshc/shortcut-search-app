@@ -500,7 +500,7 @@ textarea.input-field {
 /* Pie Chart Styles */
 .workflow-status-pie-chart,
 .story-type-pie-chart {
-  margin-top: 0.5rem;
+  margin-top: 0rem;
   padding: 1rem;
   background: linear-gradient(135deg, #FAFAFA 0%, #F6F6FA 100%);
   border-radius: 12px;
