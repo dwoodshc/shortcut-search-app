@@ -359,7 +359,8 @@ textarea.input-field {
 
 .workflow-status-chart-container h4 {
   color: #03045E;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0rem;
+  margin-top: 0rem;
   font-size: 1.1rem;
 }
 
@@ -653,7 +654,7 @@ textarea.input-field {
 .story-owners-table h4,
 .email-ticket-counts-table h4 {
   color: #03045E;
-  margin-bottom: 1rem;
+  margin-bottom: 0rem;
   font-size: 1.1rem;
 }
 
