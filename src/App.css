@@ -498,7 +498,8 @@ textarea.input-field {
 }
 
 /* Pie Chart Styles */
-.workflow-status-pie-chart {
+.workflow-status-pie-chart,
+.story-type-pie-chart {
   margin-top: 0.5rem;
   padding: 1rem;
   background: linear-gradient(135deg, #FAFAFA 0%, #F6F6FA 100%);
@@ -507,6 +508,7 @@ textarea.input-field {
     inset 0 1px 0 rgba(255, 255, 255, 0.8),
     0 2px 8px rgba(0, 0, 0, 0.08);
   border: 1px solid #F0F0F7;
+  overflow: hidden;
 }
 
 .pie-chart-wrapper {
@@ -514,12 +516,14 @@ textarea.input-field {
   align-items: center;
   gap: 2rem;
   justify-content: center;
+  max-width: 100%;
 }
 
 .pie-chart-svg {
   width: 200px;
   height: 200px;
   flex-shrink: 0;
+  max-width: 100%;
 }
 
 .pie-chart-svg path {
@@ -943,17 +947,24 @@ textarea.input-field {
 
   .workflow-status-pie-chart,
   .story-type-pie-chart {
+    padding: 0.75rem;
+  }
+
+  .pie-chart-wrapper {
     flex-direction: column;
     gap: 1rem;
+    align-items: center;
   }
 
   .pie-chart-svg {
     width: 180px;
     height: 180px;
+    max-width: calc(100vw - 3rem);
   }
 
   .pie-chart-legend {
     width: 100%;
+    max-width: 100%;
   }
 
   .column-3d-container {
