@@ -2454,6 +2454,7 @@ function App() {
                       </div>
                       </div>
 
+                    <div className="tables-container">
                     <div className="story-owners-table">
                       {(() => {
                         // Calculate owner counts (excluding unassigned)
@@ -2615,6 +2616,7 @@ function App() {
                           </>
                         );
                       })()}
+                    </div>
                     </div>
                   </div>
                 )}

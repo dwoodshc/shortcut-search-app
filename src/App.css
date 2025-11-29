@@ -634,11 +634,20 @@ textarea.input-field {
   transition: width 0.3s ease;
 }
 
+.tables-container {
+  display: flex;
+  gap: 1rem;
+  margin: 0;
+  align-items: flex-start;
+  flex: 1;
+  width: 100%;
+}
+
 .story-owners-table,
 .email-ticket-counts-table {
   flex: 1;
   min-width: 200px;
-  max-width: 30%;
+  max-width: 100%;
 }
 
 .story-owners-table h4,
@@ -891,7 +900,7 @@ textarea.input-field {
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 599px) {
   .container {
     padding: 1rem;
   }
@@ -980,6 +989,10 @@ textarea.input-field {
     padding-left: 1.5rem;
   }
 
+  .tables-container {
+    flex-direction: column;
+  }
+
   .story-owners-table,
   .email-ticket-counts-table {
     width: 100%;
@@ -1058,6 +1071,17 @@ textarea.input-field {
 
   .chart-section {
     width: 100%;
+  }
+}
+
+/* Medium screens - allow tables side by side (600px - 768px) */
+@media (min-width: 600px) and (max-width: 768px) {
+  .story-owners-table,
+  .email-ticket-counts-table {
+    flex: 1 1 48%;
+    max-width: 48%;
+    min-width: 250px;
+    width: auto;
   }
 }
 
