@@ -1608,7 +1608,7 @@ function App() {
                 onClick={handleExportData}
                 className="btn-primary"
               >
-                Download Configuration
+                Export Configuration
               </button>
             </div>
 

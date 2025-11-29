@@ -930,8 +930,38 @@ textarea.input-field {
     flex-direction: column;
   }
 
+  .workflow-status-chart-container {
+    width: 100%;
+  }
+
   .workflow-status-chart {
     width: 100%;
+    overflow-x: auto;
+    padding: 0.5rem;
+  }
+
+  .workflow-status-pie-chart,
+  .story-type-pie-chart {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .pie-chart-svg {
+    width: 180px;
+    height: 180px;
+  }
+
+  .pie-chart-legend {
+    width: 100%;
+  }
+
+  .column-3d-container {
+    width: 30px;
+    height: 110px;
+  }
+
+  .status-bar-item {
+    min-width: 45px;
   }
 
   /* Mobile sidebar adjustments */
@@ -952,8 +982,266 @@ textarea.input-field {
     padding-left: 1.5rem;
   }
 
-  .story-owners-table {
+  .story-owners-table,
+  .email-ticket-counts-table {
     width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .story-owners-table table,
+  .email-ticket-counts-table table {
+    font-size: 0.875rem;
+    min-width: 100%;
+  }
+
+  .story-owners-table th,
+  .email-ticket-counts-table th,
+  .story-owners-table td,
+  .email-ticket-counts-table td {
+    padding: 0.6rem 0.75rem;
+    font-size: 0.875rem;
+  }
+
+  /* Header responsive adjustments */
+  .App-header {
+    padding: 1rem;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .header-logo {
+    position: static;
+    transform: none;
+  }
+
+  .logo-text {
+    font-size: 1.25rem;
+  }
+
+  .logo-image {
+    height: 35px;
+  }
+
+  .settings-container {
+    top: 1rem;
+    right: 1rem;
+  }
+
+  /* Button adjustments */
+  .btn-primary,
+  .btn-secondary {
+    padding: 0.6rem 1.5rem;
+    font-size: 0.875rem;
+  }
+
+  /* Modal responsive */
+  .modal-content {
+    width: 95%;
+    max-width: 95%;
+    padding: 1.5rem;
+    margin: 1rem;
+  }
+
+  .modal-content-large,
+  .modal-content-about,
+  .modal-content-export-import {
+    max-width: 95%;
+  }
+
+  .modal-content h2 {
+    font-size: 1.25rem;
+  }
+
+  /* Charts responsive */
+  .charts-container {
+    flex-direction: column;
+  }
+
+  .chart-section {
+    width: 100%;
+  }
+}
+
+/* Tablet-specific adjustments (768px - 1024px) */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .App-header {
+    padding: 1.5rem;
+  }
+
+  .App-header h1 {
+    font-size: 2rem;
+  }
+
+  .logo-text {
+    font-size: 1.5rem;
+  }
+
+  .logo-image {
+    height: 42px;
+  }
+
+  .container {
+    padding: 1.5rem;
+  }
+
+  /* Tablet modal adjustments */
+  .modal-content {
+    max-width: 600px;
+    width: 90%;
+  }
+
+  .modal-content-large {
+    max-width: 700px;
+  }
+
+  .modal-content-about {
+    max-width: 650px;
+  }
+
+  /* Tablet charts */
+  .charts-container {
+    flex-wrap: wrap;
+  }
+
+  .chart-section {
+    flex: 1 1 45%;
+    min-width: 300px;
+  }
+
+  .epic-stats-container {
+    flex-direction: column;
+  }
+
+  .workflow-status-chart-container {
+    width: 100%;
+  }
+
+  .pie-chart-svg {
+    width: 190px;
+    height: 190px;
+  }
+
+  .column-3d-container {
+    width: 32px;
+    height: 120px;
+  }
+
+  /* Tablet table adjustments */
+  .story-owners-table,
+  .email-ticket-counts-table {
+    max-width: 100%;
+    flex: 1 1 45%;
+  }
+}
+
+/* Mobile-specific adjustments (below 480px) */
+@media (max-width: 480px) {
+  .App-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .logo-text {
+    font-size: 1rem;
+  }
+
+  .logo-image {
+    height: 30px;
+  }
+
+  .container {
+    padding: 0.75rem;
+  }
+
+  /* Mobile buttons */
+  .btn-primary,
+  .btn-secondary {
+    padding: 0.5rem 1rem;
+    font-size: 0.8125rem;
+    width: 100%;
+  }
+
+  .modal-buttons {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .modal-buttons button {
+    width: 100%;
+  }
+
+  /* Mobile modal */
+  .modal-content {
+    padding: 1rem;
+    border-radius: 8px;
+  }
+
+  .modal-content h2 {
+    font-size: 1.125rem;
+  }
+
+  /* Mobile epic cards */
+  .epic-card {
+    padding: 1rem;
+  }
+
+  .epic-header h2 {
+    font-size: 1.25rem;
+  }
+
+  /* Mobile tables */
+  .story-owners-table table,
+  .email-ticket-counts-table table {
+    font-size: 0.8125rem;
+  }
+
+  .story-owners-table th,
+  .email-ticket-counts-table th,
+  .story-owners-table td,
+  .email-ticket-counts-table td {
+    padding: 0.5rem 0.6rem;
+    font-size: 0.8125rem;
+  }
+
+  .story-owners-table th,
+  .email-ticket-counts-table th {
+    font-size: 0.75rem;
+  }
+
+  /* Mobile settings menu */
+  .settings-icon {
+    width: 36px;
+    height: 36px;
+    font-size: 1.25rem;
+  }
+
+  /* Small mobile chart adjustments */
+  .pie-chart-svg {
+    width: 150px;
+    height: 150px;
+  }
+
+  .column-3d-container {
+    width: 25px;
+    height: 90px;
+  }
+
+  .status-bar-item {
+    min-width: 40px;
+  }
+
+  .column-3d-fill .status-count-label {
+    font-size: 0.75rem;
+    top: -1.25rem;
+  }
+
+  .status-bar-label {
+    font-size: 0.7rem;
+  }
+
+  .workflow-status-chart {
+    gap: 0.25rem;
+    padding: 0.5rem 0.5rem 1rem 0.5rem;
   }
 }
 
