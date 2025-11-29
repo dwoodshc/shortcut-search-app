@@ -2118,7 +2118,7 @@ function App() {
                                 </div>
                               </div>
                               <div className="status-bar-label">
-                                <span className="status-name">{stateName}</span>
+                                <span className="status-name">{stateName.replace(/Development/g, 'Dev')}</span>
                               </div>
                             </div>
                           );
