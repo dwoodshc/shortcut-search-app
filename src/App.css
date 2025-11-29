@@ -387,7 +387,7 @@ textarea.input-field {
   flex: 1;
   min-width: 50px;
   position: relative;
-  padding-bottom: 2.5rem;
+  padding-bottom: 3.5rem;
 }
 
 .column-3d-wrapper {
@@ -401,7 +401,7 @@ textarea.input-field {
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  margin-top: 0.5rem;
+  margin-top: 1rem;
   font-size: 0.8rem;
   text-align: center;
   width: 100%;
