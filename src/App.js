@@ -51,7 +51,6 @@ function App() {
   const [hasExistingToken, setHasExistingToken] = useState(false);
   const [epicListError, setEpicListError] = useState('');
   const [collapsedCharts, setCollapsedCharts] = useState({});
-  const [collapsedEpics, setCollapsedEpics] = useState({});
   const [epicsList, setEpicsList] = useState([]);
   const [showReadmeModal, setShowReadmeModal] = useState(false);
   const [readmeContent, setReadmeContent] = useState('');
@@ -146,14 +145,6 @@ function App() {
     }));
   };
 
-  // Toggle epic collapse state (for entire epic content)
-  const toggleEpic = (epicId) => {
-    setCollapsedEpics(prev => ({
-      ...prev,
-      [epicId]: !prev[epicId]
-    }));
-  };
-
   // Scroll to epic by ID
   const scrollToEpic = (epicId) => {
     const element = document.getElementById(`epic-${epicId}`);
@@ -210,24 +201,6 @@ function App() {
     });
 
     setCollapsedCharts(newState);
-  };
-
-  // Toggle all epics collapse state
-  const toggleAllEpics = () => {
-    // Check if all epics are currently collapsed
-    const allCollapsed = epics
-      .filter(epic => !epic.notFound)
-      .every(epic => collapsedEpics[epic.id]);
-
-    // Set all epics to the opposite state
-    const newState = { ...collapsedEpics };
-    epics.forEach(epic => {
-      if (!epic.notFound) {
-        newState[epic.id] = !allCollapsed;
-      }
-    });
-
-    setCollapsedEpics(newState);
   };
 
   // Shared function to load workflow configuration from localStorage
@@ -1997,18 +1970,6 @@ function App() {
               </h2>
               <div style={{ display: 'flex', gap: '0.5rem' }}>
                 <button
-                  onClick={toggleAllEpics}
-                  className="btn-secondary"
-                  style={{ whiteSpace: 'nowrap' }}
-                >
-                  {(() => {
-                    const allCollapsed = epics
-                      .filter(epic => !epic.notFound)
-                      .every(epic => collapsedEpics[epic.id]);
-                    return allCollapsed ? 'Expand Epics' : 'Collapse Epics';
-                  })()}
-                </button>
-                <button
                   onClick={toggleAllStories}
                   className="btn-secondary"
                   style={{ whiteSpace: 'nowrap' }}
@@ -2057,20 +2018,6 @@ function App() {
                   className="epic-header"
                 >
                   <div className="epic-title">
-                    <button
-                      onClick={() => toggleEpic(epic.id)}
-                      aria-label="Toggle epic content"
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        padding: 0,
-                        cursor: 'pointer',
-                        fontSize: '1.5rem',
-                        lineHeight: 1
-                      }}
-                    >
-                      <span className="expand-icon">{collapsedEpics[epic.id] ? '▼' : '▲'}</span>
-                    </button>
                     <h3>
                       {epic.app_url ? (
                         <a
@@ -2104,8 +2051,6 @@ function App() {
                   </div>
                 </div>
 
-                {!collapsedEpics[epic.id] && (
-                <>
                 {epic.stories && workflowStateOrder.length > 0 && (
                   <div className="epic-stats-container">
                     <div className="workflow-status-chart-container">
@@ -2745,8 +2690,6 @@ function App() {
                       </>
                     )}
                   </div>
-                )}
-                </>
                 )}
               </div>
               )
