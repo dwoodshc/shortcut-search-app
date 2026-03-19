@@ -2672,7 +2672,7 @@ function App() {
                       </button>
                     </h4>
                     {!collapsedCharts[`${epic.id}-stories`] && (
-                      <>
+                      <div style={{ borderTop: '2px solid #e2e8f0', paddingTop: '0.75rem' }}>
                         {epic.stories.length === 0 ? (
                           <p className="no-stories">No stories found for this epic</p>
                         ) : (
@@ -2724,7 +2724,7 @@ function App() {
                             })}
                           </div>
                         )}
-                      </>
+                      </div>
                     )}
                   </div>
                 )}
