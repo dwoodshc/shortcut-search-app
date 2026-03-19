@@ -2026,13 +2026,13 @@ function App() {
                 const inProgressPct = total > 0 ? (inProgressCount / total) * 100 : 0;
                 const completePct = total > 0 ? (completeCount / total) * 100 : 0;
                 return (
-                  <tr key={epic.id} style={{ borderBottom: '1px solid #F0F0F7', background: idx % 2 === 0 ? 'white' : '#fafafa' }}>
-                    <td style={{ padding: '0.5rem 0.75rem', fontWeight: 600, fontSize: '0.875rem', whiteSpace: 'nowrap' }}>
+                  <tr key={epic.id} style={{ background: idx % 2 === 0 ? 'white' : '#fafafa' }}>
+                    <td style={{ padding: '0.5rem 0.75rem', fontWeight: 600, fontSize: '0.875rem', whiteSpace: 'nowrap', borderBottom: '1px solid #F0F0F7' }}>
                       <a href={`#epic-${epic.id}`} style={{ color: '#494BCB', textDecoration: 'none' }}>
                         {epic.name}
                       </a>
                     </td>
-                    <td style={{ padding: '0.4rem 0.75rem', width: '100%' }}>
+                    <td style={{ padding: '0.4rem 0.75rem', width: '100%', borderBottom: '1px solid #F0F0F7' }}>
                       <div className="summary-bar-wrapper">
                         <div style={{ display: 'flex', height: '22px', borderRadius: '999px', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
                           {total === 0 ? (
@@ -2047,14 +2047,14 @@ function App() {
                         </div>
                         <div className="summary-bar-tooltip">
                           {[
-                            { label: 'Backlog', pct: backlogPct, color: '#f1f5f9' },
-                            { label: 'In Progress', pct: inProgressPct, color: '#fde68a' },
-                            { label: 'Complete', pct: completePct, color: '#059669' },
-                          ].map(({ label, pct, color }) => (
+                            { label: 'Backlog', count: backlogCount, pct: backlogPct, color: '#f1f5f9' },
+                            { label: 'In Progress', count: inProgressCount, pct: inProgressPct, color: '#fde68a' },
+                            { label: 'Complete', count: completeCount, pct: completePct, color: '#059669' },
+                          ].map(({ label, count, pct, color }) => (
                             <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.15rem 0' }}>
                               <span style={{ width: '10px', height: '10px', borderRadius: '2px', background: color, flexShrink: 0, border: '1px solid rgba(255,255,255,0.3)', display: 'inline-block' }} />
                               <span style={{ flex: 1 }}>{label}</span>
-                              <span style={{ fontWeight: 700, marginLeft: '0.75rem' }}>{Math.round(pct)}%</span>
+                              <span style={{ fontWeight: 700, marginLeft: '0.75rem' }}>{count} ({Math.round(pct)}%)</span>
                             </div>
                           ))}
                         </div>
@@ -2068,11 +2068,11 @@ function App() {
               const leftEpics = foundEpics.slice(0, half);
               const rightEpics = foundEpics.slice(half);
 
-              const tableStyle = { width: '100%', borderCollapse: 'collapse', background: 'white', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 2px 4px rgba(0,0,0,0.08)', border: '1px solid #F0F0F7' };
+              const tableStyle = { width: '100%', borderCollapse: 'separate', borderSpacing: 0, background: 'white', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.08)', border: '1px solid #F0F0F7' };
               const theadRow = (
                 <tr style={{ background: '#494BCB', color: 'white' }}>
-                  <th style={{ padding: '0.5rem 0.75rem', textAlign: 'left', fontWeight: 600, fontSize: '0.875rem', whiteSpace: 'nowrap' }}>Epic</th>
-                  <th style={{ padding: '0.5rem 0.75rem', textAlign: 'center', fontWeight: 600, fontSize: '0.875rem' }}>Ticket Status</th>
+                  <th style={{ padding: '0.5rem 0.75rem', textAlign: 'left', fontWeight: 600, fontSize: '0.875rem', whiteSpace: 'nowrap', borderRadius: '8px 0 0 0' }}>Epic</th>
+                  <th style={{ padding: '0.5rem 0.75rem', textAlign: 'center', fontWeight: 600, fontSize: '0.875rem', borderRadius: '0 8px 0 0' }}>Ticket Status</th>
                 </tr>
               );
 
@@ -2080,13 +2080,13 @@ function App() {
                 <div style={{ marginBottom: '1rem' }}>
                   <h3 style={{ color: '#03045E', fontSize: '1.1rem', fontWeight: 700, marginBottom: '0.5rem' }}>Summary</h3>
                   <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
-                    <div style={{ flex: 1, overflow: 'hidden' }}>
+                    <div style={{ flex: 1 }}>
                       <table style={tableStyle}>
                         <thead>{theadRow}</thead>
                         <tbody>{leftEpics.map((epic, idx) => renderRow(epic, idx))}</tbody>
                       </table>
                     </div>
-                    <div style={{ flex: 1, overflow: 'hidden' }}>
+                    <div style={{ flex: 1 }}>
                       <table style={tableStyle}>
                         <thead>{theadRow}</thead>
                         <tbody>{rightEpics.map((epic, idx) => renderRow(epic, idx))}</tbody>
