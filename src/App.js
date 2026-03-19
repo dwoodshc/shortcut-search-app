@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { marked } from 'marked';
 import './App.css';
 
@@ -36,6 +36,7 @@ const getApiBaseUrl = () => {
 function App() {
   const [epics, setEpics] = useState([]);
   const [loading, setLoading] = useState(false);
+  const searchAbortControllerRef = useRef(null);
   const [error, setError] = useState(null);
   const [hoveredPieSegment, setHoveredPieSegment] = useState(null);
   const [hoveredTypeSegment, setHoveredTypeSegment] = useState(null);
@@ -160,66 +161,38 @@ function App() {
   const toggleAllCharts = () => {
     const allChartKeys = [];
     const chartTypes = ['column', 'workflow-pie', 'type-pie', 'owners-table', 'team-tickets'];
-
     epics.forEach(epic => {
       if (!epic.notFound) {
-        chartTypes.forEach(type => {
-          allChartKeys.push(`${epic.id}-${type}`);
-        });
+        chartTypes.forEach(type => { allChartKeys.push(`${epic.id}-${type}`); });
       }
     });
-
-    // Check if all are currently collapsed
     const allCollapsed = allChartKeys.every(key => collapsedCharts[key]);
-
-    // Set all charts/tables to the opposite state, but preserve stories state
     const newState = { ...collapsedCharts };
-    allChartKeys.forEach(key => {
-      newState[key] = !allCollapsed;
-    });
-
+    allChartKeys.forEach(key => { newState[key] = !allCollapsed; });
     setCollapsedCharts(newState);
   };
 
   // Toggle only story type breakdown charts
   const toggleAllTypePie = () => {
     const allTypePieKeys = [];
-
     epics.forEach(epic => {
-      if (!epic.notFound) {
-        allTypePieKeys.push(`${epic.id}-type-pie`);
-      }
+      if (!epic.notFound) { allTypePieKeys.push(`${epic.id}-type-pie`); }
     });
-
     const allCollapsed = allTypePieKeys.every(key => collapsedCharts[key]);
-
     const newState = { ...collapsedCharts };
-    allTypePieKeys.forEach(key => {
-      newState[key] = !allCollapsed;
-    });
-
+    allTypePieKeys.forEach(key => { newState[key] = !allCollapsed; });
     setCollapsedCharts(newState);
   };
 
   // Toggle only stories sections
   const toggleAllStories = () => {
     const allStoriesKeys = [];
-
     epics.forEach(epic => {
-      if (!epic.notFound) {
-        allStoriesKeys.push(`${epic.id}-stories`);
-      }
+      if (!epic.notFound) { allStoriesKeys.push(`${epic.id}-stories`); }
     });
-
-    // Check if all stories are currently collapsed
     const allCollapsed = allStoriesKeys.every(key => collapsedCharts[key]);
-
-    // Set all stories to the opposite state
     const newState = { ...collapsedCharts };
-    allStoriesKeys.forEach(key => {
-      newState[key] = !allCollapsed;
-    });
-
+    allStoriesKeys.forEach(key => { newState[key] = !allCollapsed; });
     setCollapsedCharts(newState);
   };
 
@@ -830,8 +803,17 @@ function App() {
     }
   }, [epics, members, fetchUserName]);
 
+  const cancelSearch = () => {
+    if (searchAbortControllerRef.current) {
+      searchAbortControllerRef.current.abort();
+    }
+  };
+
   const searchEpics = async (e) => {
     e.preventDefault();
+
+    const controller = new AbortController();
+    searchAbortControllerRef.current = controller;
 
     setLoading(true);
     setError(null);
@@ -867,9 +849,8 @@ function App() {
             const searchResponse = await fetch(
               `${getApiBaseUrl()}/api/search/epics?query=${encodeURIComponent(name)}`,
               {
-                headers: {
-                  'Authorization': `Bearer ${token}`
-                }
+                headers: { 'Authorization': `Bearer ${token}` },
+                signal: controller.signal
               }
             );
 
@@ -895,9 +876,8 @@ function App() {
             // Fetch full epic details to get all fields including internal IDs
             try {
               const epicResponse = await fetch(`${getApiBaseUrl()}/api/epics/${searchEpic.id}`, {
-                headers: {
-                  'Authorization': `Bearer ${token}`
-                }
+                headers: { 'Authorization': `Bearer ${token}` },
+                signal: controller.signal
               });
               if (epicResponse.ok) {
                 const epic = await epicResponse.json();
@@ -905,9 +885,8 @@ function App() {
                 // Fetch stories for this epic
                 try {
                   const storiesResponse = await fetch(`${getApiBaseUrl()}/api/epics/${epic.id}/stories`, {
-                    headers: {
-                      'Authorization': `Bearer ${token}`
-                    }
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    signal: controller.signal
                   });
                   if (storiesResponse.ok) {
                     const stories = await storiesResponse.json();
@@ -960,15 +939,31 @@ function App() {
       });
       setCollapsedCharts(prev => ({ ...prev, ...newCollapsedState }));
     } catch (err) {
-      setError(err.message);
+      if (err.name !== 'AbortError') {
+        setError(err.message);
+      }
     } finally {
       setLoading(false);
+      searchAbortControllerRef.current = null;
     }
   };
 
 
   return (
     <div className="App">
+      {loading && (
+        <div className="modal-overlay" style={{ zIndex: 9999 }}>
+          <div className="modal-content" style={{ textAlign: 'center', padding: '2.5rem 3rem', maxWidth: '360px' }}>
+            <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>⏳</div>
+            <h2 style={{ margin: '0 0 0.5rem', fontSize: '1.2rem', color: '#03045E' }}>Loading Epics…</h2>
+            <p style={{ color: '#718096', marginBottom: '1.5rem', fontSize: '0.9rem' }}>Fetching epic and story data from Shortcut</p>
+            <div style={{ width: '100%', height: '4px', background: '#e2e8f0', borderRadius: '2px', overflow: 'hidden', marginBottom: '1.5rem' }}>
+              <div style={{ height: '100%', background: '#494BCB', borderRadius: '2px', animation: 'loading-bar 1.5s ease-in-out infinite' }} />
+            </div>
+            <button className="btn-secondary" onClick={cancelSearch} style={{ minWidth: '100px' }}>Cancel</button>
+          </div>
+        </div>
+      )}
       {showSetupWizard && (
         <div className="modal-overlay">
           <div className="modal-content modal-content-large">
@@ -1762,8 +1757,41 @@ function App() {
         <div className="settings-container">
           <button
             className="settings-icon"
+            aria-label="Refresh Epics"
+            title="Refresh Epics"
+            onClick={(e) => searchEpics(e)}
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+              <path d="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+            </svg>
+          </button>
+          <button
+            className="settings-icon"
+            aria-label="Edit Epic List"
+            title="Edit Epic List"
+            onClick={() => {
+              const epicsConfig = storage.getEpicsConfig();
+              if (epicsConfig && epicsConfig.epics) {
+                setEpicsList(epicsConfig.epics);
+                const collapsed = {};
+                epicsConfig.epics.forEach((_, index) => { collapsed[index] = true; });
+                setCollapsedTeamMembers(collapsed);
+              } else {
+                setEpicsList([]);
+              }
+              setShowSetupWizard(true);
+              setSetupWizardStep(4);
+            }}
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+              <path d="M3 5h2v2H3V5zm4 0h14v2H7V5zM3 11h2v2H3v-2zm4 0h14v2H7v-2zM3 17h2v2H3v-2zm4 0h14v2H7v-2z"/>
+            </svg>
+          </button>
+          <button
+            className="settings-icon"
             onClick={() => setShowSettingsMenu(!showSettingsMenu)}
             aria-label="Settings"
+            title="Settings"
           >
             <svg
               width="24"
@@ -1914,36 +1942,6 @@ function App() {
       )}
 
       <main className="container">
-        <form onSubmit={searchEpics} className="search-form">
-          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem' }}>
-            <button type="submit" disabled={loading} className="btn-primary">
-              {loading ? 'Searching...' : (epics.length > 0 ? 'Refresh Epics' : 'Search Epics')}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                // Load existing epics config
-                const epicsConfig = storage.getEpicsConfig();
-                if (epicsConfig && epicsConfig.epics) {
-                  setEpicsList(epicsConfig.epics);
-                  // Collapse all team members by default
-                  const collapsed = {};
-                  epicsConfig.epics.forEach((_, index) => {
-                    collapsed[index] = true;
-                  });
-                  setCollapsedTeamMembers(collapsed);
-                } else {
-                  setEpicsList([]);
-                }
-                setShowSetupWizard(true);
-                setSetupWizardStep(4);
-              }}
-              className="btn-primary"
-            >
-              Edit Epic List
-            </button>
-          </div>
-        </form>
 
         {successMessage && (
           <div style={{
@@ -2080,7 +2078,6 @@ function App() {
 
               return (
                 <div id="summary-table" style={{ marginBottom: '1rem' }}>
-                  <h3 style={{ color: '#03045E', fontSize: '1.1rem', fontWeight: 700, marginBottom: '0.5rem' }}>Summary</h3>
                   <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
                     <div style={{ flex: 1 }}>
                       <table style={tableStyle}>
@@ -2106,55 +2103,23 @@ function App() {
                 Found {epics.filter(e => !e.notFound).length} of {filteredEpicNames.length} Epic{filteredEpicNames.length !== 1 ? 's' : ''}
               </h2>
               <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <button
-                  onClick={toggleAllStories}
-                  className="btn-secondary"
-                  style={{ whiteSpace: 'nowrap' }}
-                >
+                <button onClick={toggleAllStories} className="btn-secondary" style={{ whiteSpace: 'nowrap' }}>
                   {(() => {
-                    const allStoriesKeys = [];
-                    epics.forEach(epic => {
-                      if (!epic.notFound) {
-                        allStoriesKeys.push(`${epic.id}-stories`);
-                      }
-                    });
-                    const allCollapsed = allStoriesKeys.every(key => collapsedCharts[key]);
-                    return allCollapsed ? 'Expand Stories' : 'Collapse Stories';
+                    const allStoriesKeys = epics.filter(e => !e.notFound).map(e => `${e.id}-stories`);
+                    return allStoriesKeys.every(key => collapsedCharts[key]) ? 'Expand Stories' : 'Collapse Stories';
                   })()}
                 </button>
-                <button
-                  onClick={toggleAllTypePie}
-                  className="btn-secondary"
-                  style={{ whiteSpace: 'nowrap' }}
-                >
+                <button onClick={toggleAllTypePie} className="btn-secondary" style={{ whiteSpace: 'nowrap' }}>
                   {(() => {
-                    const allTypePieKeys = [];
-                    epics.forEach(epic => {
-                      if (!epic.notFound) {
-                        allTypePieKeys.push(`${epic.id}-type-pie`);
-                      }
-                    });
-                    const allCollapsed = allTypePieKeys.every(key => collapsedCharts[key]);
-                    return allCollapsed ? 'Expand Story Types' : 'Collapse Story Types';
+                    const allTypePieKeys = epics.filter(e => !e.notFound).map(e => `${e.id}-type-pie`);
+                    return allTypePieKeys.every(key => collapsedCharts[key]) ? 'Expand Story Types' : 'Collapse Story Types';
                   })()}
                 </button>
-                <button
-                  onClick={toggleAllCharts}
-                  className="btn-secondary"
-                  style={{ whiteSpace: 'nowrap' }}
-                >
+                <button onClick={toggleAllCharts} className="btn-secondary" style={{ whiteSpace: 'nowrap' }}>
                   {(() => {
-                    const allChartKeys = [];
                     const chartTypes = ['column', 'workflow-pie', 'type-pie', 'owners-table', 'team-tickets'];
-                    epics.forEach(epic => {
-                      if (!epic.notFound) {
-                        chartTypes.forEach(type => {
-                          allChartKeys.push(`${epic.id}-${type}`);
-                        });
-                      }
-                    });
-                    const allCollapsed = allChartKeys.every(key => collapsedCharts[key]);
-                    return allCollapsed ? 'Expand Charts' : 'Collapse Charts';
+                    const allChartKeys = epics.filter(e => !e.notFound).flatMap(e => chartTypes.map(t => `${e.id}-${t}`));
+                    return allChartKeys.every(key => collapsedCharts[key]) ? 'Expand Charts' : 'Collapse Charts';
                   })()}
                 </button>
               </div>
