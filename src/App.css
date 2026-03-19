@@ -124,19 +124,19 @@ body {
 .container {
   max-width: 1500px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 1.25rem 2rem;
 }
 
 .search-form {
   background: white;
-  padding: 2rem;
+  padding: 1.25rem;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
 }
 
 .form-group {
-  margin-bottom: 1.5rem;
+  margin-bottom: 0.75rem;
 }
 
 .form-group label {
@@ -201,12 +201,12 @@ textarea.input-field {
 }
 
 .epics-list {
-  margin-top: 2rem;
+  margin-top: 1rem;
 }
 
 .epics-list > h2 {
   color: #03045E;
-  margin-bottom: 1.5rem;
+  margin-bottom: 0.75rem;
   font-size: 1.5rem;
 }
 
@@ -236,8 +236,8 @@ textarea.input-field {
 .epic-card {
   background: white;
   border-radius: 8px;
-  padding: 1.5rem;
-  margin-bottom: 1rem;
+  padding: 1rem;
+  margin-bottom: 0.5rem;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
   transition: all 0.3s;
   border: 1px solid #F0F0F7;
@@ -358,7 +358,7 @@ textarea.input-field {
 .epic-stats-container {
   display: flex;
   gap: 1rem;
-  margin: 1rem 0;
+  margin: 0.5rem 0;
   align-items: flex-start;
 }
 
@@ -375,7 +375,7 @@ textarea.input-field {
 }
 
 .workflow-status-chart {
-  padding: 2rem 1rem 1rem 1rem;
+  padding: 1.25rem 1rem 0.75rem 1rem;
   background: linear-gradient(135deg, #FAFAFA 0%, #F6F6FA 100%);
   border-radius: 12px;
   display: flex;
@@ -724,7 +724,7 @@ textarea.input-field {
 
 .epic-description {
   color: #718096;
-  margin: 1rem 0;
+  margin: 0.5rem 0;
   line-height: 1.6;
 }
 
@@ -757,14 +757,14 @@ textarea.input-field {
 }
 
 .stories-section {
-  margin-top: 1.5rem;
-  padding-top: 1.5rem;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
   border-top: 2px solid #e2e8f0;
 }
 
 .stories-section h4 {
   color: #03045E;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
   font-size: 1.1rem;
 }
 
@@ -1337,7 +1337,7 @@ textarea.input-field {
 }
 
 .modal-content .form-group {
-  margin-bottom: 1.5rem;
+  margin-bottom: 0.75rem;
 }
 
 .modal-buttons {

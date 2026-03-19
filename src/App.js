@@ -1984,7 +1984,7 @@ function App() {
 
         {epics.length > 0 && (
           <div className="epics-list">
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
               <h2 style={{ margin: 0, fontSize: '1.0rem' }}>
                 {epics.filter(e => !e.notFound).length === filteredEpicNames.length ? '✅ ' : '⚠️ '}
                 Found {epics.filter(e => !e.notFound).length} of {filteredEpicNames.length} Epic{filteredEpicNames.length !== 1 ? 's' : ''}
@@ -2166,7 +2166,7 @@ function App() {
 
                       {/* Pie Chart */}
                       <div>
-                      <h4 style={{ marginTop: '1rem' }}>
+                      <h4 style={{ marginTop: '0.5rem' }}>
                         <button
                           onClick={() => toggleChart(epic.id, 'workflow-pie')}
                           className="chart-toggle-btn"
@@ -2334,7 +2334,7 @@ function App() {
 
                       {/* Story Type Pie Chart */}
                       <div>
-                      <h4 style={{ marginTop: '1rem' }}>
+                      <h4 style={{ marginTop: '0.5rem' }}>
                         <button
                           onClick={() => toggleChart(epic.id, 'type-pie')}
                           className="chart-toggle-btn"
