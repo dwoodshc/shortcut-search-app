@@ -1318,14 +1318,18 @@ function App() {
                             <button
                               type="button"
                               onClick={() => removeEpic(epicIndex)}
-                              className="btn-secondary"
+                              title="Remove epic"
                               style={{
-                                padding: '0.4rem 0.75rem',
-                                backgroundColor: '#ef4444',
-                                color: 'white'
+                                background: 'none',
+                                border: 'none',
+                                cursor: 'pointer',
+                                color: '#ef4444',
+                                fontSize: '1rem',
+                                lineHeight: 1,
+                                padding: '0.1rem 0.25rem'
                               }}
                             >
-                              Remove
+                              ✕
                             </button>
                           </div>
 
@@ -1359,15 +1363,18 @@ function App() {
                                     <button
                                       type="button"
                                       onClick={() => removeTeamMember(epicIndex, memberIndex)}
-                                      className="btn-secondary"
+                                      title="Remove team member"
                                       style={{
-                                        padding: '0.4rem 0.75rem',
-                                        backgroundColor: '#f59e0b',
-                                        color: 'white',
-                                        fontSize: '0.78rem'
+                                        background: 'none',
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        color: '#ef4444',
+                                        fontSize: '1rem',
+                                        lineHeight: 1,
+                                        padding: '0.1rem 0.25rem'
                                       }}
                                     >
-                                      Remove
+                                      ✕
                                     </button>
                                   </div>
                                 ))}
