@@ -2077,7 +2077,7 @@ function App() {
               );
 
               return (
-                <div style={{ marginBottom: '1rem' }}>
+                <div id="summary-table" style={{ marginBottom: '1rem' }}>
                   <h3 style={{ color: '#03045E', fontSize: '1.1rem', fontWeight: 700, marginBottom: '0.5rem' }}>Summary</h3>
                   <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
                     <div style={{ flex: 1 }}>
@@ -2843,6 +2843,11 @@ function App() {
                     )}
                   </div>
                 )}
+                <div style={{ textAlign: 'left', marginTop: '0.5rem' }}>
+                  <a href="#summary-table" style={{ color: '#494BCB', fontSize: '0.8rem', textDecoration: 'none', fontWeight: 500 }}>
+                    ↑ Summary Table
+                  </a>
+                </div>
               </div>
               )
             ))}
