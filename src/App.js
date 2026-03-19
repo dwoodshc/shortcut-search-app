@@ -181,6 +181,26 @@ function App() {
     setCollapsedCharts(newState);
   };
 
+  // Toggle only story type breakdown charts
+  const toggleAllTypePie = () => {
+    const allTypePieKeys = [];
+
+    epics.forEach(epic => {
+      if (!epic.notFound) {
+        allTypePieKeys.push(`${epic.id}-type-pie`);
+      }
+    });
+
+    const allCollapsed = allTypePieKeys.every(key => collapsedCharts[key]);
+
+    const newState = { ...collapsedCharts };
+    allTypePieKeys.forEach(key => {
+      newState[key] = !allCollapsed;
+    });
+
+    setCollapsedCharts(newState);
+  };
+
   // Toggle only stories sections
   const toggleAllStories = () => {
     const allStoriesKeys = [];
@@ -930,11 +950,12 @@ function App() {
 
       setEpics(allEpics);
 
-      // Collapse stories by default for all epics
+      // Collapse stories and story type breakdown by default for all epics
       const newCollapsedState = {};
       allEpics.forEach(epic => {
         if (!epic.notFound) {
           newCollapsedState[`${epic.id}-stories`] = true;
+          newCollapsedState[`${epic.id}-type-pie`] = true;
         }
       });
       setCollapsedCharts(prev => ({ ...prev, ...newCollapsedState }));
@@ -1473,7 +1494,7 @@ function App() {
                         setTokenError('');
                         setSetupWizardStep(2);
                       } catch (err) {
-                        setTokenError('Failed to verify token. Please check your connection and try again.');
+                        setTokenError('Exception - Failed to verify token. Please check your connection and try again.');
                         return;
                       }
                     } else if (setupWizardStep === 2) {
@@ -1983,6 +2004,22 @@ function App() {
                     });
                     const allCollapsed = allStoriesKeys.every(key => collapsedCharts[key]);
                     return allCollapsed ? 'Expand Stories' : 'Collapse Stories';
+                  })()}
+                </button>
+                <button
+                  onClick={toggleAllTypePie}
+                  className="btn-secondary"
+                  style={{ whiteSpace: 'nowrap' }}
+                >
+                  {(() => {
+                    const allTypePieKeys = [];
+                    epics.forEach(epic => {
+                      if (!epic.notFound) {
+                        allTypePieKeys.push(`${epic.id}-type-pie`);
+                      }
+                    });
+                    const allCollapsed = allTypePieKeys.every(key => collapsedCharts[key]);
+                    return allCollapsed ? 'Expand Story Types' : 'Collapse Story Types';
                   })()}
                 </button>
                 <button
