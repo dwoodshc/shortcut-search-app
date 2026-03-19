@@ -281,6 +281,7 @@ function App() {
 
         // If any required configuration is missing, show setup wizard
         if (!token || !workflowConfig || !workflowConfig.workflow_id || !epicsConfig || !epicsConfig.epics || epicsConfig.epics.length === 0) {
+
           setShowSetupWizard(true);
 
           // Load existing epics config if available, or start with empty list
@@ -306,6 +307,9 @@ function App() {
           }
           return;
         }
+
+        // All config present — auto-search on load
+        searchEpics();
       } catch (err) {
         setShowSetupWizard(true);
         setSetupWizardStep(1);
@@ -314,7 +318,7 @@ function App() {
     };
 
     checkConfig();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Fetch teams, workflow states, and filtered epic names on mount
   useEffect(() => {
@@ -810,7 +814,7 @@ function App() {
   };
 
   const searchEpics = async (e) => {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
 
     const controller = new AbortController();
     searchAbortControllerRef.current = controller;
@@ -914,7 +918,7 @@ function App() {
 
       // Add not found epics to the results (in order)
       const allEpics = [];
-      filteredEpicNames.forEach((name, index) => {
+      epicNamesToSearch.forEach((name, index) => {
         const foundEpic = epicsWithStories[index];
         if (foundEpic) {
           allEpics.push(foundEpic);
@@ -1758,7 +1762,7 @@ function App() {
           <button
             className="settings-icon"
             aria-label="Refresh Epics"
-            title="Refresh Epics"
+            data-tooltip="Refresh Epics"
             onClick={(e) => searchEpics(e)}
           >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
@@ -1768,7 +1772,7 @@ function App() {
           <button
             className="settings-icon"
             aria-label="Edit Epic List"
-            title="Edit Epic List"
+            data-tooltip="Edit Epic List"
             onClick={() => {
               const epicsConfig = storage.getEpicsConfig();
               if (epicsConfig && epicsConfig.epics) {
@@ -1791,7 +1795,7 @@ function App() {
             className="settings-icon"
             onClick={() => setShowSettingsMenu(!showSettingsMenu)}
             aria-label="Settings"
-            title="Settings"
+            data-tooltip="Settings"
           >
             <svg
               width="24"

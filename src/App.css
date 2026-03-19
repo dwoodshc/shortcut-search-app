@@ -89,6 +89,33 @@ body {
   color: #03045E;
 }
 
+.settings-icon[data-tooltip] {
+  position: relative;
+}
+
+.settings-icon[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(26, 32, 44, 0.92);
+  color: white;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  padding: 0.3rem 0.6rem;
+  border-radius: 4px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s;
+  transition-delay: 0s;
+}
+
+.settings-icon[data-tooltip]:hover::after {
+  opacity: 1;
+  transition-delay: 0.2s;
+}
+
 .settings-menu {
   position: absolute;
   top: 50px;
