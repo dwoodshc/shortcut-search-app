@@ -1548,27 +1548,21 @@ function App() {
       {showAboutModal && (
         <div className="modal-overlay" onClick={() => setShowAboutModal(false)}>
           <div className="modal-content modal-content-about" onClick={(e) => e.stopPropagation()}>
-            <h2>About Shortcut Viewer</h2>
+            <h2>About Shortcut Dashboard</h2>
             <p>
-              A comprehensive React-based dashboard for visualizing and managing Shortcut.com epics and their associated stories.
-            </p>
-            <p>
-              <strong>Features:</strong>
+              A React-based dashboard for tracking Shortcut.com epics, visualising progress, and monitoring team workload.
             </p>
             <ul>
-              <li><strong>Epic Management:</strong> Track multiple Shortcut epics with team member assignments</li>
-              <li><strong>Interactive Visualizations:</strong>
-                <ul style={{ marginTop: '0.5rem', marginBottom: '0.5rem' }}>
-                  <li>3D Column Chart showing workflow status breakdown</li>
-                  <li>Workflow Status Pie Chart with clickable legend items that link to filtered Shortcut views</li>
-                  <li>Story Type Breakdown Pie Chart with clickable legend items</li>
-                </ul>
-              </li>
-              <li><strong>Kanban Board:</strong> Six-column workflow view with collapsible stories sections</li>
-              <li><strong>Analytics Tables:</strong> Story owners and team ticket counts with sorting</li>
-              <li><strong>Setup Wizard:</strong> Guided 4-step setup for first-time configuration</li>
-              <li><strong>Configuration Management:</strong> Uses localStorage with Export/Import functionality</li>
-              <li><strong>Sidebar Navigation:</strong> Quick jump to any epic with slide-out panel</li>
+              <li><strong>Summary Table:</strong> At-a-glance progress bars for all epics</li>
+              <li><strong>Ticket Status Breakdown:</strong> column chart showing story workflow states per epic</li>
+              <li><strong>Workflow Status Pie Chart:</strong> Clickable links to filtered Shortcut views</li>
+              <li><strong>Story Type Breakdown:</strong> Pie chart showing Feature / Bug / Chore distribution</li>
+              <li><strong>Analytics Tables:</strong> Story owners table and team open-ticket counts per epic</li>
+              <li><strong>Kanban Board:</strong> Wworkflow view (Backlog → Complete) with collapsible story cards</li>
+              <li><strong>Sidebar Navigation:</strong> Slide-out panel for quick jumping between epics</li>
+              <li><strong>Expand / Collapse Controls:</strong> Global toggles for Stories, Story Types, and all Charts</li>
+              <li><strong>Setup Wizard:</strong> Guided first-time configuration (token, workspace URL, workflow, epic list)</li>
+              <li><strong>Configuration Management:</strong> Export / Import support of all settings</li>
             </ul>
             <p style={{ marginTop: '1rem', fontSize: '0.875rem', color: '#718096' }}>
               Version 1.0.0 | Project D.A.V.E. (Dashboards Are Very Effective)
@@ -1756,7 +1750,7 @@ function App() {
             className="logo-image"
           />
         </div>
-        <h1>Shortcut Viewer</h1>
+        <h1>Shortcut Dashboard</h1>
         <div className="settings-container">
           <button
             className="settings-icon"
