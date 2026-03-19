@@ -1984,7 +1984,107 @@ function App() {
 
         {epics.length > 0 && (
           <div className="epics-list">
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+            {/* Summary Table */}
+            {(() => {
+              const backlogStates = ['backlog'];
+              const completeStates = ['complete'];
+              const inProgressStates = ['ready for development', 'in development', 'in review', 'ready for release'];
+
+              const getGroup = name => {
+                const n = (name || '').toLowerCase().trim();
+                if (backlogStates.includes(n)) return 'backlog';
+                if (completeStates.includes(n)) return 'complete';
+                if (inProgressStates.includes(n)) return 'inprogress';
+                return null;
+              };
+
+              const allTargetStates = [...backlogStates, ...inProgressStates, ...completeStates];
+              const summaryStateIds = workflowStateOrder.filter(stateId => {
+                const name = workflowStates[stateId];
+                return name && allTargetStates.includes(name.toLowerCase().trim());
+              });
+              const foundEpics = epics.filter(e => !e.notFound);
+              if (foundEpics.length === 0 || summaryStateIds.length === 0) return null;
+
+              return (
+                <div style={{ marginBottom: '1rem', overflowX: 'auto' }}>
+                  <h3 style={{ color: '#03045E', fontSize: '1.1rem', fontWeight: 700, marginBottom: '0.5rem' }}>Summary</h3>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 2px 4px rgba(0,0,0,0.08)', border: '1px solid #F0F0F7' }}>
+                    <thead>
+                      <tr style={{ background: '#494BCB', color: 'white' }}>
+                        <th style={{ padding: '0.5rem 0.75rem', textAlign: 'left', fontWeight: 600, fontSize: '0.875rem', whiteSpace: 'nowrap' }}>Epic</th>
+                        <th style={{ padding: '0.5rem 0.75rem', textAlign: 'center', fontWeight: 600, fontSize: '0.875rem' }}>Ticket Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {foundEpics.map((epic, idx) => {
+                        const stateCounts = {};
+                        if (epic.stories) {
+                          epic.stories.forEach(story => {
+                            stateCounts[story.workflow_state_id] = (stateCounts[story.workflow_state_id] || 0) + 1;
+                          });
+                        }
+                        const total = epic.stories ? epic.stories.length : 0;
+
+                        let backlogCount = 0, inProgressCount = 0, completeCount = 0;
+                        summaryStateIds.forEach(stateId => {
+                          const group = getGroup(workflowStates[stateId]);
+                          const count = stateCounts[stateId] || 0;
+                          if (group === 'backlog') backlogCount += count;
+                          else if (group === 'inprogress') inProgressCount += count;
+                          else if (group === 'complete') completeCount += count;
+                        });
+
+                        const backlogPct = total > 0 ? (backlogCount / total) * 100 : 0;
+                        const inProgressPct = total > 0 ? (inProgressCount / total) * 100 : 0;
+                        const completePct = total > 0 ? (completeCount / total) * 100 : 0;
+
+                        return (
+                          <tr key={epic.id} style={{ borderBottom: '1px solid #F0F0F7', background: idx % 2 === 0 ? 'white' : '#fafafa' }}>
+                            <td style={{ padding: '0.5rem 0.75rem', fontWeight: 600, fontSize: '0.875rem', whiteSpace: 'nowrap' }}>
+                              <a href={`#epic-${epic.id}`} style={{ color: '#494BCB', textDecoration: 'none' }}>
+                                {epic.name}
+                              </a>
+                            </td>
+                            <td style={{ padding: '0.4rem 0.75rem', width: '100%' }}>
+                              <div className="summary-bar-wrapper">
+                                <div style={{ display: 'flex', height: '22px', borderRadius: '999px', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
+                                  {total === 0 ? (
+                                    <div style={{ width: '100%', background: '#f1f5f9' }} />
+                                  ) : (
+                                    <>
+                                      {backlogPct > 0 && <div style={{ width: `${backlogPct}%`, background: '#f1f5f9', height: '100%', minWidth: '2px', borderRight: inProgressPct > 0 || completePct > 0 ? '1px solid #e2e8f0' : 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>{backlogPct >= 8 && <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748b', whiteSpace: 'nowrap' }}>{Math.round(backlogPct)}%</span>}</div>}
+                                      {inProgressPct > 0 && <div style={{ width: `${inProgressPct}%`, background: '#fde68a', height: '100%', minWidth: '2px', borderRight: completePct > 0 ? '1px solid #f59e0b' : 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>{inProgressPct >= 8 && <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#92400e', whiteSpace: 'nowrap' }}>{Math.round(inProgressPct)}%</span>}</div>}
+                                      {completePct > 0 && <div style={{ width: `${completePct}%`, background: '#059669', height: '100%', minWidth: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>{completePct >= 8 && <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#ffffff', whiteSpace: 'nowrap' }}>{Math.round(completePct)}%</span>}</div>}
+                                    </>
+                                  )}
+                                </div>
+                                <div className="summary-bar-tooltip">
+                                  {[
+                                    { label: 'Backlog', count: backlogCount, pct: backlogPct, color: '#f1f5f9', textColor: '#1a202c' },
+                                    { label: 'In Progress', count: inProgressCount, pct: inProgressPct, color: '#fde68a', textColor: '#1a202c' },
+                                    { label: 'Complete', count: completeCount, pct: completePct, color: '#059669', textColor: '#ffffff' },
+                                  ].map(({ label, pct, color }) => (
+                                    <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.15rem 0' }}>
+                                      <span style={{ width: '10px', height: '10px', borderRadius: '2px', background: color, flexShrink: 0, border: '1px solid rgba(255,255,255,0.3)', display: 'inline-block' }} />
+                                      <span style={{ flex: 1 }}>{label}</span>
+                                      <span style={{ fontWeight: 700, marginLeft: '0.75rem' }}>{Math.round(pct)}%</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                  <hr style={{ border: 'none', borderTop: '2px solid #e2e8f0', marginTop: '1rem' }} />
+                </div>
+              );
+            })()}
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem', paddingBottom: '0.75rem', borderBottom: '2px solid #e2e8f0' }}>
               <h2 style={{ margin: 0, fontSize: '1.0rem' }}>
                 {epics.filter(e => !e.notFound).length === filteredEpicNames.length ? '✅ ' : '⚠️ '}
                 Found {epics.filter(e => !e.notFound).length} of {filteredEpicNames.length} Epic{filteredEpicNames.length !== 1 ? 's' : ''}
@@ -2043,6 +2143,7 @@ function App() {
                 </button>
               </div>
             </div>
+
             {epics.map((epic) => (
               epic.notFound ? (
                 <div key={epic.id} className="epic-not-found">

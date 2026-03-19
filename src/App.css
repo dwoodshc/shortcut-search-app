@@ -1265,6 +1265,43 @@ textarea.input-field {
   }
 }
 
+/* Summary table progress bar */
+.summary-bar-wrapper {
+  position: relative;
+}
+
+.summary-bar-tooltip {
+  display: none;
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(26, 32, 44, 0.95);
+  color: white;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  z-index: 200;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+  min-width: 200px;
+}
+
+.summary-bar-tooltip::after {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-bottom-color: rgba(26, 32, 44, 0.95);
+}
+
+.summary-bar-wrapper:hover .summary-bar-tooltip {
+  display: block;
+}
+
 /* Modal styles */
 .modal-overlay {
   position: fixed;
