@@ -1992,8 +1992,8 @@ function App() {
             {/* Summary Table */}
             {(() => {
               const backlogStates = ['backlog'];
-              const completeStates = ['complete'];
-              const inProgressStates = ['ready for development', 'in development', 'in review', 'ready for release'];
+              const completeStates = ['complete', 'ready for release'];
+              const inProgressStates = ['ready for development', 'in development', 'in review'];
 
               const getGroup = name => {
                 const n = (name || '').toLowerCase().trim();
@@ -2062,6 +2062,11 @@ function App() {
                               <span style={{ fontWeight: 700, marginLeft: '0.75rem' }}>{count} ({Math.round(pct)}%)</span>
                             </div>
                           ))}
+                          <div style={{ borderTop: '1px solid rgba(255,255,255,0.15)', marginTop: '0.4rem', paddingTop: '0.4rem', fontSize: '0.68rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.4 }}>
+                            <div><strong style={{ color: 'rgba(255,255,255,0.85)' }}>Complete:</strong> Complete + Ready for Release</div>
+                            <div><strong style={{ color: 'rgba(255,255,255,0.85)' }}>In Progress:</strong> Ready for Dev + In Dev + In Review</div>
+                            <div><strong style={{ color: 'rgba(255,255,255,0.85)' }}>Backlog:</strong> Backlog</div>
+                          </div>
                         </div>
                       </div>
                     </td>
