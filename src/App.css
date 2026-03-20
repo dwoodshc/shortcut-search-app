@@ -89,6 +89,37 @@ body {
   color: #03045E;
 }
 
+.summary-sort-icon {
+  position: relative;
+  display: inline-block;
+  margin-left: 4px;
+}
+
+.summary-sort-icon::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(26, 32, 44, 0.92);
+  color: white;
+  font-size: 0.72rem;
+  white-space: nowrap;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s;
+  transition-delay: 0s;
+  z-index: 100;
+  font-weight: 400;
+}
+
+.summary-sort-icon:hover::after {
+  opacity: 1;
+  transition-delay: 0.5s;
+}
+
 .settings-icon[data-tooltip] {
   position: relative;
 }

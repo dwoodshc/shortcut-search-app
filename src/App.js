@@ -56,6 +56,7 @@ function App() {
   const [showReadmeModal, setShowReadmeModal] = useState(false);
   const [readmeContent, setReadmeContent] = useState('');
   const [collapsedTeamMembers, setCollapsedTeamMembers] = useState({});
+  const [summarySort, setSummarySort] = useState({ col: null, dir: 'asc' });
   const [showExportImportModal, setShowExportImportModal] = useState(false);
   const [importError, setImportError] = useState('');
   const [importSuccess, setImportSuccess] = useState('');
@@ -2068,15 +2069,58 @@ function App() {
                 );
               };
 
-              const half = Math.ceil(foundEpics.length / 2);
-              const leftEpics = foundEpics.slice(0, half);
-              const rightEpics = foundEpics.slice(half);
+              const getCompletePct = (epic) => {
+                const stateCounts = {};
+                summaryStateIds.forEach(id => { stateCounts[id] = 0; });
+                (epic.stories || []).forEach(story => {
+                  if (stateCounts[story.workflow_state_id] !== undefined) stateCounts[story.workflow_state_id]++;
+                });
+                const total = Object.values(stateCounts).reduce((a, b) => a + b, 0);
+                let completeCount = 0;
+                summaryStateIds.forEach(id => {
+                  if (getGroup(workflowStates[id]) === 'complete') completeCount += stateCounts[id];
+                });
+                return total > 0 ? (completeCount / total) * 100 : 0;
+              };
+
+              const sortedEpics = [...foundEpics].sort((a, b) => {
+                if (!summarySort.col) return 0;
+                const dir = summarySort.dir === 'asc' ? 1 : -1;
+                if (summarySort.col === 'name') return dir * a.name.localeCompare(b.name);
+                if (summarySort.col === 'progress') return dir * (getCompletePct(a) - getCompletePct(b));
+                return 0;
+              });
+
+              const toggleSort = (col) => {
+                setSummarySort(prev => prev.col === col && prev.dir === 'asc' ? { col, dir: 'desc' } : { col, dir: 'asc' });
+              };
+
+              const sortIcon = (col, isNumeric = false) => {
+                const unsorted = 'Click to sort';
+                const ascLabel = isNumeric ? 'Sorted low→high, click to reverse' : 'Sorted A→Z, click to reverse';
+                const descLabel = isNumeric ? 'Sorted high→low, click to reverse' : 'Sorted Z→A, click to reverse';
+                const label = summarySort.col !== col ? unsorted : summarySort.dir === 'asc' ? ascLabel : descLabel;
+                const icon = summarySort.col !== col ? ' ↕' : summarySort.dir === 'asc' ? ' ↑' : ' ↓';
+                return <span className="summary-sort-icon" data-tooltip={label}>{icon}</span>;
+              };
+
+              const half = Math.ceil(sortedEpics.length / 2);
+              const leftEpics = sortedEpics.slice(0, half);
+              const rightEpics = sortedEpics.slice(half);
 
               const tableStyle = { width: '100%', borderCollapse: 'separate', borderSpacing: 0, background: 'white', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.08)', border: '1px solid #F0F0F7' };
+              const thStyle = { cursor: 'pointer', userSelect: 'none' };
               const theadRow = (
                 <tr style={{ background: '#494BCB', color: 'white' }}>
-                  <th style={{ padding: '0.5rem 0.75rem', textAlign: 'left', fontWeight: 600, fontSize: '0.875rem', whiteSpace: 'nowrap', borderRadius: '8px 0 0 0' }}>Epic Name</th>
-                  <th style={{ padding: '0.5rem 0.75rem', textAlign: 'center', fontWeight: 600, fontSize: '0.875rem', borderRadius: '0 8px 0 0' }}>Epic Progress</th>
+                  <th style={{ ...thStyle, padding: '0.5rem 0.75rem', textAlign: 'left', fontWeight: 600, fontSize: '0.875rem', whiteSpace: 'nowrap', borderRadius: '8px 0 0 0' }}>
+                    <span onClick={() => toggleSort('name')} style={{ cursor: 'pointer', userSelect: 'none' }}>Epic Name{sortIcon('name')}</span>
+                    <span className="summary-sort-icon" data-tooltip="Restore original order" onClick={(e) => { e.stopPropagation(); setSummarySort({ col: null, dir: 'asc' }); }} style={{ marginLeft: '6px', cursor: 'pointer', opacity: summarySort.col ? 1 : 0.4 }}>
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style={{ width: '14px', height: '14px', verticalAlign: 'middle', display: 'inline-block' }}>
+                        <path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.95-2.05L6.64 18.36A8.955 8.955 0 0 0 13 21a9 9 0 0 0 0-18z"/>
+                      </svg>
+                    </span>
+                  </th>
+                  <th onClick={() => toggleSort('progress')} style={{ ...thStyle, padding: '0.5rem 0.75rem', textAlign: 'center', fontWeight: 600, fontSize: '0.875rem', borderRadius: '0 8px 0 0' }}>Epic Progress{sortIcon('progress', true)}</th>
                 </tr>
               );
 
