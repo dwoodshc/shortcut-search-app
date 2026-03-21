@@ -1,18 +1,34 @@
-# Shortcut Viewer
+# Shortcut Dashboard
 
 **Project D.A.V.E. (Dashboards Are Very Effective)**
 
-A React-based web application for visualizing and managing Shortcut.com epics and their associated stories. This tool provides comprehensive dashboards with interactive charts, kanban-style workflow visualization, team analytics, and direct integration with Shortcut.
+A React-based web application for visualizing and managing Shortcut.com epics and their associated stories. Provides a comprehensive at-a-glance summary table, interactive charts, kanban-style workflow visualization, team analytics, and direct integration with Shortcut.
 
 ## Features
 
+### Summary Table
+- At-a-glance progress overview for all tracked epics at the top of the page
+- Three-section chevron progress bar per epic: **Complete** (green) → **In Progress** (yellow) → **Backlog** (white)
+  - Complete = "Complete" + "Ready for Release"
+  - In Progress = "Ready for Development" + "In Development" + "In Review"
+  - Backlog = "Backlog"
+- Percentage label shown inside the Complete segment
+- Hover tooltip showing counts and percentages for each group, plus a legend explaining the groupings
+- Two-column responsive layout (stacks to single column on narrow screens)
+- Sortable columns: **Epic Name** (A→Z / Z→A) and **Epic Progress** (% complete)
+- Restore icon to return epics to their configured list order
+- Epic name links scroll to the epic's detail section on the page
+- "↑ Summary Table" link at the bottom of each epic card returns to the summary
+
 ### Epic Management
-- Search and display multiple epics from your Shortcut workspace
+- Epics loaded automatically on page load (no manual search required)
+- Loading modal with animated progress bar and **Cancel** button during data fetch
+- Epics not found in Shortcut are listed by name below the "Found X of Y Epics" count
 - Configure tracked epics via built-in editor with localStorage persistence
 - Track team members assigned to each epic
 - Sidebar navigation for quick jumping between epics
 - Drag-and-drop reordering of epics in the configuration editor
-- Collapsible team member sections for cleaner interface
+- Collapsible team member sections per epic card
 - Export/Import configuration for backup and portability
 
 ### Interactive Visualizations
@@ -24,15 +40,14 @@ A React-based web application for visualizing and managing Shortcut.com epics an
 - Story counts displayed on each column
 
 #### Workflow Status Pie Chart
-- Visual representation of stories by state with gradient color scale
-- Color progression: Gray (Backlog) → Light Green → Green → Dark Green (Complete)
+- Visual representation of stories by state with gradient colour scale
+- Colour progression: Gray (Backlog) → Light Green → Green → Dark Green (Complete)
 - Interactive hover tooltips showing count and percentage
 - **Clickable legend items** that link directly to filtered Shortcut epic views
-- Each status links to the epic filtered by that specific workflow state
 
 #### Story Type Breakdown Pie Chart
 - Distribution of stories by type (Feature, Bug, Chore)
-- Color-coded: Light Green (Feature), Light Yellow (Chore), Light Red (Bug)
+- Colour-coded: Light Green (Feature), Light Yellow (Chore), Light Red (Bug)
 - Interactive hover tooltips
 - **Clickable legend items** that link to Shortcut backlog filtered by epic and story type
 
@@ -42,7 +57,6 @@ A React-based web application for visualizing and managing Shortcut.com epics an
 - Lists all story owners with their ticket counts
 - Sorted by count (descending)
 - Shows unassigned tickets separately
-- Includes note about multiple ownership
 
 #### Team Open Tickets Table
 - Shows open ticket counts for configured team members
@@ -55,45 +69,40 @@ A React-based web application for visualizing and managing Shortcut.com epics an
 - Six-column workflow display: Backlog → Ready for Development → In Development → In Review → Ready for Release → Complete
 - Story cards with clickable links to Shortcut
 - Story count badges on each column header
-- Collapsible sections (can hide/show all stories at once)
-- Compact view showing story titles with truncated descriptions
+- Collapsible Stories section (hidden by default)
+- Collapsible Story Type Breakdown chart (hidden by default)
+- Expand/Collapse controls for Stories, Story Types, and Charts across all epics
+
+### Header Actions
+Three icon buttons in the top-right of the header (all with 0.5s hover tooltips):
+- **Refresh** — Reload all epic and story data from Shortcut
+- **Edit Epic List** — Open the epic list configuration editor directly
+- **Settings** (gear) — Open the settings dropdown menu
+
+### Settings Menu
+- **Setup** — Re-run the setup wizard (API token, workspace URL, workflow)
+- **Dark Mode / Light Mode** — Toggle dark colour scheme (persisted across sessions)
+- **README.md** — View this documentation in-app
+- **Export/Import** — Backup and restore configuration as JSON
+- **Wipe Settings** — Clear all stored configuration data
+- **About** — View application information
+
+### Dark Mode
+- Full dark colour scheme toggle via Settings menu
+- Covers all UI areas: header, cards, charts, tables, modals, sidebar, inputs
+- Preference persisted to localStorage
 
 ### Setup & Configuration
 
 #### Initial Setup Wizard
 - **4-Step Guided Setup**: Automatically launches on first use or when configuration is incomplete
-  - Step 1: Enter Shortcut API token
+  - Step 1: Enter Shortcut API token (verified against the API before proceeding)
   - Step 2: Set workspace URL for generating hyperlinks
   - Step 3: Select workflow from all available workflows in your workspace
-  - Step 4: Configure epic list with team members (collapsible by default)
-- Visual workflow preview showing all states with color-coded badges
-- Selected workflow highlighted with visual feedback
+  - Step 4: Configure epic list with team members
+- Visual workflow preview showing all states with colour-coded badges
 - Drag-and-drop epic reordering in Step 4
-- Settings saved to browser localStorage for persistence
-
-#### Settings Menu
-- Access via gear icon in header
-- **Edit Epic List**: Manage tracked epics and team members with drag-and-drop reordering
-- **Edit API Token**: Update your Shortcut API token
-- **Setup Shortcut**: Change workspace URL or workflow
-- **Export/Import**: Backup and restore your configuration as JSON files
-- **Wipe Settings**: Clear all stored configuration data
-- **View README.md**: Access documentation
-- **About**: View application information and features
-
-### Navigation Features
-- **Sidebar Navigation**: Quick jump to any epic with slide-out panel
-- **"Top" Button**: Scroll to top of page
-- **Expand/Collapse Controls**: Toggle all charts or all stories sections
-- **Collapsible Sections**: Individual collapse controls for each chart type
-
-### UI/UX Enhancements
-- Responsive design with mobile support
-- Smooth animations and transitions
-- Interactive hover effects on clickable elements
-- Visual feedback for loading states
-- Error handling with user-friendly messages
-- Settings persist across sessions
+- Settings saved to browser localStorage automatically
 
 ## Prerequisites
 
@@ -115,11 +124,7 @@ A React-based web application for visualizing and managing Shortcut.com epics an
    npm install
    ```
 
-3. Configuration:
-   - All configuration is stored in browser localStorage (client-side)
-   - Settings are managed through the app's built-in interface
-   - No manual file editing is required
-   - Use Export/Import feature for backup and portability
+3. Launch the app — all configuration is handled through the built-in Setup Wizard on first run.
 
 ## Running the Application
 
@@ -129,8 +134,8 @@ Run both the backend server and React frontend concurrently:
 npm run dev
 ```
 
-This will start:
-- Express server on [http://localhost:3001](http://localhost:3001)
+This starts:
+- Express proxy server on [http://localhost:3001](http://localhost:3001)
 - React app on [http://localhost:3000](http://localhost:3000)
 
 ### Individual Components
@@ -149,169 +154,112 @@ npm start
 ```
 shortcut-search-app/
 ├── src/
-│   ├── App.js          # Main React component with localStorage integration
-│   ├── App.css         # Application styles
+│   ├── App.js          # Main React component
+│   ├── App.css         # Application styles (includes dark mode)
 │   └── index.js        # React entry point
-├── server.js           # Express proxy server (handles Shortcut API calls)
+├── server.js           # Express proxy server (Shortcut API calls)
 ├── package.json        # Dependencies and scripts
 └── README.md           # This file
 ```
 
 ## Configuration Storage
 
-All configuration is stored in **browser localStorage** (client-side) for security and portability:
+All configuration is stored in **browser localStorage**:
 
-- **API Token**: Stored in localStorage key `shortcut_api_token`
-- **Workflow Configuration**: Stored in localStorage key `shortcut_workflow_config` (includes workflow ID, name, URL, and states)
-- **Epics Configuration**: Stored in localStorage key `shortcut_epics_config` (includes epic names and team members)
+| Key | Contents |
+|-----|----------|
+| `shortcut_api_token` | Shortcut API token |
+| `shortcut_workflow_config` | Workflow ID, name, URL, and states |
+| `shortcut_epics_config` | Epic names and team members |
+| `shortcut_members_cache` | Owner ID → display name cache (reduces API calls on refresh) |
+| `dark_mode` | Dark mode preference (`true`/`false`) |
 
 **Backup & Portability:**
-- Use the Export/Import feature in the Settings menu to backup your configuration
-- Exported files are in JSON format with date stamps
-- Import previously exported files to restore settings or transfer between browsers
+- Use Export/Import in the Settings menu to save your configuration as a JSON file
+- Import to restore settings or transfer between browsers
 
-## API Endpoints
+## API Calls
 
-The Express server provides these proxy endpoints (all Shortcut API calls require `Authorization: Bearer <token>` header):
+The app makes the following calls to the Express proxy on page load:
 
-### Utility Endpoints
-- `GET /api/readme` - Get README.md content (no auth required)
+| Call | Frequency | Notes |
+|------|-----------|-------|
+| `GET /api/migrate-data` | Once ever | One-time migration from legacy files |
+| `GET /api/search/epics?query=` | 1 per tracked epic | Run in parallel via `Promise.all` |
+| `GET /api/epics/:id` | 1 per epic found | Full epic details |
+| `GET /api/epics/:id/stories` | 1 per epic found | All non-archived stories |
+| `GET /api/users/:id` | 1 per unique owner **not in cache** | Cached to localStorage after first fetch |
 
-### Shortcut API Proxies (Require Authorization Header)
-- `GET /api/search/epics?query=` - Search for epics
-- `GET /api/epics/:id` - Get full epic details
-- `GET /api/epics/:id/stories` - Get stories for an epic (excluding archived)
-- `GET /api/workflows` - Get all workflows with states
-- `GET /api/users/:id` - Get user/member details
+For 22 tracked epics: ~66 calls per refresh, with member lookups cached after the first session.
 
-**Note:** All configuration is now managed through browser localStorage. The app no longer uses server-side file storage.
+## API Endpoints (Express Proxy)
+
+- `GET /api/readme` — README.md content
+- `GET /api/search/epics?query=` — Search epics by name
+- `GET /api/epics/:id` — Full epic details
+- `GET /api/epics/:id/stories` — Stories for an epic (archived excluded)
+- `GET /api/workflows` — All workflows with states
+- `GET /api/users/:id` — Member display name
 
 ## Technologies Used
 
-- **Frontend**: React 19.2.0 with Hooks (useState, useEffect, useCallback)
+- **Frontend**: React 19.2.0 with Hooks (useState, useEffect, useCallback, useRef)
 - **Backend**: Express 5.1.0
 - **API**: Shortcut API v3
-- **Storage**: Browser localStorage for configuration persistence
-- **HTTP Client**: Axios for API requests
-- **Markdown**: marked for rendering README in-app
-- **Styling**: Custom CSS with modern design patterns
-- **Development**: concurrently for running multiple processes
-
-## Color Scheme
-
-### Primary Colors
-- **Primary Purple**: #494BCB (Shortcut brand, buttons, links)
-- **Dark Navy**: #03045E (headers, dark elements)
-- **Accent Yellow**: #FFDE87 (highlights, Slice logo)
-
-### Workflow Status Colors (Gradient)
-- **Backlog**: #d1d5db (Light Gray)
-- **Ready for Development**: #a7f3d0 (Very Light Green)
-- **In Development**: #6ee7b7 (Light Green)
-- **In Review**: #4ade80 (Medium Green)
-- **Ready for Release**: #22c55e (Green)
-- **Complete**: #16a34a (Dark Green)
-
-### Story Type Colors
-- **Feature**: #86efac (Light Green)
-- **Chore**: #fef08a (Light Yellow)
-- **Bug**: #fca5a5 (Light Red)
-
-### UI Colors
-- **Background**: #f8fafc (Light Gray)
-- **Borders**: #e2e8f0 (Neutral Gray)
-- **Text**: Various shades (#1e293b, #64748b, #94a3b8)
-- **Success**: #d1fae5 (Light Green background)
-- **Error**: #fef2f2 (Light Red background)
+- **Storage**: Browser localStorage
+- **HTTP Client**: Axios (server) / fetch (client)
+- **Markdown**: marked
+- **Styling**: Custom CSS with dark mode support
+- **Development**: concurrently
 
 ## Usage
 
 ### First-Time Setup
-1. Launch the application using `npm run dev`
-2. The Setup Wizard will automatically appear on first launch
-3. Follow the 4-step guided setup:
-   - Step 1: Enter your Shortcut API token
-   - Step 2: Set your Shortcut workspace URL
-   - Step 3: Select a workflow from your workspace
-   - Step 4: Configure epics to track with team members
-4. All settings are saved to browser localStorage automatically
+1. Run `npm run dev`
+2. The Setup Wizard launches automatically
+3. Complete the 4 steps: API token → workspace URL → workflow → epic list
+4. The dashboard loads automatically once setup is complete
 
 ### Daily Use
-1. Click "Search Epics" to load data for configured epics
-2. View comprehensive analytics and workflow visualizations
-3. Click legend items in pie charts to filter views in Shortcut
-4. Use sidebar navigation to jump between epics
-5. Expand/collapse sections as needed
-6. Click "Refresh Epics" to reload latest data
+1. Epics load automatically on page open
+2. Review the Summary Table for an at-a-glance progress view
+3. Scroll down to individual epic cards for charts, tables, and stories
+4. Use the **Refresh** icon (top-right) to reload latest data
+5. Use the sidebar to jump between epics
+6. Click legend items in pie charts to open filtered views in Shortcut
 
 ### Managing Configuration
-- **Edit Epic List**: Add/remove epics, manage team members, reorder via drag-and-drop
-- **Setup Shortcut**: Change workspace URL or select a different workflow
-- **Edit API Token**: Update if your token expires or changes
-- **Export/Import**: Backup your configuration to a JSON file or restore from a previous backup
-  - Export: Downloads current configuration as `shortcut-viewer-config-YYYY-MM-DD.json`
-  - Import: Upload a previously exported JSON file to restore settings
-  - Useful for moving between browsers, backing up settings, or sharing configurations
-- **Wipe Settings**: Clear all localStorage data to start fresh
-
-## Interactive Features
-
-### Clickable Chart Legends
-- **Workflow Status Pie Chart**: Click any status to open Shortcut filtered by that epic and workflow state
-  - Example: Click "In Review" to see all stories in that state for the epic
-- **Story Type Pie Chart**: Click any type to open Shortcut backlog filtered by that epic and story type
-  - Example: Click "Bug" to see all bugs for the epic
-
-### Hyperlinks
-- Epic titles link to their Shortcut pages
-- Story cards link to individual story pages
-- All external links open in new tabs
-
-## Development Notes
-
-- Built with Create React App
-- Uses React Hooks for state management (no Redux)
-- SVG-based chart rendering with custom path generation
-- Interactive tooltips with position-relative containers
-- Responsive design with flexbox and grid layouts
-- Case-insensitive workflow state matching
-- Filters out archived stories automatically
-- Epic data fetched includes full details (id, name, states, stories, etc.)
-- Direct links to epic pages with grouping parameters
-- Modal overlays with click-outside-to-close behavior
-- Drag-and-drop with visual feedback
-- Collapsible sections with expand/collapse all controls
+- **Edit Epic List** header icon — add/remove epics, manage team members, reorder via drag-and-drop
+- **Settings → Setup** — change workspace URL or workflow
+- **Settings → Export/Import** — backup configuration to JSON or restore from a previous backup
+- **Settings → Wipe Settings** — clear all localStorage data to start fresh
 
 ## Troubleshooting
 
-### API Token Issues
-- Ensure your token is valid and has proper permissions
-- Use "Edit API Token" in Settings menu to update your token
-- Check browser console for authentication errors
-
 ### Epic Not Found
-- Verify epic name matches exactly (case-insensitive)
-- Check that the epic exists in your Shortcut workspace
-- Epic may be archived or deleted
+- Verify the epic name matches exactly (case-insensitive)
+- Names of missing epics are shown in red below the "Found X of Y Epics" count
+- Check the epic is not archived or deleted in Shortcut
+
+### API Token Issues
+- Re-run Setup (Settings → Setup) to update your token
+- Token is verified against the Shortcut API during setup
 
 ### Workflow States Not Showing
-- Ensure you've selected a workflow via "Setup Shortcut" in Settings menu
+- Re-run the Setup Wizard to reselect your workflow
 - Verify the workflow has states configured in Shortcut
-- Try re-running the Setup Wizard to reconfigure workflow
 
 ### Stories Not Loading
-- Check that the epic has stories
 - Archived stories are automatically excluded
-- Verify API token has permission to access stories
+- Verify your API token has permission to access stories
 
 ### Configuration Not Persisting
-- Check that browser localStorage is enabled
-- Try using Export/Import to backup and restore your configuration
-- Clear browser cache and re-enter configuration if localStorage issues persist
+- Ensure browser localStorage is enabled
+- Use Export/Import to backup and restore if needed
 
 ## Version Information
 
-**Version**: 1.0.0
+**Version**: 2.0.0
 **Project Name**: D.A.V.E. (Dashboards Are Very Effective)
 **Author**: Dave Woods
 
