@@ -6,7 +6,8 @@ import './App.css';
 const STORAGE_KEYS = {
   API_TOKEN: 'shortcut_api_token',
   WORKFLOW_CONFIG: 'shortcut_workflow_config',
-  EPICS_CONFIG: 'shortcut_epics_config'
+  EPICS_CONFIG: 'shortcut_epics_config',
+  MEMBERS_CACHE: 'shortcut_members_cache'
 };
 
 const storage = {
@@ -23,7 +24,13 @@ const storage = {
     const data = localStorage.getItem(STORAGE_KEYS.EPICS_CONFIG);
     return data ? JSON.parse(data) : null;
   },
-  setEpicsConfig: (config) => localStorage.setItem(STORAGE_KEYS.EPICS_CONFIG, JSON.stringify(config))
+  setEpicsConfig: (config) => localStorage.setItem(STORAGE_KEYS.EPICS_CONFIG, JSON.stringify(config)),
+
+  getMembersCache: () => {
+    const data = localStorage.getItem(STORAGE_KEYS.MEMBERS_CACHE);
+    return data ? JSON.parse(data) : {};
+  },
+  setMembersCache: (cache) => localStorage.setItem(STORAGE_KEYS.MEMBERS_CACHE, JSON.stringify(cache))
 };
 
 // API Base URL - dynamically uses the current hostname
@@ -42,7 +49,7 @@ function App() {
   const [hoveredTypeSegment, setHoveredTypeSegment] = useState(null);
   const [workflowStates, setWorkflowStates] = useState({});
   const [workflowStateOrder, setWorkflowStateOrder] = useState([]);
-  const [members, setMembers] = useState({});
+  const [members, setMembers] = useState(() => storage.getMembersCache());
   const [filteredEpicNames, setFilteredEpicNames] = useState([]);
   const [epicEmails, setEpicEmails] = useState({});
   const [apiToken, setApiToken] = useState('');
@@ -347,6 +354,13 @@ function App() {
     checkEpicsConfig();
     loadSelectedWorkflow();
   }, [showSetupWizard, handleApiError, loadSelectedWorkflow]);
+
+  // Persist members cache to localStorage whenever it updates
+  useEffect(() => {
+    if (Object.keys(members).length > 0) {
+      storage.setMembersCache(members);
+    }
+  }, [members]);
 
   // Close settings menu when clicking outside
   useEffect(() => {
