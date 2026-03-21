@@ -2150,32 +2150,40 @@ function App() {
               );
             })()}
 
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem', paddingBottom: '0.75rem', borderBottom: '2px solid #e2e8f0' }}>
-              <h2 style={{ margin: 0, fontSize: '1.0rem' }}>
-                {epics.filter(e => !e.notFound).length === filteredEpicNames.length ? '✅ ' : '⚠️ '}
-                Found {epics.filter(e => !e.notFound).length} of {filteredEpicNames.length} Epic{filteredEpicNames.length !== 1 ? 's' : ''}
-              </h2>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <button onClick={toggleAllStories} className="btn-secondary" style={{ whiteSpace: 'nowrap' }}>
-                  {(() => {
-                    const allStoriesKeys = epics.filter(e => !e.notFound).map(e => `${e.id}-stories`);
-                    return allStoriesKeys.every(key => collapsedCharts[key]) ? 'Expand Stories' : 'Collapse Stories';
-                  })()}
-                </button>
-                <button onClick={toggleAllTypePie} className="btn-secondary" style={{ whiteSpace: 'nowrap' }}>
-                  {(() => {
-                    const allTypePieKeys = epics.filter(e => !e.notFound).map(e => `${e.id}-type-pie`);
-                    return allTypePieKeys.every(key => collapsedCharts[key]) ? 'Expand Story Types' : 'Collapse Story Types';
-                  })()}
-                </button>
-                <button onClick={toggleAllCharts} className="btn-secondary" style={{ whiteSpace: 'nowrap' }}>
-                  {(() => {
-                    const chartTypes = ['column', 'workflow-pie', 'type-pie', 'owners-table', 'team-tickets'];
-                    const allChartKeys = epics.filter(e => !e.notFound).flatMap(e => chartTypes.map(t => `${e.id}-${t}`));
-                    return allChartKeys.every(key => collapsedCharts[key]) ? 'Expand Charts' : 'Collapse Charts';
-                  })()}
-                </button>
+            <div style={{ marginBottom: '0.5rem', paddingBottom: '0.75rem', borderBottom: '2px solid #e2e8f0' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <h2 style={{ margin: 0, fontSize: '1.0rem' }}>
+                  {epics.filter(e => !e.notFound).length === filteredEpicNames.length ? '✅ ' : '⚠️ '}
+                  Found {epics.filter(e => !e.notFound).length} of {filteredEpicNames.length} Epic{filteredEpicNames.length !== 1 ? 's' : ''}
+                </h2>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <button onClick={toggleAllStories} className="btn-secondary" style={{ whiteSpace: 'nowrap' }}>
+                    {(() => {
+                      const allStoriesKeys = epics.filter(e => !e.notFound).map(e => `${e.id}-stories`);
+                      return allStoriesKeys.every(key => collapsedCharts[key]) ? 'Expand Stories' : 'Collapse Stories';
+                    })()}
+                  </button>
+                  <button onClick={toggleAllTypePie} className="btn-secondary" style={{ whiteSpace: 'nowrap' }}>
+                    {(() => {
+                      const allTypePieKeys = epics.filter(e => !e.notFound).map(e => `${e.id}-type-pie`);
+                      return allTypePieKeys.every(key => collapsedCharts[key]) ? 'Expand Story Types' : 'Collapse Story Types';
+                    })()}
+                  </button>
+                  <button onClick={toggleAllCharts} className="btn-secondary" style={{ whiteSpace: 'nowrap' }}>
+                    {(() => {
+                      const chartTypes = ['column', 'workflow-pie', 'type-pie', 'owners-table', 'team-tickets'];
+                      const allChartKeys = epics.filter(e => !e.notFound).flatMap(e => chartTypes.map(t => `${e.id}-${t}`));
+                      return allChartKeys.every(key => collapsedCharts[key]) ? 'Expand Charts' : 'Collapse Charts';
+                    })()}
+                  </button>
+                </div>
               </div>
+              {epics.some(e => e.notFound) && (
+                <div style={{ marginTop: '0.4rem', fontSize: '0.8rem', color: '#dc2626' }}>
+                  <span style={{ fontWeight: 600 }}>Not found: </span>
+                  {epics.filter(e => e.notFound).map(e => e.name).join(', ')}
+                </div>
+              )}
             </div>
 
             {epics.map((epic) => (
