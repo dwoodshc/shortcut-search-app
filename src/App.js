@@ -2897,7 +2897,7 @@ function App() {
         )}
       </main>
       <footer className="App-footer">
-        <p>© 2025 | Project D.A.V.E. (Dashboards Are Very Effective) </p>
+        <p>© 2026 | Project D.A.V.E. (Dashboards Are Very Effective) </p>
       </footer>
     </div>
   );
