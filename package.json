@@ -46,5 +46,14 @@
   },
   "devDependencies": {
     "concurrently": "^9.2.1"
+  },
+  "overrides": {
+    "nth-check": "^2.0.1",
+    "postcss": "^8.4.31",
+    "serialize-javascript": "^7.0.3",
+    "webpack-dev-server": "^5.2.1",
+    "@tootallnate/once": "^3.0.1",
+    "underscore": "^1.13.8",
+    "svgo": "^3.3.2"
   }
 }
