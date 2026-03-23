@@ -82,6 +82,7 @@ function App() {
   const [setupWizardStep, setSetupWizardStep] = useState(1);
   const [epicStates, setEpicStates] = useState({});
   const [loadStats, setLoadStats] = useState(null);
+  const [showRateLimitModal, setShowRateLimitModal] = useState(false);
 
   // Helper function to generate Shortcut URLs for epics
   const generateShortcutUrl = useCallback((epicId, stateName) => {
@@ -112,6 +113,13 @@ function App() {
 
   // Helper function to handle API errors and check for token issues
   const handleApiError = useCallback(async (response) => {
+    if (response.status === 429) {
+      searchAbortControllerRef.current?.abort();
+      setLoading(false);
+      setShowRateLimitModal(true);
+      return true;
+    }
+
     if (response.status === 401 || response.status === 403) {
       // Unauthorized or Forbidden - likely token issue
       setApiTokenIssue(true);
@@ -1014,6 +1022,24 @@ function App() {
               <div style={{ height: '100%', background: '#494BCB', borderRadius: '2px', animation: 'loading-bar 1.5s ease-in-out infinite' }} />
             </div>
             <button className="btn-secondary" onClick={cancelSearch} style={{ minWidth: '100px' }}>Cancel</button>
+          </div>
+        </div>
+      )}
+
+      {showRateLimitModal && (
+        <div className="modal-overlay" onClick={() => setShowRateLimitModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ textAlign: 'center', padding: '2.5rem 3rem', maxWidth: '420px' }}>
+            <div style={{ fontSize: '3rem', marginBottom: '0.75rem' }}>🚦</div>
+            <h2 style={{ margin: '0 0 0.75rem', fontSize: '1.3rem', color: '#b91c1c' }}>Too Many Requests</h2>
+            <p style={{ color: '#4a5568', marginBottom: '0.5rem' }}>
+              The Shortcut API has rate-limited this session <strong>(HTTP 429)</strong>.
+            </p>
+            <p style={{ color: '#718096', fontSize: '0.875rem', marginBottom: '1.75rem' }}>
+              This happens when too many API calls are made in a short period. Please wait a few minutes before trying again.
+            </p>
+            <button className="btn-primary" onClick={() => setShowRateLimitModal(false)} style={{ minWidth: '100px' }}>
+              OK
+            </button>
           </div>
         </div>
       )}
