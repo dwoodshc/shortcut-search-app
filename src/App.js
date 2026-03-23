@@ -2051,6 +2051,13 @@ function App() {
                         {epic.name}
                       </a>
                     </td>
+                    <td style={{ padding: '0.4rem 0.75rem', textAlign: 'center', whiteSpace: 'nowrap', borderBottom: '1px solid #F0F0F7' }}>
+                      {epic.state && (
+                        <span className={`epic-state ${getEpicStateClass(epic.state)}`} style={{ fontSize: '0.75rem', padding: '0.15rem 0.5rem' }}>
+                          {toTitleCase(epic.state)}{epic.state.toLowerCase() === 'done' && ' ✓'}
+                        </span>
+                      )}
+                    </td>
                     <td style={{ padding: '0.4rem 0.75rem', width: '100%', borderBottom: '1px solid #F0F0F7' }}>
                       <div className="summary-bar-wrapper">
                         <div style={{ display: 'flex', height: '22px', borderRadius: '999px', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
@@ -2106,6 +2113,7 @@ function App() {
                 if (!summarySort.col) return 0;
                 const dir = summarySort.dir === 'asc' ? 1 : -1;
                 if (summarySort.col === 'name') return dir * a.name.localeCompare(b.name);
+                if (summarySort.col === 'status') return dir * (a.state || '').localeCompare(b.state || '');
                 if (summarySort.col === 'progress') return dir * (getCompletePct(a) - getCompletePct(b));
                 return 0;
               });
@@ -2139,6 +2147,7 @@ function App() {
                       </svg>
                     </span>
                   </th>
+                  <th onClick={() => toggleSort('status')} style={{ ...thStyle, padding: '0.5rem 0.75rem', textAlign: 'center', fontWeight: 600, fontSize: '0.875rem', whiteSpace: 'nowrap' }}>Epic Status{sortIcon('status')}</th>
                   <th onClick={() => toggleSort('progress')} style={{ ...thStyle, padding: '0.5rem 0.75rem', textAlign: 'center', fontWeight: 600, fontSize: '0.875rem', borderRadius: '0 8px 0 0' }}>Epic Progress{sortIcon('progress', true)}</th>
                 </tr>
               );
