@@ -80,6 +80,7 @@ function App() {
   const [showWipeConfirmModal, setShowWipeConfirmModal] = useState(false);
   const [showSetupWizard, setShowSetupWizard] = useState(false);
   const [setupWizardStep, setSetupWizardStep] = useState(1);
+  const [epicStates, setEpicStates] = useState({});
 
   // Helper function to generate Shortcut URLs for epics
   const generateShortcutUrl = useCallback((epicId, stateName) => {
@@ -413,15 +414,20 @@ function App() {
       .join(' ');
   };
 
-  // Get epic state CSS class based on state name
-  const getEpicStateClass = (stateName) => {
-    const lowerStateName = stateName.toLowerCase();
-    if (lowerStateName === 'in progress') {
-      return 'epic-state-in-progress';
-    } else if (lowerStateName === 'done') {
-      return 'epic-state-done';
-    }
+  // Get epic state CSS class based on state type (unstarted/started/done) or legacy name
+  const getEpicStateClass = (stateType) => {
+    const lower = (stateType || '').toLowerCase();
+    if (lower === 'started' || lower === 'in progress') return 'epic-state-in-progress';
+    if (lower === 'done') return 'epic-state-done';
     return 'epic-state-default';
+  };
+
+  // Resolve display name and type for an epic's state using custom epic workflow if available
+  const getEpicStateInfo = (epic) => {
+    if (epic.epic_state_id && epicStates[epic.epic_state_id]) {
+      return epicStates[epic.epic_state_id];
+    }
+    return { name: toTitleCase(epic.state || ''), type: epic.state || '' };
   };
 
   // Load epic list content from localStorage
@@ -859,6 +865,22 @@ function App() {
 
       // Get token from localStorage for API calls
       const token = storage.getApiToken();
+
+      // Fetch custom epic workflow states (e.g. "Exploration and Design")
+      try {
+        const ewResponse = await fetch(`${getApiBaseUrl()}/api/epic-workflow`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+          signal: controller.signal
+        });
+        if (ewResponse.ok) {
+          const ewData = await ewResponse.json();
+          const stateMap = {};
+          (ewData.epic_states || []).forEach(s => { stateMap[s.id] = { name: s.name, type: s.type }; });
+          setEpicStates(stateMap);
+        }
+      } catch (err) {
+        if (err.name !== 'AbortError') console.warn('Could not fetch epic workflow:', err.message);
+      }
 
       // Search for each epic individually by name
       const epicsWithStories = await Promise.all(
@@ -2052,11 +2074,11 @@ function App() {
                       </a>
                     </td>
                     <td style={{ padding: '0.4rem 0.75rem', textAlign: 'center', whiteSpace: 'nowrap', borderBottom: '1px solid #F0F0F7' }}>
-                      {epic.state && (
-                        <span className={`epic-state ${getEpicStateClass(epic.state)}`} style={{ fontSize: '0.75rem', padding: '0.15rem 0.5rem' }}>
-                          {toTitleCase(epic.state)}{epic.state.toLowerCase() === 'done' && ' ✓'}
+                      {(() => { const si = getEpicStateInfo(epic); return si.name ? (
+                        <span className={`epic-state ${getEpicStateClass(si.type)}`} style={{ fontSize: '0.75rem', padding: '0.15rem 0.5rem' }}>
+                          {si.name}{si.type.toLowerCase() === 'done' && ' ✓'}
                         </span>
-                      )}
+                      ) : null; })()}
                     </td>
                     <td style={{ padding: '0.4rem 0.75rem', width: '100%', borderBottom: '1px solid #F0F0F7' }}>
                       <div className="summary-bar-wrapper">
@@ -2247,10 +2269,11 @@ function App() {
                         {epic.stats.num_stories_total || 0} stories
                       </span>
                     )}
-                    <span className={`epic-state ${getEpicStateClass(epic.state)}`}>
-                      {toTitleCase(epic.state)}
-                      {epic.state.toLowerCase() === 'done' && ' ✓'}
-                    </span>
+                    {(() => { const si = getEpicStateInfo(epic); return (
+                      <span className={`epic-state ${getEpicStateClass(si.type)}`}>
+                        {si.name}{si.type.toLowerCase() === 'done' && ' ✓'}
+                      </span>
+                    ); })()}
                   </div>
                 </div>
 
