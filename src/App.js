@@ -1604,7 +1604,10 @@ function App() {
       {showAboutModal && (
         <div className="modal-overlay" onClick={() => setShowAboutModal(false)}>
           <div className="modal-content modal-content-about" onClick={(e) => e.stopPropagation()}>
-            <h2>About Shortcut Dashboard</h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+              <img src="/dave.png" alt="D.A.V.E." style={{ width: '72px', height: '72px', flexShrink: 0 }} />
+              <h2 style={{ margin: 0 }}>About Shortcut Dashboard</h2>
+            </div>
             <p>
               A React-based dashboard for tracking Shortcut.com epics, visualising progress, and monitoring team workload.
             </p>
