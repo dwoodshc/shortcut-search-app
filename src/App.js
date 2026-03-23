@@ -2154,7 +2154,7 @@ function App() {
 
               return (
                 <div id="summary-table" style={{ marginBottom: '1rem' }}>
-                  <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
+                  <div className="summary-table-grid">
                     <div style={{ flex: 1 }}>
                       <table style={tableStyle}>
                         <thead>{theadRow}</thead>

@@ -183,7 +183,7 @@ body {
 }
 
 .container {
-  max-width: 1500px;
+  max-width: 1650px;
   margin: 0 auto;
   padding: 0.4rem 2rem 1.25rem;
 }
@@ -1323,6 +1323,29 @@ textarea.input-field {
   .workflow-status-chart {
     gap: 0.25rem;
     padding: 0.5rem 0.5rem 1rem 0.5rem;
+  }
+}
+
+/* Summary table two-column layout */
+.summary-table-grid {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.summary-table-grid > div {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 1150px) {
+  .summary-table-grid {
+    flex-direction: column;
+  }
+
+  .summary-table-grid > div {
+    width: 100%;
+    flex: none;
   }
 }
 
