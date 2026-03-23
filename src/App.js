@@ -81,6 +81,7 @@ function App() {
   const [showSetupWizard, setShowSetupWizard] = useState(false);
   const [setupWizardStep, setSetupWizardStep] = useState(1);
   const [epicStates, setEpicStates] = useState({});
+  const [loadStats, setLoadStats] = useState(null);
 
   // Helper function to generate Shortcut URLs for epics
   const generateShortcutUrl = useCallback((epicId, stateName) => {
@@ -839,11 +840,13 @@ function App() {
 
     const controller = new AbortController();
     searchAbortControllerRef.current = controller;
+    const searchStartTime = Date.now();
 
     setLoading(true);
     setError(null);
     setApiTokenIssue(false);
     setEpics([]);
+    setLoadStats(null);
 
     try {
       // Reload workflow configuration from localStorage
@@ -969,6 +972,15 @@ function App() {
       });
 
       setEpics(allEpics);
+
+      // Compute load stats
+      const foundCount = allEpics.filter(e => !e.notFound).length;
+      const allOwnerIds = new Set(allEpics.flatMap(e => (e.stories || []).flatMap(s => s.owner_ids || [])));
+      const cachedMemberIds = Object.keys(storage.getMembersCache());
+      const uncachedMemberCalls = [...allOwnerIds].filter(id => !cachedMemberIds.includes(id)).length;
+      // 1 epic-workflow + N searches + foundCount epics + foundCount stories + uncached member lookups
+      const totalApiCalls = 1 + epicNamesToSearch.length + (foundCount * 2) + uncachedMemberCalls;
+      setLoadStats({ loadTime: Date.now() - searchStartTime, apiCallCount: totalApiCalls, loadedAt: new Date() });
 
       // Collapse stories and story type breakdown by default for all epics
       const newCollapsedState = {};
@@ -2928,6 +2940,39 @@ function App() {
           </div>
         )}
       </main>
+      {loadStats && (() => {
+        const pageSizeBytes = new Blob([document.documentElement.outerHTML]).size;
+        const pageSizeKb = (pageSizeBytes / 1024).toFixed(1);
+        const handleDownload = () => {
+          const blob = new Blob([document.documentElement.outerHTML], { type: 'text/html' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `shortcut-dashboard-${loadStats.loadedAt.toISOString().slice(0, 10)}.html`;
+          a.click();
+          URL.revokeObjectURL(url);
+        };
+        const statStyle = { display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#718096', fontSize: '0.78rem' };
+        const divider = <span style={{ color: '#cbd5e0' }}>|</span>;
+        return (
+          <div style={{ background: '#f8fafc', borderTop: '1px solid #e2e8f0', padding: '0.5rem 2rem', display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={statStyle}><span>⏱</span><span>Load time: <strong>{(loadStats.loadTime / 1000).toFixed(2)}s</strong></span></div>
+            {divider}
+            <div style={statStyle}><span>🔗</span><span>API calls: <strong>{loadStats.apiCallCount}</strong></span></div>
+            {divider}
+            <div style={statStyle}><span>🕐</span><span>Generated: <strong>{loadStats.loadedAt.toLocaleString()}</strong></span></div>
+            {divider}
+            <div style={statStyle}><span>📄</span><span>Page size: <strong>{pageSizeKb} KB</strong></span></div>
+            {divider}
+            <div style={statStyle}>
+              <span>💾</span>
+              <button onClick={handleDownload} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#494BCB', fontSize: '0.78rem', fontWeight: 600, padding: 0, textDecoration: 'underline' }}>
+                Download page
+              </button>
+            </div>
+          </div>
+        );
+      })()}
       <footer className="App-footer">
         <p>© 2026 | Project D.A.V.E. (Dashboards Are Very Effective) </p>
       </footer>
