@@ -1643,7 +1643,7 @@ function App() {
               <li><strong>Workflow Status Pie Chart:</strong> Clickable links to filtered Shortcut views</li>
               <li><strong>Story Type Breakdown:</strong> Pie chart showing Feature / Bug / Chore distribution</li>
               <li><strong>Analytics Tables:</strong> Story owners table and team open-ticket counts per epic</li>
-              <li><strong>Kanban Board:</strong> Wworkflow view (Backlog → Complete) with collapsible story cards</li>
+              <li><strong>Kanban Board:</strong> Workflow view (Backlog → Complete) with collapsible story cards</li>
               <li><strong>Sidebar Navigation:</strong> Slide-out panel for quick jumping between epics</li>
               <li><strong>Expand / Collapse Controls:</strong> Global toggles for Stories, Story Types, and all Charts</li>
               <li><strong>Setup Wizard:</strong> Guided first-time configuration (token, workspace URL, workflow, epic list)</li>
