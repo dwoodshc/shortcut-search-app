@@ -64,6 +64,8 @@ function App() {
   const [readmeContent, setReadmeContent] = useState('');
   const [collapsedTeamMembers, setCollapsedTeamMembers] = useState({});
   const [summarySort, setSummarySort] = useState({ col: null, dir: 'asc' });
+  const [epicTeamSort, setEpicTeamSort] = useState({ col: null, dir: 'asc' });
+  const [memberEpicSort, setMemberEpicSort] = useState({ col: 'member', dir: 'asc' });
   const [showExportImportModal, setShowExportImportModal] = useState(false);
   const [importError, setImportError] = useState('');
   const [importSuccess, setImportSuccess] = useState('');
@@ -2271,6 +2273,130 @@ function App() {
                 </div>
               )}
             </div>
+
+            {/* Epic–Team and Member–Epic tables */}
+            {(() => {
+              const foundEpics = epics.filter(e => !e.notFound);
+              if (foundEpics.length === 0) return null;
+
+              // Epic → team members
+              const epicTeamData = foundEpics.map(epic => ({
+                id: epic.id,
+                name: epic.name,
+                team: epicEmails[epic.name] || [],
+              }));
+
+              // Member → epics (inverted)
+              const memberEpicMap = {};
+              epicTeamData.forEach(({ id, name, team }) => {
+                team.forEach(member => {
+                  if (!memberEpicMap[member]) memberEpicMap[member] = [];
+                  memberEpicMap[member].push({ id, name });
+                });
+              });
+              const memberEpicData = Object.entries(memberEpicMap).map(([member, epicsForMember]) => ({ member, epics: epicsForMember }));
+
+              if (memberEpicData.length === 0) return null;
+
+              const tableStyle = { width: '100%', borderCollapse: 'separate', borderSpacing: 0, background: 'white', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.08)', border: '1px solid #F0F0F7' };
+              const thBase = { padding: '0.5rem 0.75rem', fontWeight: 600, fontSize: '0.875rem', textAlign: 'left', cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap', color: 'white' };
+              const tdStyle = { padding: '0.4rem 0.75rem', fontSize: '0.875rem', borderBottom: '1px solid #F0F0F7' };
+
+              const makeSortIcon = (sortState, col, isNumeric = false) => {
+                const unsorted = 'Click to sort';
+                const ascLabel = isNumeric ? 'Sorted low→high, click to reverse' : 'Sorted A→Z, click to reverse';
+                const descLabel = isNumeric ? 'Sorted high→low, click to reverse' : 'Sorted Z→A, click to reverse';
+                const label = sortState.col !== col ? unsorted : sortState.dir === 'asc' ? ascLabel : descLabel;
+                const icon = sortState.col !== col ? ' ↕' : sortState.dir === 'asc' ? ' ↑' : ' ↓';
+                return <span className="summary-sort-icon" data-tooltip={label}>{icon}</span>;
+              };
+
+              const doToggleSort = (setSortFn, col) => {
+                setSortFn(prev => prev.col === col && prev.dir === 'asc' ? { col, dir: 'desc' } : { col, dir: 'asc' });
+              };
+
+              const sortedEpicTeam = [...epicTeamData].sort((a, b) => {
+                if (!epicTeamSort.col) return 0;
+                const dir = epicTeamSort.dir === 'asc' ? 1 : -1;
+                if (epicTeamSort.col === 'epic') return dir * a.name.localeCompare(b.name);
+                if (epicTeamSort.col === 'count') return dir * (a.team.length - b.team.length);
+                return 0;
+              });
+
+              const sortedMemberEpic = [...memberEpicData].sort((a, b) => {
+                if (!memberEpicSort.col) return 0;
+                const dir = memberEpicSort.dir === 'asc' ? 1 : -1;
+                if (memberEpicSort.col === 'member') return dir * a.member.localeCompare(b.member);
+                if (memberEpicSort.col === 'count') return dir * (a.epics.length - b.epics.length);
+                return 0;
+              });
+
+              return (
+                <>
+                <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
+                  {/* Table 1: Epic → Team Members */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <table style={tableStyle}>
+                      <thead>
+                        <tr style={{ background: '#494BCB' }}>
+                          <th style={{ ...thBase, borderRadius: '8px 0 0 0' }} onClick={() => doToggleSort(setEpicTeamSort, 'epic')}>
+                            Epic{makeSortIcon(epicTeamSort, 'epic')}
+                            <span className="summary-sort-icon" data-tooltip="Restore original order" onClick={(e) => { e.stopPropagation(); setEpicTeamSort({ col: null, dir: 'asc' }); }} style={{ marginLeft: '6px', cursor: 'pointer', opacity: epicTeamSort.col ? 1 : 0.4 }}>
+                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style={{ width: '14px', height: '14px', verticalAlign: 'middle', display: 'inline-block' }}>
+                                <path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.95-2.05L6.64 18.36A8.955 8.955 0 0 0 13 21a9 9 0 0 0 0-18z"/>
+                              </svg>
+                            </span>
+                          </th>
+                          <th style={{ ...thBase, borderRadius: '0 8px 0 0', cursor: 'default' }}>
+                            Team Members
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {sortedEpicTeam.map((row, idx) => (
+                          <tr key={row.id} style={{ background: idx % 2 === 0 ? 'white' : '#fafafa' }}>
+                            <td style={{ ...tdStyle, fontWeight: 600, whiteSpace: 'nowrap' }}>
+                              <a href={`#epic-${row.id}`} style={{ color: '#494BCB', textDecoration: 'none' }}>{row.name}</a>
+                            </td>
+                            <td style={tdStyle}>
+                              {row.team.length === 0
+                                ? <span style={{ color: '#a0aec0', fontStyle: 'italic' }}>None</span>
+                                : [...row.team].sort((a, b) => a.localeCompare(b)).map((m, i) => <div key={i}>{m}</div>)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Table 2: Team Member → Epics */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <table style={tableStyle}>
+                      <thead>
+                        <tr style={{ background: '#494BCB' }}>
+                          <th style={{ ...thBase, borderRadius: '8px 0 0 0' }} onClick={() => doToggleSort(setMemberEpicSort, 'member')}>
+                            Team Member{makeSortIcon(memberEpicSort, 'member')}
+                          </th>
+                          <th style={{ ...thBase, borderRadius: '0 8px 0 0', cursor: 'default' }}>
+                            Epics
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {sortedMemberEpic.map((row, idx) => (
+                          <tr key={row.member} style={{ background: idx % 2 === 0 ? 'white' : '#fafafa' }}>
+                            <td style={{ ...tdStyle, fontWeight: 600, whiteSpace: 'nowrap' }}>{row.member}</td>
+                            <td style={tdStyle}>{[...row.epics].sort((a, b) => a.name.localeCompare(b.name)).map((e) => <div key={e.id}><a href={`#epic-${e.id}`} style={{ color: '#494BCB', textDecoration: 'none' }}>{e.name}</a></div>)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+                <hr style={{ border: 'none', borderTop: '2px solid #e2e8f0', margin: '0 0 1rem' }} />
+                </>
+              );
+            })()}
 
             {epics.map((epic) => (
               epic.notFound ? (
