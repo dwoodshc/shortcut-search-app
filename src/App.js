@@ -997,7 +997,7 @@ function App() {
 
 
   return (
-    <div className="App">
+    <div className="App" id="top">
       {loading && (
         <div className="modal-overlay" style={{ zIndex: 9999 }}>
           <div className="modal-content" style={{ textAlign: 'center', padding: '2.5rem 3rem', maxWidth: '360px' }}>
@@ -2891,8 +2891,8 @@ function App() {
                   </div>
                 )}
                 <div style={{ textAlign: 'left', marginTop: '0.5rem' }}>
-                  <a href="#summary-table" style={{ color: '#494BCB', fontSize: '0.8rem', textDecoration: 'none', fontWeight: 500 }}>
-                    ↑ Summary Table
+                  <a href="#top" style={{ color: '#494BCB', fontSize: '0.8rem', textDecoration: 'none', fontWeight: 500 }}>
+                    ↑ Top of Page
                   </a>
                 </div>
               </div>
