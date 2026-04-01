@@ -7,7 +7,11 @@ const STORAGE_KEYS = {
   API_TOKEN: 'shortcut_api_token',
   WORKFLOW_CONFIG: 'shortcut_workflow_config',
   EPICS_CONFIG: 'shortcut_epics_config',
-  MEMBERS_CACHE: 'shortcut_members_cache'
+  MEMBERS_CACHE: 'shortcut_members_cache',
+  TEAM_CONFIG: 'shortcut_team_config',
+  TEAM_MEMBERS_CACHE: 'shortcut_team_members_cache',
+  EPIC_WORKFLOW_CACHE: 'shortcut_epic_workflow_cache',
+  IGNORED_USERS: 'shortcut_ignored_users'
 };
 
 const storage = {
@@ -30,7 +34,37 @@ const storage = {
     const data = localStorage.getItem(STORAGE_KEYS.MEMBERS_CACHE);
     return data ? JSON.parse(data) : {};
   },
-  setMembersCache: (cache) => localStorage.setItem(STORAGE_KEYS.MEMBERS_CACHE, JSON.stringify(cache))
+  setMembersCache: (cache) => localStorage.setItem(STORAGE_KEYS.MEMBERS_CACHE, JSON.stringify(cache)),
+
+  getTeamConfig: () => {
+    const data = localStorage.getItem(STORAGE_KEYS.TEAM_CONFIG);
+    return data ? JSON.parse(data) : null;
+  },
+  setTeamConfig: (config) => localStorage.setItem(STORAGE_KEYS.TEAM_CONFIG, JSON.stringify(config)),
+
+  // Cached team member IDs — stored as { teamId, memberIds: [] } so it auto-invalidates on team change
+  getTeamMembersCache: (teamId) => {
+    const data = localStorage.getItem(STORAGE_KEYS.TEAM_MEMBERS_CACHE);
+    if (!data) return null;
+    const parsed = JSON.parse(data);
+    return parsed.teamId === teamId ? parsed.memberIds : null;
+  },
+  setTeamMembersCache: (teamId, memberIds) =>
+    localStorage.setItem(STORAGE_KEYS.TEAM_MEMBERS_CACHE, JSON.stringify({ teamId, memberIds })),
+
+  // Cached epic workflow states map
+  getEpicWorkflowCache: () => {
+    const data = localStorage.getItem(STORAGE_KEYS.EPIC_WORKFLOW_CACHE);
+    return data ? JSON.parse(data) : null;
+  },
+  setEpicWorkflowCache: (stateMap) =>
+    localStorage.setItem(STORAGE_KEYS.EPIC_WORKFLOW_CACHE, JSON.stringify(stateMap)),
+
+  getIgnoredUsers: () => {
+    const data = localStorage.getItem(STORAGE_KEYS.IGNORED_USERS);
+    return data ? JSON.parse(data) : [];
+  },
+  setIgnoredUsers: (users) => localStorage.setItem(STORAGE_KEYS.IGNORED_USERS, JSON.stringify(users))
 };
 
 // API Base URL - dynamically uses the current hostname
@@ -43,6 +77,7 @@ const getApiBaseUrl = () => {
 function App() {
   const [epics, setEpics] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [loadProgress, setLoadProgress] = useState({ loaded: 0, total: 0 });
   const searchAbortControllerRef = useRef(null);
   const [error, setError] = useState(null);
   const [hoveredPieSegment, setHoveredPieSegment] = useState(null);
@@ -51,7 +86,6 @@ function App() {
   const [workflowStateOrder, setWorkflowStateOrder] = useState([]);
   const [members, setMembers] = useState(() => storage.getMembersCache());
   const [filteredEpicNames, setFilteredEpicNames] = useState([]);
-  const [epicEmails, setEpicEmails] = useState({});
   const [apiToken, setApiToken] = useState('');
   const [tokenError, setTokenError] = useState('');
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
@@ -62,15 +96,17 @@ function App() {
   const [epicsList, setEpicsList] = useState([]);
   const [showReadmeModal, setShowReadmeModal] = useState(false);
   const [readmeContent, setReadmeContent] = useState('');
-  const [collapsedTeamMembers, setCollapsedTeamMembers] = useState({});
+  const [allTeams, setAllTeams] = useState([]);
+  const [selectedTeamId, setSelectedTeamId] = useState(() => storage.getTeamConfig()?.id || null);
+  const [teamMemberIds, setTeamMemberIds] = useState(new Set());
+  const [ignoredUsers, setIgnoredUsers] = useState(() => storage.getIgnoredUsers());
+  const [filterIgnoredInTickets, setFilterIgnoredInTickets] = useState(true);
   const [summarySort, setSummarySort] = useState({ col: null, dir: 'asc' });
   const [epicTeamSort, setEpicTeamSort] = useState({ col: null, dir: 'asc' });
   const [memberEpicSort, setMemberEpicSort] = useState({ col: 'member', dir: 'asc' });
   const [showExportImportModal, setShowExportImportModal] = useState(false);
   const [importError, setImportError] = useState('');
   const [importSuccess, setImportSuccess] = useState('');
-  const [draggedEpicIndex, setDraggedEpicIndex] = useState(null);
-  const [dragOverIndex, setDragOverIndex] = useState(null);
   const [showSidebar, setShowSidebar] = useState(false);
   const [apiTokenIssue, setApiTokenIssue] = useState(false);
   const [allWorkflows, setAllWorkflows] = useState([]);
@@ -158,13 +194,6 @@ function App() {
     }));
   };
 
-  // Toggle team members collapse state for a specific epic in the edit modal
-  const toggleTeamMembers = (epicIndex) => {
-    setCollapsedTeamMembers(prev => ({
-      ...prev,
-      [epicIndex]: !prev[epicIndex]
-    }));
-  };
 
   // Scroll to epic by ID
   const scrollToEpic = (epicId) => {
@@ -177,10 +206,40 @@ function App() {
     }
   };
 
+  // Shared list of workflow states shown in charts
+  const TARGET_WORKFLOW_STATES = ["Backlog", "Ready for Development", "In Development", "In Review", "Ready for Release", "Complete"];
+  const NORMALIZED_WORKFLOW_STATES = TARGET_WORKFLOW_STATES.map(s => s.toLowerCase().trim());
+
+  // Returns filtered workflow state IDs matching TARGET_WORKFLOW_STATES
+  const getFilteredStateIds = () => workflowStateOrder.filter(stateId => {
+    const stateName = workflowStates[stateId];
+    return stateName && NORMALIZED_WORKFLOW_STATES.includes(stateName.toLowerCase().trim());
+  });
+
+  // Creates an SVG path string for a pie slice
+  const createPieSlice = (startAngle, angle, radius = 80) => {
+    const centerX = 100;
+    const centerY = 100;
+    if (angle >= 359.9) {
+      const startRad = (startAngle - 90) * Math.PI / 180;
+      const midRad   = (startAngle + 180 - 90) * Math.PI / 180;
+      const endRad   = (startAngle + 360 - 90) * Math.PI / 180;
+      const x1 = centerX + radius * Math.cos(startRad), y1 = centerY + radius * Math.sin(startRad);
+      const x2 = centerX + radius * Math.cos(midRad),   y2 = centerY + radius * Math.sin(midRad);
+      const x3 = centerX + radius * Math.cos(endRad),   y3 = centerY + radius * Math.sin(endRad);
+      return `M ${centerX} ${centerY} L ${x1} ${y1} A ${radius} ${radius} 0 0 1 ${x2} ${y2} A ${radius} ${radius} 0 0 1 ${x3} ${y3} Z`;
+    }
+    const startRad = (startAngle - 90) * Math.PI / 180;
+    const endRad   = (startAngle + angle - 90) * Math.PI / 180;
+    const x1 = centerX + radius * Math.cos(startRad), y1 = centerY + radius * Math.sin(startRad);
+    const x2 = centerX + radius * Math.cos(endRad),   y2 = centerY + radius * Math.sin(endRad);
+    return `M ${centerX} ${centerY} L ${x1} ${y1} A ${radius} ${radius} 0 ${angle > 180 ? 1 : 0} 1 ${x2} ${y2} Z`;
+  };
+
   // Toggle all charts and tables collapse state (excluding stories)
   const toggleAllCharts = () => {
     const allChartKeys = [];
-    const chartTypes = ['column', 'workflow-pie', 'type-pie', 'owners-table', 'team-tickets'];
+    const chartTypes = ['workflow-pie', 'type-pie'];
     epics.forEach(epic => {
       if (!epic.notFound) {
         chartTypes.forEach(type => { allChartKeys.push(`${epic.id}-${type}`); });
@@ -189,30 +248,6 @@ function App() {
     const allCollapsed = allChartKeys.every(key => collapsedCharts[key]);
     const newState = { ...collapsedCharts };
     allChartKeys.forEach(key => { newState[key] = !allCollapsed; });
-    setCollapsedCharts(newState);
-  };
-
-  // Toggle only story type breakdown charts
-  const toggleAllTypePie = () => {
-    const allTypePieKeys = [];
-    epics.forEach(epic => {
-      if (!epic.notFound) { allTypePieKeys.push(`${epic.id}-type-pie`); }
-    });
-    const allCollapsed = allTypePieKeys.every(key => collapsedCharts[key]);
-    const newState = { ...collapsedCharts };
-    allTypePieKeys.forEach(key => { newState[key] = !allCollapsed; });
-    setCollapsedCharts(newState);
-  };
-
-  // Toggle only stories sections
-  const toggleAllStories = () => {
-    const allStoriesKeys = [];
-    epics.forEach(epic => {
-      if (!epic.notFound) { allStoriesKeys.push(`${epic.id}-stories`); }
-    });
-    const allCollapsed = allStoriesKeys.every(key => collapsedCharts[key]);
-    const newState = { ...collapsedCharts };
-    allStoriesKeys.forEach(key => { newState[key] = !allCollapsed; });
     setCollapsedCharts(newState);
   };
 
@@ -307,12 +342,6 @@ function App() {
           // Load existing epics config if available, or start with empty list
           if (epicsConfig && epicsConfig.epics) {
             setEpicsList(epicsConfig.epics);
-            // Collapse all team members by default
-            const collapsed = {};
-            epicsConfig.epics.forEach((_, index) => {
-              collapsed[index] = true;
-            });
-            setCollapsedTeamMembers(collapsed);
           } else {
             setEpicsList([]);
           }
@@ -323,7 +352,7 @@ function App() {
           } else if (!workflowConfig || !workflowConfig.workflow_id) {
             setSetupWizardStep(2);
           } else if (!epicsConfig || !epicsConfig.epics || epicsConfig.epics.length === 0) {
-            setSetupWizardStep(4);
+            setSetupWizardStep(6);
           }
           return;
         }
@@ -353,11 +382,6 @@ function App() {
         if (epicsConfig && epicsConfig.epics) {
           // Load epic names and team data from config
           setFilteredEpicNames(epicsConfig.epics.map(e => e.name));
-          const emailsData = {};
-          epicsConfig.epics.forEach(epic => {
-            emailsData[epic.name] = epic.team || [];
-          });
-          setEpicEmails(emailsData);
         }
       } catch (err) {
       }
@@ -426,7 +450,10 @@ function App() {
   };
 
   // Get epic state CSS class based on state type (unstarted/started/done) or legacy name
-  const getEpicStateClass = (stateType) => {
+  const getEpicStateClass = (stateType, stateName) => {
+    const lowerName = (stateName || '').toLowerCase().trim();
+    if (lowerName === 'blocked') return 'epic-state-blocked';
+    if (lowerName === 'ready for release') return 'epic-state-ready-for-release';
     const lower = (stateType || '').toLowerCase();
     if (lower === 'started' || lower === 'in progress') return 'epic-state-in-progress';
     if (lower === 'done') return 'epic-state-done';
@@ -452,11 +479,6 @@ function App() {
 
       // Update local state with new data
       setFilteredEpicNames(epicsList.map(e => e.name));
-      const emailsData = {};
-      epicsList.forEach(epic => {
-        emailsData[epic.name] = epic.team || [];
-      });
-      setEpicEmails(emailsData);
       return true; // Success
     } catch (err) {
       setEpicListError('Failed to save epics configuration. Please try again.');
@@ -488,7 +510,7 @@ function App() {
     const urlPattern = /^https?:\/\/.+/;
     if (!shortcutWebUrl || !urlPattern.test(shortcutWebUrl)) {
       setError('Please enter a valid URL starting with http:// or https://');
-      return;
+      return false;
     }
 
     // Remove trailing slash if present
@@ -514,9 +536,10 @@ function App() {
         }
       } catch (err) {
         setError('Failed to save Shortcut Web URL');
+        return false;
       }
     }
-    // Note: Validation for "workflow must be selected first" is handled within the wizard
+    return true;
   };
 
   // Save selected workflow state IDs to localStorage
@@ -567,7 +590,7 @@ function App() {
     // Reset all state to defaults
     setEpics([]);
     setFilteredEpicNames([]);
-    setEpicEmails({});
+
     setEpicsList([]);
     setWorkflowStates({});
     setWorkflowStateOrder([]);
@@ -579,6 +602,9 @@ function App() {
     setAllWorkflows([]);
     setSelectedWorkflowId(null);
     setSavedWorkflowId(null);
+    setSelectedTeamId(null);
+    setTeamMemberIds(new Set());
+    setIgnoredUsers([]);
     setError(null);
     setSuccessMessage(null);
 
@@ -598,10 +624,17 @@ function App() {
   const handleExportData = () => {
     try {
       // Collect all localStorage data
+      const rawEpicsConfig = storage.getEpicsConfig();
+      const epicsConfig = rawEpicsConfig?.epics
+        ? { ...rawEpicsConfig, epics: rawEpicsConfig.epics.map(({ team: _team, ...epic }) => epic) }
+        : rawEpicsConfig;
+
       const exportData = {
         apiToken: storage.getApiToken(),
         workflowConfig: storage.getWorkflowConfig(),
-        epicsConfig: storage.getEpicsConfig(),
+        epicsConfig,
+        teamConfig: storage.getTeamConfig(),
+        ignoredUsers: storage.getIgnoredUsers(),
         migrationCompleted: localStorage.getItem('migration_completed'),
         exportDate: new Date().toISOString(),
         version: '1.0'
@@ -654,7 +687,16 @@ function App() {
           storage.setWorkflowConfig(importData.workflowConfig);
         }
         if (importData.epicsConfig) {
-          storage.setEpicsConfig(importData.epicsConfig);
+          const epicsConfig = importData.epicsConfig?.epics
+            ? { ...importData.epicsConfig, epics: importData.epicsConfig.epics.map(({ team: _team, ...epic }) => epic) }
+            : importData.epicsConfig;
+          storage.setEpicsConfig(epicsConfig);
+        }
+        if (importData.teamConfig) {
+          storage.setTeamConfig(importData.teamConfig);
+        }
+        if (importData.ignoredUsers) {
+          storage.setIgnoredUsers(importData.ignoredUsers);
         }
         if (importData.migrationCompleted) {
           localStorage.setItem('migration_completed', importData.migrationCompleted);
@@ -678,100 +720,6 @@ function App() {
     reader.readAsText(file);
     // Reset the file input
     event.target.value = '';
-  };
-
-  // Epic management helper functions
-  const addEpic = () => {
-    const newIndex = epicsList.length;
-    setEpicsList([...epicsList, { name: '', team: [] }]);
-    setCollapsedTeamMembers({ ...collapsedTeamMembers, [newIndex]: true });
-  };
-
-  const removeEpic = (index) => {
-    setEpicsList(epicsList.filter((_, i) => i !== index));
-  };
-
-  const updateEpicName = (index, name) => {
-    const newEpicsList = [...epicsList];
-    newEpicsList[index].name = name;
-    setEpicsList(newEpicsList);
-  };
-
-  const addTeamMember = (epicIndex) => {
-    const newEpicsList = [...epicsList];
-    if (!newEpicsList[epicIndex].team) {
-      newEpicsList[epicIndex].team = [];
-    }
-    newEpicsList[epicIndex].team.push('');
-    setEpicsList(newEpicsList);
-  };
-
-  const removeTeamMember = (epicIndex, memberIndex) => {
-    const newEpicsList = [...epicsList];
-    newEpicsList[epicIndex].team = newEpicsList[epicIndex].team.filter((_, i) => i !== memberIndex);
-    setEpicsList(newEpicsList);
-  };
-
-  const updateTeamMember = (epicIndex, memberIndex, name) => {
-    const newEpicsList = [...epicsList];
-    newEpicsList[epicIndex].team[memberIndex] = name;
-    setEpicsList(newEpicsList);
-  };
-
-  // Drag and drop handlers for epic reordering
-  const handleDragStart = (e, index) => {
-    setDraggedEpicIndex(index);
-    e.dataTransfer.effectAllowed = 'move';
-  };
-
-  const handleDragOver = (e, index) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    setDragOverIndex(index);
-  };
-
-  const handleDragLeave = (e) => {
-    // Only clear if we're leaving the drop target entirely (not moving to a child element)
-    if (!e.currentTarget.contains(e.relatedTarget)) {
-      setDragOverIndex(null);
-    }
-  };
-
-  const handleDrop = (e, dropIndex) => {
-    e.preventDefault();
-
-    if (draggedEpicIndex === null) return;
-
-    const newEpicsList = [...epicsList];
-
-    // Calculate the actual insertion position
-    // dropIndex represents the "drop zone" position:
-    // - dropIndex 0 = insert at position 0 (before all items)
-    // - dropIndex 1 = insert at position 1 (after item 0)
-    // - etc.
-
-    let insertIndex = dropIndex;
-
-    // If we're dragging to a position after the dragged item's current position,
-    // we need to adjust because removing the item shifts everything down
-    if (dropIndex > draggedEpicIndex) {
-      insertIndex = dropIndex - 1;
-    }
-
-    // Remove the item from its current position
-    const [draggedItem] = newEpicsList.splice(draggedEpicIndex, 1);
-
-    // Insert it at the new position
-    newEpicsList.splice(insertIndex, 0, draggedItem);
-
-    setEpicsList(newEpicsList);
-    setDraggedEpicIndex(null);
-    setDragOverIndex(null);
-  };
-
-  const handleDragEnd = () => {
-    setDraggedEpicIndex(null);
-    setDragOverIndex(null);
   };
 
   const fetchUserName = useCallback(async (userId) => {
@@ -853,6 +801,7 @@ function App() {
     const searchStartTime = Date.now();
 
     setLoading(true);
+    setLoadProgress({ loaded: 0, total: 0 });
     setError(null);
     setApiTokenIssue(false);
     setEpics([]);
@@ -869,33 +818,62 @@ function App() {
         epicNamesToSearch = epicsConfig.epics.map(e => e.name);
         setFilteredEpicNames(epicNamesToSearch);
 
-        const emailsData = {};
-        epicsConfig.epics.forEach(epic => {
-          emailsData[epic.name] = epic.team || [];
-        });
-        setEpicEmails(emailsData);
       }
 
       // Get token from localStorage for API calls
       const token = storage.getApiToken();
 
-      // Fetch custom epic workflow states (e.g. "Exploration and Design")
-      try {
-        const ewResponse = await fetch(`${getApiBaseUrl()}/api/epic-workflow`, {
-          headers: { 'Authorization': `Bearer ${token}` },
-          signal: controller.signal
-        });
-        if (ewResponse.ok) {
-          const ewData = await ewResponse.json();
-          const stateMap = {};
-          (ewData.epic_states || []).forEach(s => { stateMap[s.id] = { name: s.name, type: s.type }; });
-          setEpicStates(stateMap);
+      // Fetch team member IDs for the selected team (use cache if available)
+      const teamConfig = storage.getTeamConfig();
+      let teamApiCall = false;
+      if (teamConfig?.id) {
+        const cachedMemberIds = storage.getTeamMembersCache(teamConfig.id);
+        if (cachedMemberIds) {
+          setTeamMemberIds(new Set(cachedMemberIds));
+        } else {
+          teamApiCall = true;
+          try {
+            const teamsRes = await fetch(`${getApiBaseUrl()}/api/teams`, {
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (teamsRes.ok) {
+              const teams = await teamsRes.json();
+              const team = teams.find(t => t.id === teamConfig.id);
+              if (team?.member_ids) {
+                setTeamMemberIds(new Set(team.member_ids));
+                storage.setTeamMembersCache(teamConfig.id, team.member_ids);
+              }
+            }
+          } catch (err) {}
         }
-      } catch (err) {
-        if (err.name !== 'AbortError') console.warn('Could not fetch epic workflow:', err.message);
+      }
+
+      // Fetch custom epic workflow states (use cache if available)
+      let workflowApiCall = false;
+      const cachedEpicWorkflow = storage.getEpicWorkflowCache();
+      if (cachedEpicWorkflow) {
+        setEpicStates(cachedEpicWorkflow);
+      } else {
+        workflowApiCall = true;
+        try {
+          const ewResponse = await fetch(`${getApiBaseUrl()}/api/epic-workflow`, {
+            headers: { 'Authorization': `Bearer ${token}` },
+            signal: controller.signal
+          });
+          if (ewResponse.ok) {
+            const ewData = await ewResponse.json();
+            const stateMap = {};
+            (ewData.epic_states || []).forEach(s => { stateMap[s.id] = { name: s.name, type: s.type }; });
+            setEpicStates(stateMap);
+            storage.setEpicWorkflowCache(stateMap);
+          }
+        } catch (err) {
+          if (err.name !== 'AbortError') console.warn('Could not fetch epic workflow:', err.message);
+        }
       }
 
       // Search for each epic individually by name
+      setLoadProgress({ loaded: 0, total: epicNamesToSearch.length });
       const epicsWithStories = await Promise.all(
         epicNamesToSearch.map(async (name) => {
           try {
@@ -962,6 +940,8 @@ function App() {
             return searchEpic;
           } catch (err) {
             return null;
+          } finally {
+            setLoadProgress(prev => ({ ...prev, loaded: prev.loaded + 1 }));
           }
         })
       );
@@ -988,19 +968,23 @@ function App() {
       const allOwnerIds = new Set(allEpics.flatMap(e => (e.stories || []).flatMap(s => s.owner_ids || [])));
       const cachedMemberIds = Object.keys(storage.getMembersCache());
       const uncachedMemberCalls = [...allOwnerIds].filter(id => !cachedMemberIds.includes(id)).length;
-      // 1 epic-workflow + N searches + foundCount epics + foundCount stories + uncached member lookups
-      const totalApiCalls = 1 + epicNamesToSearch.length + (foundCount * 2) + uncachedMemberCalls;
+      const totalApiCalls = (teamApiCall ? 1 : 0) + (workflowApiCall ? 1 : 0) + epicNamesToSearch.length + (foundCount * 2) + uncachedMemberCalls;
       setLoadStats({ loadTime: Date.now() - searchStartTime, apiCallCount: totalApiCalls, loadedAt: new Date() });
 
-      // Collapse stories and story type breakdown by default for all epics
-      const newCollapsedState = {};
+      // Collapse stories, workflow-pie, type-pie and assignments by default
+      const newCollapsedState = {
+        'assignment-epic': true,
+        'assignment-member': true,
+      };
       allEpics.forEach(epic => {
         if (!epic.notFound) {
           newCollapsedState[`${epic.id}-stories`] = true;
+          newCollapsedState[`${epic.id}-workflow-pie`] = true;
           newCollapsedState[`${epic.id}-type-pie`] = true;
         }
       });
       setCollapsedCharts(prev => ({ ...prev, ...newCollapsedState }));
+
     } catch (err) {
       if (err.name !== 'AbortError') {
         setError(err.message);
@@ -1019,7 +1003,11 @@ function App() {
           <div className="modal-content" style={{ textAlign: 'center', padding: '2.5rem 3rem', maxWidth: '360px' }}>
             <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>⏳</div>
             <h2 style={{ margin: '0 0 0.5rem', fontSize: '1.2rem', color: '#03045E' }}>Loading Epics…</h2>
-            <p style={{ color: '#718096', marginBottom: '1.5rem', fontSize: '0.9rem' }}>Fetching epic and story data from Shortcut</p>
+            <p style={{ color: '#718096', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
+              {loadProgress.total > 0
+                ? `Loading ${loadProgress.loaded} of ${loadProgress.total} epics`
+                : 'Fetching epic and story data from Shortcut'}
+            </p>
             <div style={{ width: '100%', height: '4px', background: '#e2e8f0', borderRadius: '2px', overflow: 'hidden', marginBottom: '1.5rem' }}>
               <div style={{ height: '100%', background: '#494BCB', borderRadius: '2px', animation: 'loading-bar 1.5s ease-in-out infinite' }} />
             </div>
@@ -1060,7 +1048,7 @@ function App() {
               marginBottom: '2rem',
               position: 'relative'
             }}>
-              {[1, 2, 3, 4].map((stepNum) => (
+              {[1, 2, 3, 4, 5, 6].map((stepNum) => (
                 <div
                   key={stepNum}
                   style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative', cursor: 'pointer' }}
@@ -1093,10 +1081,12 @@ function App() {
                   }}>
                     {stepNum === 1 && 'API Token'}
                     {stepNum === 2 && 'Shortcut URL'}
-                    {stepNum === 3 && 'Select Workflow'}
-                    {stepNum === 4 && 'Epic List'}
+                    {stepNum === 3 && 'Workflow'}
+                    {stepNum === 4 && 'Select Team'}
+                    {stepNum === 5 && 'Ignore Users'}
+                    {stepNum === 6 && 'Epic List'}
                   </div>
-                  {stepNum < 4 && (
+                  {stepNum < 6 && (
                     <div style={{
                       position: 'absolute',
                       top: '20px',
@@ -1113,7 +1103,7 @@ function App() {
             </div>
 
             {/* Step Content */}
-            <div style={{ height: '450px', overflowY: 'auto' }}>
+            <div style={{ height: '450px', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
               {/* Step 1: API Token */}
               {setupWizardStep === 1 && (
                 <div>
@@ -1289,194 +1279,92 @@ function App() {
                 </div>
               )}
 
-              {/* Step 4: Epic List */}
+              {/* Step 4: Select Team */}
               {setupWizardStep === 4 && (
                 <div>
-                  <h3 style={{ color: '#1e293b', marginBottom: '0.4rem' }}>Step 4: Epic List</h3>
-                  <p style={{ marginBottom: '0.15rem' }}>Add the epics you want to track and their team members.</p>
-
-                  <div style={{ marginBottom: '0.5rem' }}>
-                    {/* Drop zone at the top for first position */}
-                    <div
-                      onDragOver={(e) => handleDragOver(e, 0)}
-                      onDragLeave={handleDragLeave}
-                      onDrop={(e) => handleDrop(e, 0)}
-                      style={{
-                        minHeight: dragOverIndex === 0 ? '40px' : '4px',
-                        transition: 'min-height 0.2s ease',
-                        position: 'relative',
-                        marginBottom: '0.15rem'
-                      }}
-                    >
-                      {dragOverIndex === 0 && (
-                        <div style={{
-                          height: '3px',
-                          backgroundColor: '#494BCB',
-                          borderRadius: '2px',
-                          margin: '8px 0',
-                          boxShadow: '0 0 4px rgba(73, 75, 203, 0.5)'
-                        }} />
-                      )}
+                  <h3 style={{ color: '#1e293b', marginBottom: '1rem' }}>Step 4: Select Team</h3>
+                  <p style={{ marginBottom: '1.5rem' }}>Choose the Shortcut team you want to track in this dashboard.</p>
+                  {allTeams.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '2rem 0' }}>
+                      <p style={{ color: '#94a3b8', fontStyle: 'italic', marginBottom: '1rem' }}>No teams found. You can skip this step if you don't use teams.</p>
+                      <button
+                        type="button"
+                        className="btn-secondary"
+                        style={{ fontSize: '0.8rem' }}
+                        onClick={async () => {
+                          try {
+                            const token = storage.getApiToken();
+                            const teamsRes = await fetch(`${getApiBaseUrl()}/api/teams`, {
+                              headers: { 'Authorization': `Bearer ${token}` }
+                            });
+                            if (teamsRes.ok) setAllTeams(await teamsRes.json());
+                          } catch (err) {}
+                        }}
+                      >
+                        Retry
+                      </button>
                     </div>
-
-                    {epicsList.map((epic, epicIndex) => (
-                      <React.Fragment key={epicIndex}>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                      {allTeams.map((team) => (
                         <div
-                          onDragOver={(e) => handleDragOver(e, epicIndex + 1)}
-                          onDragLeave={handleDragLeave}
-                          onDrop={(e) => handleDrop(e, epicIndex + 1)}
+                          key={team.id}
+                          onClick={() => setSelectedTeamId(team.id)}
                           style={{
-                            border: '1px solid #e2e8f0',
+                            padding: '0.75rem 1rem',
+                            backgroundColor: selectedTeamId === team.id ? '#eff6ff' : '#ffffff',
+                            border: selectedTeamId === team.id ? '2px solid #494BCB' : '1px solid #e2e8f0',
                             borderRadius: '8px',
-                            padding: '0.5rem 0.75rem',
-                            marginBottom: '0.4rem',
-                            backgroundColor: draggedEpicIndex === epicIndex ? '#f0f0f0' : '#f7fafc',
-                            opacity: draggedEpicIndex === epicIndex ? 0.5 : 1,
-                            position: 'relative'
+                            cursor: 'pointer',
+                            transition: 'all 0.15s ease'
                           }}
                         >
-                          {dragOverIndex === epicIndex + 1 && draggedEpicIndex !== epicIndex && (
-                            <div style={{
-                              position: 'absolute',
-                              bottom: '-8px',
-                              left: 0,
-                              right: 0,
-                              height: '3px',
-                              backgroundColor: '#494BCB',
-                              borderRadius: '2px',
-                              zIndex: 10,
-                              boxShadow: '0 0 4px rgba(73, 75, 203, 0.5)'
-                            }} />
-                          )}
-
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
-                            <div
-                              draggable
-                              onDragStart={(e) => handleDragStart(e, epicIndex)}
-                              onDragEnd={handleDragEnd}
-                              style={{
-                                cursor: 'grab',
-                                padding: '0.25rem',
-                                color: '#666',
-                                fontSize: '1.2rem',
-                                lineHeight: 1,
-                                userSelect: 'none'
-                              }}
-                              title="Drag to reorder"
-                            >
-                              ⋮⋮
-                            </div>
-
-                            <div style={{
-                              backgroundColor: '#494BCB',
-                              color: 'white',
-                              borderRadius: '50%',
-                              width: '28px',
-                              height: '28px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              fontWeight: 'bold',
-                              fontSize: '0.875rem'
-                            }}>
-                              {epicIndex + 1}
-                            </div>
-
-                            <label style={{ fontWeight: 'bold', minWidth: '80px' }}>Epic Name:</label>
-                            <input
-                              type="text"
-                              value={epic.name || ''}
-                              onChange={(e) => updateEpicName(epicIndex, e.target.value)}
-                              className="input-field"
-                              placeholder="Enter epic name"
-                              style={{ flex: 1, padding: '0.4rem 0.6rem' }}
-                            />
-                            <button
-                              type="button"
-                              onClick={() => removeEpic(epicIndex)}
-                              title="Remove epic"
-                              style={{
-                                background: 'none',
-                                border: 'none',
-                                cursor: 'pointer',
-                                color: '#ef4444',
-                                fontSize: '1rem',
-                                lineHeight: 1,
-                                padding: '0.1rem 0.25rem'
-                              }}
-                            >
-                              ✕
-                            </button>
-                          </div>
-
-                          <div style={{ marginLeft: '2.2rem', marginTop: '0.25rem' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0' }}>
-                              <button
-                                type="button"
-                                onClick={() => toggleTeamMembers(epicIndex)}
-                                className="chart-toggle-btn"
-                                aria-label="Toggle team members"
-                                style={{ marginRight: '0.5rem', padding: '0 0' }}
-                              >
-                                {collapsedTeamMembers[epicIndex] ? '▼' : '▲'}
-                              </button>
-                              <label style={{ fontWeight: 'bold', display: 'block', margin: 0, fontSize: '0.8rem' }}>
-                                Team Members {epic.team && epic.team.length > 0 && `(${epic.team.length})`}
-                              </label>
-                            </div>
-                            {!collapsedTeamMembers[epicIndex] && (
-                              <div style={{ fontSize: '0.8rem' }}>
-                                {epic.team && epic.team.map((member, memberIndex) => (
-                                  <div key={memberIndex} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                                    <input
-                                      type="text"
-                                      value={member || ''}
-                                      onChange={(e) => updateTeamMember(epicIndex, memberIndex, e.target.value)}
-                                      className="input-field"
-                                      placeholder="Enter team member name"
-                                      style={{ flex: 1, padding: '0.3rem 0.6rem', fontSize: '0.78rem' }}
-                                    />
-                                    <button
-                                      type="button"
-                                      onClick={() => removeTeamMember(epicIndex, memberIndex)}
-                                      title="Remove team member"
-                                      style={{
-                                        background: 'none',
-                                        border: 'none',
-                                        cursor: 'pointer',
-                                        color: '#ef4444',
-                                        fontSize: '1rem',
-                                        lineHeight: 1,
-                                        padding: '0.1rem 0.25rem'
-                                      }}
-                                    >
-                                      ✕
-                                    </button>
-                                  </div>
-                                ))}
-                                <button
-                                  type="button"
-                                  onClick={() => addTeamMember(epicIndex)}
-                                  className="btn-secondary"
-                                  style={{ marginTop: '0.25rem', fontSize: '0.72rem', padding: '0.25rem 0.5rem' }}
-                                >
-                                  + Add Team Member
-                                </button>
-                              </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <span style={{ fontWeight: 600, fontSize: '0.95rem', color: '#494BCB' }}>{team.name}</span>
+                            {selectedTeamId === team.id && (
+                              <span style={{ color: '#22c55e', fontSize: '0.8rem' }}>✓ Selected</span>
                             )}
                           </div>
+                          {team.description && (
+                            <p style={{ color: '#64748b', fontSize: '0.85rem', margin: '0.25rem 0 0' }}>{team.description}</p>
+                          )}
                         </div>
-                      </React.Fragment>
-                    ))}
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
 
-                    <button
-                      type="button"
-                      onClick={addEpic}
-                      className="btn-secondary"
-                      style={{ width: '100%', padding: '0.4rem' }}
-                    >
-                      + Add New Epic
-                    </button>
+              {/* Step 5: Epic List */}
+              {setupWizardStep === 5 && (
+                <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                  <h3 style={{ color: '#1e293b', marginBottom: '0.4rem' }}>Step 5: Ignore Users</h3>
+                  <p style={{ marginBottom: '0.15rem' }}>Enter the names of Shortcut users to exclude from the assignment tables (one per line).</p>
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                    <textarea
+                      className="input-field"
+                      value={ignoredUsers.join('\n')}
+                      onChange={(e) => setIgnoredUsers(e.target.value.split('\n').filter(u => u.trim() !== ''))}
+                      placeholder={"John Smith\nJane Doe"}
+                      style={{ flex: 1, width: '100%', resize: 'none', fontFamily: 'inherit', fontSize: '1rem', padding: '0.5rem 0.75rem', boxSizing: 'border-box' }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {setupWizardStep === 6 && (
+                <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                  <h3 style={{ color: '#1e293b', marginBottom: '0.4rem' }}>Step 6: Epic List</h3>
+                  <p style={{ marginBottom: '0.15rem' }}>Add the epics you want to track.</p>
+
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                    <textarea
+                      className="input-field"
+                      value={epicsList.map(e => e.name).join('\n')}
+                      onChange={(e) => setEpicsList(e.target.value.split('\n').filter(name => name.trim() !== '').map(name => ({ name })))}
+                      placeholder={"Epic Alpha\nEpic Beta\nEpic Gamma"}
+                      style={{ flex: 1, width: '100%', resize: 'none', fontFamily: 'inherit', fontSize: '1rem', padding: '0.5rem 0.75rem', boxSizing: 'border-box' }}
+                    />
                   </div>
 
                   {epicListError && (
@@ -1583,7 +1471,7 @@ function App() {
                       }
                     } else if (setupWizardStep === 2) {
                       // Save URL and move to step 3
-                      const savedUrl = await handleSaveShortcutUrl();
+                      const savedUrl = handleSaveShortcutUrl();
                       if (savedUrl !== false) {
                         // Load workflows for step 3
                         try {
@@ -1600,28 +1488,50 @@ function App() {
                         setSetupWizardStep(3);
                       }
                     } else if (setupWizardStep === 3) {
-                      // Save workflow and move to step 4
+                      // Save workflow and move to step 4 (Select Team)
                       if (!selectedWorkflowId) {
                         setError('Please select a workflow');
                         return;
                       }
                       const selectedWorkflow = allWorkflows.find(w => w.id === selectedWorkflowId);
                       if (selectedWorkflow) {
-                        await handleSelectWorkflow(selectedWorkflow);
+                        handleSelectWorkflow(selectedWorkflow);
+                        // Fetch teams for step 4
+                        try {
+                          const token = storage.getApiToken();
+                          const teamsRes = await fetch(`${getApiBaseUrl()}/api/teams`, {
+                            headers: { 'Authorization': `Bearer ${token}` }
+                          });
+                          if (teamsRes.ok) setAllTeams(await teamsRes.json());
+                        } catch (err) {}
                         setSetupWizardStep(4);
                       }
                     } else if (setupWizardStep === 4) {
+                      // Save selected team and move to step 5 (Ignore Users)
+                      if (selectedTeamId) {
+                        const selectedTeam = allTeams.find(t => t.id === selectedTeamId);
+                        if (selectedTeam) {
+                          storage.setTeamConfig({ id: selectedTeam.id, name: selectedTeam.name });
+                        }
+                      }
+                      setSetupWizardStep(5);
+                    } else if (setupWizardStep === 5) {
+                      // Save ignored users and move to step 6 (Epic List)
+                      storage.setIgnoredUsers(ignoredUsers);
+                      setSetupWizardStep(6);
+                    } else if (setupWizardStep === 6) {
                       // Save epic list and close wizard
                       const saved = handleSaveEpicList();
                       if (saved) {
                         setShowSetupWizard(false);
                         setSetupWizardStep(1);
+                        searchEpics();
                       }
                     }
                   }}
                   className="btn-primary"
                 >
-                  {setupWizardStep < 4 ? 'Next' : 'Finish'}
+                  {setupWizardStep < 6 ? 'Next' : 'Finish'}
                 </button>
               </div>
             </div>
@@ -1640,19 +1550,22 @@ function App() {
               A React-based dashboard for tracking Shortcut.com epics, visualising progress, and monitoring team workload.
             </p>
             <ul>
-              <li><strong>Summary Table:</strong> At-a-glance progress bars for all epics</li>
-              <li><strong>Ticket Status Breakdown:</strong> column chart showing story workflow states per epic</li>
-              <li><strong>Workflow Status Pie Chart:</strong> Clickable links to filtered Shortcut views</li>
+              <li><strong>Summary Table:</strong> At-a-glance chevron progress bars for all tracked epics</li>
+              <li><strong>Epic Owner Assignment:</strong> Maps each epic to its assigned team members</li>
+              <li><strong>Team Member Assignment:</strong> Inverted view — each team member and their assigned epics</li>
+              <li><strong>Ticket Status Breakdown:</strong> 3D column chart of story workflow states per epic</li>
+              <li><strong>Workflow Status Pie Chart:</strong> Stories by workflow state with clickable Shortcut links</li>
               <li><strong>Story Type Breakdown:</strong> Pie chart showing Feature / Bug / Chore distribution</li>
-              <li><strong>Analytics Tables:</strong> Story owners table and team open-ticket counts per epic</li>
-              <li><strong>Kanban Board:</strong> Workflow view (Backlog → Complete) with collapsible story cards</li>
+              <li><strong>Story Owners Table:</strong> Per-epic story owner counts including unassigned</li>
+              <li><strong>Team Open Tickets:</strong> Open ticket counts per team member, excluding completed stories</li>
+              <li><strong>User Story Board:</strong> Kanban view (Backlog → Complete) with collapsible story cards</li>
               <li><strong>Sidebar Navigation:</strong> Slide-out panel for quick jumping between epics</li>
-              <li><strong>Expand / Collapse Controls:</strong> Global toggles for Stories, Story Types, and all Charts</li>
-              <li><strong>Setup Wizard:</strong> Guided first-time configuration (token, workspace URL, workflow, epic list)</li>
-              <li><strong>Configuration Management:</strong> Export / Import support of all settings</li>
+              <li><strong>Ignored Users:</strong> Wizard-configured list of users excluded from assignment and ticket tables</li>
+              <li><strong>Setup Wizard:</strong> 6-step guided setup — token, URL, workflow, team, ignored users, epic list</li>
+              <li><strong>Configuration Management:</strong> Export / Import of all settings as JSON</li>
             </ul>
             <p style={{ marginTop: '1rem', fontSize: '0.875rem', color: '#718096' }}>
-              Version 1.0.0 | Project D.A.V.E. (Dashboards Are Very Effective)
+              Version 3.0.0 | Project D.A.V.E. (Dashboards Are Very Effective)
             </p>
             <div className="modal-buttons">
               <button
@@ -1827,7 +1740,7 @@ function App() {
         </div>
       )}
 
-      {/* Epic list modal removed - now using setup wizard step 4 */}
+      {/* Epic list modal removed - now using setup wizard step 6 */}
 
       <header className="App-header">
         <div className="header-logo">
@@ -1857,14 +1770,11 @@ function App() {
               const epicsConfig = storage.getEpicsConfig();
               if (epicsConfig && epicsConfig.epics) {
                 setEpicsList(epicsConfig.epics);
-                const collapsed = {};
-                epicsConfig.epics.forEach((_, index) => { collapsed[index] = true; });
-                setCollapsedTeamMembers(collapsed);
               } else {
                 setEpicsList([]);
               }
               setShowSetupWizard(true);
-              setSetupWizardStep(4);
+              setSetupWizardStep(6);
             }}
           >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
@@ -2118,8 +2028,8 @@ function App() {
                     </td>
                     <td style={{ padding: '0.4rem 0.75rem', textAlign: 'center', whiteSpace: 'nowrap', borderBottom: '1px solid #F0F0F7' }}>
                       {(() => { const si = getEpicStateInfo(epic); return si.name ? (
-                        <span className={`epic-state ${getEpicStateClass(si.type)}`} style={{ fontSize: '0.75rem', padding: '0.15rem 0.5rem' }}>
-                          {si.name}{si.type.toLowerCase() === 'done' && ' ✓'}
+                        <span className={`epic-state ${getEpicStateClass(si.type, si.name)}`} style={{ fontSize: '0.75rem', padding: '0.15rem 0.5rem' }}>
+                          {si.type.toLowerCase() === 'done' ? 'Done ✓' : si.name}
                         </span>
                       ) : null; })()}
                     </td>
@@ -2245,21 +2155,28 @@ function App() {
                   Found {epics.filter(e => !e.notFound).length} of {filteredEpicNames.length} Epic{filteredEpicNames.length !== 1 ? 's' : ''}
                 </h2>
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <button onClick={toggleAllStories} className="btn-secondary" style={{ whiteSpace: 'nowrap' }}>
-                    {(() => {
-                      const allStoriesKeys = epics.filter(e => !e.notFound).map(e => `${e.id}-stories`);
-                      return allStoriesKeys.every(key => collapsedCharts[key]) ? 'Expand Stories' : 'Collapse Stories';
-                    })()}
+                  <button
+                    onClick={() => {
+                      const bothCollapsed = collapsedCharts['assignment-epic'] && collapsedCharts['assignment-member'];
+                      setCollapsedCharts(prev => ({ ...prev, 'assignment-epic': !bothCollapsed, 'assignment-member': !bothCollapsed }));
+                    }}
+                    className="btn-secondary"
+                    style={{ whiteSpace: 'nowrap' }}
+                    title="Show or hide the Epic Owner Assignment and Team Member Assignment tables"
+                  >
+                    {collapsedCharts['assignment-epic'] && collapsedCharts['assignment-member'] ? 'Expand Assignments' : 'Collapse Assignments'}
                   </button>
-                  <button onClick={toggleAllTypePie} className="btn-secondary" style={{ whiteSpace: 'nowrap' }}>
-                    {(() => {
-                      const allTypePieKeys = epics.filter(e => !e.notFound).map(e => `${e.id}-type-pie`);
-                      return allTypePieKeys.every(key => collapsedCharts[key]) ? 'Expand Story Types' : 'Collapse Story Types';
-                    })()}
+                  <button
+                    onClick={() => setFilterIgnoredInTickets(prev => !prev)}
+                    className="btn-secondary"
+                    style={{ whiteSpace: 'nowrap' }}
+                    title={filterIgnoredInTickets ? 'Currently hiding ignored users — click to show them highlighted in assignment and ticket tables' : 'Currently showing ignored users — click to hide them from assignment and ticket tables'}
+                  >
+                    {filterIgnoredInTickets ? 'Show Ignored Users' : 'Hide Ignored Users'}
                   </button>
-                  <button onClick={toggleAllCharts} className="btn-secondary" style={{ whiteSpace: 'nowrap' }}>
+                  <button onClick={toggleAllCharts} className="btn-secondary" style={{ whiteSpace: 'nowrap' }} title="Show or hide the Workflow Status Pie Chart and Story Type Breakdown across all epics">
                     {(() => {
-                      const chartTypes = ['column', 'workflow-pie', 'type-pie', 'owners-table', 'team-tickets'];
+                      const chartTypes = ['workflow-pie', 'type-pie'];
                       const allChartKeys = epics.filter(e => !e.notFound).flatMap(e => chartTypes.map(t => `${e.id}-${t}`));
                       return allChartKeys.every(key => collapsedCharts[key]) ? 'Expand Charts' : 'Collapse Charts';
                     })()}
@@ -2283,24 +2200,28 @@ function App() {
               const epicTeamData = foundEpics.map(epic => ({
                 id: epic.id,
                 name: epic.name,
-                team: epicEmails[epic.name] || [],
+                isDone: getEpicStateInfo(epic).type === 'done',
+                team: (epic.owner_ids || [])
+                  .filter(id => !selectedTeamId || teamMemberIds.has(id))
+                  .map(id => members[id] || id)
+                  .filter(name => !filterIgnoredInTickets || !ignoredUsers.includes(name)),
               }));
 
               // Member → epics (inverted)
               const memberEpicMap = {};
-              epicTeamData.forEach(({ id, name, team }) => {
+              epicTeamData.forEach(({ id, name, isDone, team }) => {
                 team.forEach(member => {
                   if (!memberEpicMap[member]) memberEpicMap[member] = [];
-                  memberEpicMap[member].push({ id, name });
+                  memberEpicMap[member].push({ id, name, isDone });
                 });
               });
               const memberEpicData = Object.entries(memberEpicMap).map(([member, epicsForMember]) => ({ member, epics: epicsForMember }));
 
               if (memberEpicData.length === 0) return null;
 
-              const tableStyle = { width: '100%', borderCollapse: 'separate', borderSpacing: 0, background: 'white', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.08)', border: '1px solid #F0F0F7' };
+              const tableStyle = { width: '100%', tableLayout: 'fixed', borderCollapse: 'separate', borderSpacing: 0, background: 'white', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.08)', border: '1px solid #F0F0F7' };
               const thBase = { padding: '0.5rem 0.75rem', fontWeight: 600, fontSize: '0.875rem', textAlign: 'left', cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap', color: 'white' };
-              const tdStyle = { padding: '0.4rem 0.75rem', fontSize: '0.875rem', borderBottom: '1px solid #F0F0F7' };
+              const tdStyle = { padding: '0.4rem 0.75rem', fontSize: '0.875rem', borderBottom: '1px solid #F0F0F7', wordBreak: 'break-word', overflow: 'hidden' };
 
               const makeSortIcon = (sortState, col, isNumeric = false) => {
                 const unsorted = 'Click to sort';
@@ -2331,66 +2252,127 @@ function App() {
                 return 0;
               });
 
+              const epicTeamHead = (
+                <tr style={{ background: '#494BCB' }}>
+                  <th style={{ ...thBase, borderRadius: '8px 0 0 0' }} onClick={() => doToggleSort(setEpicTeamSort, 'epic')}>
+                    Epic{makeSortIcon(epicTeamSort, 'epic')}
+                    <span className="summary-sort-icon" data-tooltip="Restore original order" onClick={(e) => { e.stopPropagation(); setEpicTeamSort({ col: null, dir: 'asc' }); }} style={{ marginLeft: '6px', cursor: 'pointer', opacity: epicTeamSort.col ? 1 : 0.4 }}>
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style={{ width: '14px', height: '14px', verticalAlign: 'middle', display: 'inline-block' }}>
+                        <path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.95-2.05L6.64 18.36A8.955 8.955 0 0 0 13 21a9 9 0 0 0 0-18z"/>
+                      </svg>
+                    </span>
+                  </th>
+                  <th style={{ ...thBase, borderRadius: '0 8px 0 0', cursor: 'default' }}>Team Members</th>
+                </tr>
+              );
+
+              const memberEpicHead = (
+                <tr style={{ background: '#494BCB' }}>
+                  <th style={{ ...thBase, borderRadius: '8px 0 0 0' }} onClick={() => doToggleSort(setMemberEpicSort, 'member')}>
+                    Team Member{makeSortIcon(memberEpicSort, 'member')}
+                  </th>
+                  <th style={{ ...thBase, borderRadius: '0 8px 0 0', cursor: 'default' }}>Epics</th>
+                </tr>
+              );
+
+              const donePill = <span style={{ marginLeft: '0.4rem', backgroundColor: '#86efac', borderRadius: '999px', padding: '0.1rem 0.5rem', fontSize: '0.75rem', fontWeight: 500, display: 'inline-block', verticalAlign: 'middle' }}>Done</span>;
+
+              const renderEpicTeamRow = (row, idx) => (
+                <tr key={row.id} style={{ background: row.team.length === 0 ? '#fff9c4' : idx % 2 === 0 ? 'white' : '#fafafa' }}>
+                  <td style={{ ...tdStyle, fontWeight: 600 }}>
+                    <a href={`#epic-${row.id}`} style={{ color: '#494BCB', textDecoration: 'none' }}>{row.name}</a>
+                    {row.isDone && donePill}
+                  </td>
+                  <td style={tdStyle}>
+                    {row.team.length === 0
+                      ? <span style={{ color: '#a0aec0', fontStyle: 'italic' }}>None</span>
+                      : <ul style={{ margin: 0, paddingLeft: '1.2rem' }}>{[...row.team].sort((a, b) => a.localeCompare(b)).map((m, i) => <li key={i}>{!filterIgnoredInTickets && ignoredUsers.includes(m) ? <span style={{ backgroundColor: '#e5e7eb', borderRadius: '999px', padding: '0.1rem 0.5rem', display: 'inline-block' }}>{m}</span> : m}</li>)}</ul>}
+                  </td>
+                </tr>
+              );
+
+              const renderMemberEpicRow = (row, idx) => (
+                <tr key={row.member} style={{ background: idx % 2 === 0 ? 'white' : '#fafafa' }}>
+                  <td style={{ ...tdStyle, fontWeight: 600 }}>
+                    {!filterIgnoredInTickets && ignoredUsers.includes(row.member)
+                      ? <span style={{ backgroundColor: '#e5e7eb', borderRadius: '999px', padding: '0.1rem 0.5rem', display: 'inline-block' }}>{row.member}</span>
+                      : row.member}{' '}
+                    <span style={{ fontWeight: 400, color: '#718096', fontSize: '0.8rem' }}>({row.epics.length})</span>
+                  </td>
+                  <td style={tdStyle}>
+                    <ul style={{ margin: 0, paddingLeft: '1.2rem' }}>
+                      {[...row.epics].sort((a, b) => a.name.localeCompare(b.name)).map((e) => (
+                        <li key={e.id}><a href={`#epic-${e.id}`} style={{ color: '#494BCB', textDecoration: 'none' }}>{e.name}</a>{e.isDone && donePill}</li>
+                      ))}
+                    </ul>
+                  </td>
+                </tr>
+              );
+
+              const epicTeamHalf = Math.ceil(sortedEpicTeam.length / 2);
+              const memberEpicHalf = Math.ceil(sortedMemberEpic.length / 2);
+
+              const colgroup = <colgroup><col style={{ width: '50%' }} /><col style={{ width: '50%' }} /></colgroup>;
+
               return (
                 <>
-                <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
-                  {/* Table 1: Epic → Team Members */}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <table style={tableStyle}>
-                      <thead>
-                        <tr style={{ background: '#494BCB' }}>
-                          <th style={{ ...thBase, borderRadius: '8px 0 0 0' }} onClick={() => doToggleSort(setEpicTeamSort, 'epic')}>
-                            Epic{makeSortIcon(epicTeamSort, 'epic')}
-                            <span className="summary-sort-icon" data-tooltip="Restore original order" onClick={(e) => { e.stopPropagation(); setEpicTeamSort({ col: null, dir: 'asc' }); }} style={{ marginLeft: '6px', cursor: 'pointer', opacity: epicTeamSort.col ? 1 : 0.4 }}>
-                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style={{ width: '14px', height: '14px', verticalAlign: 'middle', display: 'inline-block' }}>
-                                <path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.95-2.05L6.64 18.36A8.955 8.955 0 0 0 13 21a9 9 0 0 0 0-18z"/>
-                              </svg>
-                            </span>
-                          </th>
-                          <th style={{ ...thBase, borderRadius: '0 8px 0 0', cursor: 'default' }}>
-                            Team Members
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {sortedEpicTeam.map((row, idx) => (
-                          <tr key={row.id} style={{ background: idx % 2 === 0 ? 'white' : '#fafafa' }}>
-                            <td style={{ ...tdStyle, fontWeight: 600, whiteSpace: 'nowrap' }}>
-                              <a href={`#epic-${row.id}`} style={{ color: '#494BCB', textDecoration: 'none' }}>{row.name}</a>
-                            </td>
-                            <td style={tdStyle}>
-                              {row.team.length === 0
-                                ? <span style={{ color: '#a0aec0', fontStyle: 'italic' }}>None</span>
-                                : [...row.team].sort((a, b) => a.localeCompare(b)).map((m, i) => <div key={i}>{m}</div>)}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1rem' }}>
+                  {/* Epic Owner Assignment — split into left/right halves */}
+                  <div>
+                    <h3
+                      onClick={() => setCollapsedCharts(prev => ({ ...prev, 'assignment-epic': !prev['assignment-epic'] }))}
+                      style={{ margin: '0 0 0.5rem', fontSize: '1rem', fontWeight: 600, cursor: 'pointer', userSelect: 'none', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+                      title="Show or hide the Epic Owner Assignment table"
+                    >
+                      <span>{collapsedCharts['assignment-epic'] ? '▶' : '▼'}</span> Epic Owner Assignment
+                    </h3>
+                    {!collapsedCharts['assignment-epic'] && (
+                      <div className="summary-table-grid">
+                        <div>
+                          <table style={tableStyle}>
+                            {colgroup}
+                            <thead>{epicTeamHead}</thead>
+                            <tbody>{sortedEpicTeam.slice(0, epicTeamHalf).map((row, idx) => renderEpicTeamRow(row, idx))}</tbody>
+                          </table>
+                        </div>
+                        <div>
+                          <table style={tableStyle}>
+                            {colgroup}
+                            <thead>{epicTeamHead}</thead>
+                            <tbody>{sortedEpicTeam.slice(epicTeamHalf).map((row, idx) => renderEpicTeamRow(row, idx))}</tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
-                  {/* Table 2: Team Member → Epics */}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <table style={tableStyle}>
-                      <thead>
-                        <tr style={{ background: '#494BCB' }}>
-                          <th style={{ ...thBase, borderRadius: '8px 0 0 0' }} onClick={() => doToggleSort(setMemberEpicSort, 'member')}>
-                            Team Member{makeSortIcon(memberEpicSort, 'member')}
-                          </th>
-                          <th style={{ ...thBase, borderRadius: '0 8px 0 0', cursor: 'default' }}>
-                            Epics
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {sortedMemberEpic.map((row, idx) => (
-                          <tr key={row.member} style={{ background: idx % 2 === 0 ? 'white' : '#fafafa' }}>
-                            <td style={{ ...tdStyle, fontWeight: 600, whiteSpace: 'nowrap' }}>{row.member}</td>
-                            <td style={tdStyle}>{[...row.epics].sort((a, b) => a.name.localeCompare(b.name)).map((e) => <div key={e.id}><a href={`#epic-${e.id}`} style={{ color: '#494BCB', textDecoration: 'none' }}>{e.name}</a></div>)}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                  {/* Team Member Assignment — split into left/right halves */}
+                  <div>
+                    <h3
+                      onClick={() => setCollapsedCharts(prev => ({ ...prev, 'assignment-member': !prev['assignment-member'] }))}
+                      style={{ margin: '0 0 0.5rem', fontSize: '1rem', fontWeight: 600, cursor: 'pointer', userSelect: 'none', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+                      title="Show or hide the Team Member Assignment table"
+                    >
+                      <span>{collapsedCharts['assignment-member'] ? '▶' : '▼'}</span> Team Member Assignment
+                    </h3>
+                    {!collapsedCharts['assignment-member'] && (
+                      <div className="summary-table-grid">
+                        <div>
+                          <table style={tableStyle}>
+                            {colgroup}
+                            <thead>{memberEpicHead}</thead>
+                            <tbody>{sortedMemberEpic.slice(0, memberEpicHalf).map((row, idx) => renderMemberEpicRow(row, idx))}</tbody>
+                          </table>
+                        </div>
+                        <div>
+                          <table style={tableStyle}>
+                            {colgroup}
+                            <thead>{memberEpicHead}</thead>
+                            <tbody>{sortedMemberEpic.slice(memberEpicHalf).map((row, idx) => renderMemberEpicRow(row, idx))}</tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
                 <hr style={{ border: 'none', borderTop: '2px solid #e2e8f0', margin: '0 0 1rem' }} />
@@ -2437,8 +2419,8 @@ function App() {
                       </span>
                     )}
                     {(() => { const si = getEpicStateInfo(epic); return (
-                      <span className={`epic-state ${getEpicStateClass(si.type)}`}>
-                        {si.name}{si.type.toLowerCase() === 'done' && ' ✓'}
+                      <span className={`epic-state ${getEpicStateClass(si.type, si.name)}`}>
+                        {si.type.toLowerCase() === 'done' ? 'Done ✓' : si.name}
                       </span>
                     ); })()}
                   </div>
@@ -2447,19 +2429,8 @@ function App() {
                 {epic.stories && workflowStateOrder.length > 0 && (
                   <div className="epic-stats-container">
                     <div className="workflow-status-chart-container">
-                      <h4>
-                        <button
-                          onClick={() => toggleChart(epic.id, 'column')}
-                          className="chart-toggle-btn"
-                          aria-label="Toggle column chart"
-                          style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%', justifyContent: 'flex-start' }}
-                        >
-                          <span>{collapsedCharts[`${epic.id}-column`] ? '▼' : '▲'}</span>
-                          <span>Ticket Status Breakdown</span>
-                        </button>
-                      </h4>
-                      {!collapsedCharts[`${epic.id}-column`] && (
-                      <div className="workflow-status-chart">
+                      <h4>Ticket Status Breakdown</h4>
+                      <div className="workflow-status-chart" style={{ marginTop: '0.5rem' }}>
                       {(() => {
                         // Calculate workflow state counts
                         const stateCounts = {};
@@ -2469,26 +2440,7 @@ function App() {
                           stateCounts[stateId] = (stateCounts[stateId] || 0) + 1;
                         });
 
-                        // Define the specific states to show (exact match, case-sensitive)
-                        const targetStates = [
-                          "Backlog",
-                          "Ready for Development",
-                          "In Development",
-                          "In Review",
-                          "Ready for Release",
-                          "Complete"
-                        ];
-
-                        // Create a normalized map for comparison
-                        const normalizedTargets = targetStates.map(s => s.toLowerCase().trim());
-
-                        // Filter workflow states to only include target states
-                        const filteredStateIds = workflowStateOrder.filter(stateId => {
-                          const stateName = workflowStates[stateId];
-                          if (!stateName) return false;
-                          const normalized = stateName.toLowerCase().trim();
-                          return normalizedTargets.includes(normalized);
-                        });
+                        const filteredStateIds = getFilteredStateIds();
 
                         return filteredStateIds.map((stateId) => {
                           const count = stateCounts[stateId] || 0;
@@ -2518,23 +2470,14 @@ function App() {
                         });
                       })()}
                       </div>
-                      )}
 
                       {/* Pie Chart */}
                       <div>
-                      <h4 style={{ marginTop: '0.5rem' }}>
-                        <button
-                          onClick={() => toggleChart(epic.id, 'workflow-pie')}
-                          className="chart-toggle-btn"
-                          aria-label="Toggle workflow pie chart"
-                          style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%', justifyContent: 'flex-start' }}
-                        >
-                          <span>{collapsedCharts[`${epic.id}-workflow-pie`] ? '▼' : '▲'}</span>
-                          <span>Workflow Status Pie Chart</span>
-                        </button>
+                      <h4 style={{ marginTop: '0.5rem', cursor: 'pointer', userSelect: 'none', display: 'flex', alignItems: 'center', gap: '0.4rem' }} onClick={() => toggleChart(epic.id, 'workflow-pie')} title="Show or hide the Workflow Status Pie Chart for this epic">
+                        <span>{collapsedCharts[`${epic.id}-workflow-pie`] ? '▶' : '▼'}</span> Workflow Status Pie Chart
                       </h4>
                       {!collapsedCharts[`${epic.id}-workflow-pie`] && (
-                      <div className="workflow-status-pie-chart">
+                      <div style={{ marginTop: '0.5rem' }} className="workflow-status-pie-chart">
                       {(() => {
                         // Calculate workflow state counts
                         const stateCounts = {};
@@ -2544,26 +2487,7 @@ function App() {
                           stateCounts[stateId] = (stateCounts[stateId] || 0) + 1;
                         });
 
-                        // Define the specific states to show
-                        const targetStates = [
-                          "Backlog",
-                          "Ready for Development",
-                          "In Development",
-                          "In Review",
-                          "Ready for Release",
-                          "Complete"
-                        ];
-
-                        // Create a normalized map for comparison
-                        const normalizedTargets = targetStates.map(s => s.toLowerCase().trim());
-
-                        // Filter workflow states to only include target states
-                        const filteredStateIds = workflowStateOrder.filter(stateId => {
-                          const stateName = workflowStates[stateId];
-                          if (!stateName) return false;
-                          const normalized = stateName.toLowerCase().trim();
-                          return normalizedTargets.includes(normalized);
-                        });
+                        const filteredStateIds = getFilteredStateIds();
 
                         // Calculate percentages and create segments
                         const segments = filteredStateIds.map((stateId) => {
@@ -2591,42 +2515,6 @@ function App() {
                           cumulativeAngle += angle;
                           return { ...seg, startAngle, angle };
                         });
-
-                        // Function to create SVG path for pie slice
-                        const createPieSlice = (startAngle, angle, radius = 80) => {
-                          const centerX = 100;
-                          const centerY = 100;
-
-                          // Special case: if angle is 360 degrees (or very close), draw two semi-circles
-                          // because SVG arcs can't handle a full circle in a single path
-                          if (angle >= 359.9) {
-                            const startRad = (startAngle - 90) * Math.PI / 180;
-                            const midRad = (startAngle + 180 - 90) * Math.PI / 180;
-                            const endRad = (startAngle + 360 - 90) * Math.PI / 180;
-
-                            const x1 = centerX + radius * Math.cos(startRad);
-                            const y1 = centerY + radius * Math.sin(startRad);
-                            const x2 = centerX + radius * Math.cos(midRad);
-                            const y2 = centerY + radius * Math.sin(midRad);
-                            const x3 = centerX + radius * Math.cos(endRad);
-                            const y3 = centerY + radius * Math.sin(endRad);
-
-                            // Draw full circle as two 180-degree arcs
-                            return `M ${centerX} ${centerY} L ${x1} ${y1} A ${radius} ${radius} 0 0 1 ${x2} ${y2} A ${radius} ${radius} 0 0 1 ${x3} ${y3} Z`;
-                          }
-
-                          const startRad = (startAngle - 90) * Math.PI / 180;
-                          const endRad = (startAngle + angle - 90) * Math.PI / 180;
-
-                          const x1 = centerX + radius * Math.cos(startRad);
-                          const y1 = centerY + radius * Math.sin(startRad);
-                          const x2 = centerX + radius * Math.cos(endRad);
-                          const y2 = centerY + radius * Math.sin(endRad);
-
-                          const largeArcFlag = angle > 180 ? 1 : 0;
-
-                          return `M ${centerX} ${centerY} L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2} Z`;
-                        };
 
                         return total > 0 ? (
                           <div className="pie-chart-wrapper">
@@ -2690,16 +2578,8 @@ function App() {
 
                       {/* Story Type Pie Chart */}
                       <div>
-                      <h4 style={{ marginTop: '0.5rem' }}>
-                        <button
-                          onClick={() => toggleChart(epic.id, 'type-pie')}
-                          className="chart-toggle-btn"
-                          aria-label="Toggle story type pie chart"
-                          style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%', justifyContent: 'flex-start' }}
-                        >
-                          <span>{collapsedCharts[`${epic.id}-type-pie`] ? '▼' : '▲'}</span>
-                          <span>Story Type Breakdown</span>
-                        </button>
+                      <h4 style={{ marginTop: '0.5rem', cursor: 'pointer', userSelect: 'none', display: 'flex', alignItems: 'center', gap: '0.4rem' }} onClick={() => toggleChart(epic.id, 'type-pie')} title="Show or hide the Story Type Breakdown chart for this epic">
+                        <span>{collapsedCharts[`${epic.id}-type-pie`] ? '▶' : '▼'}</span> Story Type Breakdown
                       </h4>
                       {!collapsedCharts[`${epic.id}-type-pie`] && (
                       <div>
@@ -2747,41 +2627,6 @@ function App() {
                           return { ...seg, startAngle, angle };
                         });
 
-                        // Function to create SVG path for pie slice
-                        const createPieSlice = (startAngle, angle, radius = 80) => {
-                          const centerX = 100;
-                          const centerY = 100;
-
-                          // Special case: if angle is 360 degrees (or very close), draw two semi-circles
-                          // because SVG arcs can't handle a full circle in a single path
-                          if (angle >= 359.9) {
-                            const startRad = (startAngle - 90) * Math.PI / 180;
-                            const midRad = (startAngle + 180 - 90) * Math.PI / 180;
-                            const endRad = (startAngle + 360 - 90) * Math.PI / 180;
-
-                            const x1 = centerX + radius * Math.cos(startRad);
-                            const y1 = centerY + radius * Math.sin(startRad);
-                            const x2 = centerX + radius * Math.cos(midRad);
-                            const y2 = centerY + radius * Math.sin(midRad);
-                            const x3 = centerX + radius * Math.cos(endRad);
-                            const y3 = centerY + radius * Math.sin(endRad);
-
-                            // Draw full circle as two 180-degree arcs
-                            return `M ${centerX} ${centerY} L ${x1} ${y1} A ${radius} ${radius} 0 0 1 ${x2} ${y2} A ${radius} ${radius} 0 0 1 ${x3} ${y3} Z`;
-                          }
-
-                          const startRad = (startAngle - 90) * Math.PI / 180;
-                          const endRad = (startAngle + angle - 90) * Math.PI / 180;
-
-                          const x1 = centerX + radius * Math.cos(startRad);
-                          const y1 = centerY + radius * Math.sin(startRad);
-                          const x2 = centerX + radius * Math.cos(endRad);
-                          const y2 = centerY + radius * Math.sin(endRad);
-
-                          const largeArcFlag = angle > 180 ? 1 : 0;
-
-                          return `M ${centerX} ${centerY} L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2} Z`;
-                        };
 
                         return total > 0 ? (
                           <div>
@@ -2871,20 +2716,8 @@ function App() {
 
                         return sortedOwners.length > 0 || unassignedCount > 0 ? (
                           <>
-                            <h4>
-                              <button
-                                onClick={() => toggleChart(epic.id, 'owners-table')}
-                                className="chart-toggle-btn"
-                                aria-label="Toggle story owners table"
-                                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%', justifyContent: 'flex-start' }}
-                              >
-                                <span>{collapsedCharts[`${epic.id}-owners-table`] ? '▼' : '▲'}</span>
-                                <span>Story Owners</span>
-                              </button>
-                            </h4>
-                            {!collapsedCharts[`${epic.id}-owners-table`] && (
-                            <>
-                            <table>
+                            <h4>Story Owners</h4>
+                            <table style={{ marginTop: '0.5rem' }}>
                               <thead>
                                 <tr>
                                   <th>Owner</th>
@@ -2907,8 +2740,6 @@ function App() {
                             <p style={{ color: '#718096', fontSize: '0.75rem', fontStyle: 'italic', marginTop: '0.5rem' }}>
                               NOTE: Counts may not add up if a story has more than one owner
                             </p>
-                            </>
-                            )}
                           </>
                         ) : (
                           <>
@@ -2923,15 +2754,18 @@ function App() {
 
                     <div className="email-ticket-counts-table">
                       {(() => {
-                        // Get name list for this epic
-                        const nameList = epicEmails[epic.name] || [];
+                        // Get name list from epic's owner_ids, filtered to selected team members
+                        const nameList = (epic.owner_ids || [])
+                          .filter(id => !selectedTeamId || teamMemberIds.has(id))
+                          .map(id => members[id] || id)
+                          .filter(name => !filterIgnoredInTickets || !ignoredUsers.includes(name));
 
                         if (nameList.length === 0) {
                           return (
                             <>
-                              <h4>Team Open Tickets</h4>
+                              <h4>Team Open Tickets{storage.getTeamConfig()?.name ? ` — ${storage.getTeamConfig().name}` : ''}</h4>
                               <p style={{ color: '#718096', fontSize: '0.875rem', fontStyle: 'italic' }}>
-                                No team list configured
+                                No epic owners assigned
                               </p>
                             </>
                           );
@@ -2943,25 +2777,17 @@ function App() {
                           nameCounts[name] = 0;
                         });
 
-                        // Count open tickets for users in the name list (exclude Complete state)
+                        // Count open tickets for owners (exclude Complete state)
                         epic.stories.forEach(story => {
-                          // Get the state name for this story
                           const stateName = workflowStates[story.workflow_state_id] || '';
                           const isComplete = stateName.toLowerCase().trim() === 'complete';
 
-                          // Only count if not complete
                           if (!isComplete && story.owner_ids && story.owner_ids.length > 0) {
                             story.owner_ids.forEach(ownerId => {
                               const ownerName = members[ownerId] || '';
-                              // Match by full or partial name (case insensitive)
-                              nameList.forEach(listName => {
-                                const ownerNameLower = ownerName.toLowerCase();
-                                const listNameLower = listName.toLowerCase();
-                                // Check if the owner name contains the list name or vice versa
-                                if (ownerNameLower.includes(listNameLower) || listNameLower.includes(ownerNameLower)) {
-                                  nameCounts[listName] = (nameCounts[listName] || 0) + 1;
-                                }
-                              });
+                              if (nameCounts.hasOwnProperty(ownerName)) {
+                                nameCounts[ownerName]++;
+                              }
                             });
                           }
                         });
@@ -2972,20 +2798,8 @@ function App() {
 
                         return (
                           <>
-                            <h4>
-                              <button
-                                onClick={() => toggleChart(epic.id, 'team-tickets')}
-                                className="chart-toggle-btn"
-                                aria-label="Toggle team open tickets table"
-                                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%', justifyContent: 'flex-start' }}
-                              >
-                                <span>{collapsedCharts[`${epic.id}-team-tickets`] ? '▼' : '▲'}</span>
-                                <span>Team Open Tickets</span>
-                              </button>
-                            </h4>
-                            {!collapsedCharts[`${epic.id}-team-tickets`] && (
-                            <>
-                            <table>
+                            <h4>Team Open Tickets{storage.getTeamConfig()?.name ? ` — ${storage.getTeamConfig().name}` : ''}</h4>
+                            <table style={{ marginTop: '0.5rem' }}>
                               <thead>
                                 <tr>
                                   <th>Owner</th>
@@ -2995,7 +2809,9 @@ function App() {
                               <tbody>
                                 {sortedNames.map(([name, count]) => (
                                   <tr key={name} className={count === 0 ? 'zero-count-row' : ''}>
-                                    <td>{name}</td>
+                                    <td>{!filterIgnoredInTickets && ignoredUsers.includes(name)
+                                      ? <span style={{ backgroundColor: '#e5e7eb', borderRadius: '999px', padding: '0.1rem 0.5rem', display: 'inline-block' }}>{name}</span>
+                                      : name}</td>
                                     <td>{count}</td>
                                   </tr>
                                 ))}
@@ -3004,8 +2820,6 @@ function App() {
                             <p style={{ color: '#718096', fontSize: '0.75rem', fontStyle: 'italic', marginTop: '0.5rem' }}>
                               NOTE: This table shows the count of open tickets only for the team
                             </p>
-                            </>
-                            )}
                           </>
                         );
                       })()}
@@ -3016,19 +2830,11 @@ function App() {
 
                 {epic.stories && (
                   <div className="stories-section">
-                    <h4>
-                      <button
-                        onClick={() => toggleChart(epic.id, 'stories')}
-                        className="chart-toggle-btn"
-                        aria-label="Toggle stories list"
-                        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%', justifyContent: 'flex-start' }}
-                      >
-                        <span>{collapsedCharts[`${epic.id}-stories`] ? '▼' : '▲'}</span>
-                        <span>Stories:</span>
-                      </button>
+                    <h4 style={{ cursor: 'pointer', userSelect: 'none', display: 'flex', alignItems: 'center', gap: '0.4rem' }} onClick={() => toggleChart(epic.id, 'stories')} title="Show or hide the User Story Board for this epic">
+                      <span>{collapsedCharts[`${epic.id}-stories`] ? '▶' : '▼'}</span> User Story Board
                     </h4>
                     {!collapsedCharts[`${epic.id}-stories`] && (
-                      <div style={{ borderTop: '2px solid #e2e8f0', paddingTop: '0.75rem' }}>
+                    <div style={{ borderTop: '2px solid #e2e8f0', paddingTop: '0.75rem' }}>
                         {epic.stories.length === 0 ? (
                           <p className="no-stories">No stories found for this epic</p>
                         ) : (
@@ -3129,7 +2935,7 @@ function App() {
         );
       })()}
       <footer className="App-footer">
-        <p>© 2026 | Project D.A.V.E. (Dashboards Are Very Effective) </p>
+        <p>© 2026 | Project D.A.V.E. (Dashboards Are Very Effective) | v3.0.0</p>
       </footer>
     </div>
   );

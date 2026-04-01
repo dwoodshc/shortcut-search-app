@@ -22,87 +22,112 @@ A React-based web application for visualizing and managing Shortcut.com epics an
 
 ### Epic Management
 - Epics loaded automatically on page load (no manual search required)
-- Loading modal with animated progress bar and **Cancel** button during data fetch
-- Epics not found in Shortcut are listed by name below the "Found X of Y Epics" count
+- Loading modal with animated progress bar, **"Loading X of Y Epics"** progress counter, and **Cancel** button during data fetch
+- Epics not found in Shortcut are listed by name in red below the "Found X of Y Epics" count
 - Configure tracked epics via built-in editor with localStorage persistence
-- Track team members assigned to each epic
-- Sidebar navigation for quick jumping between epics
-- Drag-and-drop reordering of epics in the configuration editor
-- Collapsible team member sections per epic card
 - Export/Import configuration for backup and portability
+
+### Assignment Tables
+Two collapsible assignment tables appear above the epic cards, controlled by the **Expand/Collapse Assignments** button. Both start collapsed by default and are split into two side-by-side sub-tables for wide-screen readability.
+
+#### Epic Owner Assignment
+- Lists each tracked epic alongside its assigned team members (filtered to the selected team)
+- Rows with no team members are highlighted in yellow
+- Team members shown as a bulleted list per epic
+
+#### Team Member Assignment
+- Inverted view: lists each team member alongside the epics they are assigned to
+- Shows epic count per member, e.g. `Alice (3)`
+- Epics shown as a bulleted list per member
+
+#### Ignored Users Display
+- The **Show/Hide Ignored Users** button (beside "Expand Assignments") toggles visibility of users in the ignore list across both assignment tables and the Team Open Tickets table
+- When shown, ignored users are rendered as a **gray pill** to distinguish them from active users
+- Hidden by default (ignored users are filtered out)
 
 ### Interactive Visualizations
 
-#### 3D Column Chart
+Per epic, three visualizations are available. Each has a **▶/▼ toggle** in its heading. The **Collapse/Expand Charts** button controls the Workflow Status Pie Chart and Story Type Breakdown across all epics simultaneously.
+
+#### Ticket Status Breakdown (3D Column Chart)
 - Workflow status breakdown showing story distribution across workflow states
 - Visual bars for: Backlog, Ready for Development, In Development, In Review, Ready for Release, Complete
 - 3D-styled columns with depth and shading effects
 - Story counts displayed on each column
+- Always visible (no collapse toggle)
 
 #### Workflow Status Pie Chart
-- Visual representation of stories by state with gradient colour scale
+- Visual representation of stories by workflow state with gradient colour scale
 - Colour progression: Gray (Backlog) → Light Green → Green → Dark Green (Complete)
 - Interactive hover tooltips showing count and percentage
 - **Clickable legend items** that link directly to filtered Shortcut epic views
+- Starts **collapsed** by default
 
 #### Story Type Breakdown Pie Chart
 - Distribution of stories by type (Feature, Bug, Chore)
 - Colour-coded: Light Green (Feature), Light Yellow (Chore), Light Red (Bug)
 - Interactive hover tooltips
 - **Clickable legend items** that link to Shortcut backlog filtered by epic and story type
+- Starts **collapsed** by default
 
 ### Analytics Tables
 
 #### Story Owners Table
-- Lists all story owners with their ticket counts
+- Lists all story owners with their ticket counts per epic
 - Sorted by count (descending)
 - Shows unassigned tickets separately
 
 #### Team Open Tickets Table
-- Shows open ticket counts for configured team members
+- Shows open ticket counts for configured team members within the epic
 - Excludes completed tickets from the count
 - Sorted by workload (descending)
 - Highlights team members with zero open tickets
-- Partial name matching for flexible configuration
+- Ignored users are filtered out by default (toggle via **Show/Hide Ignored Users** button)
 
-### Kanban Board
-- Six-column workflow display: Backlog → Ready for Development → In Development → In Review → Ready for Release → Complete
+### User Story Board
+- Six-column kanban display: Backlog → Ready for Development → In Development → In Review → Ready for Release → Complete
 - Story cards with clickable links to Shortcut
 - Story count badges on each column header
-- Collapsible Stories section (hidden by default)
-- Collapsible Story Type Breakdown chart (hidden by default)
-- Expand/Collapse controls for Stories, Story Types, and Charts across all epics
+- **▶/▼ toggle** in the "User Story Board" heading — starts **collapsed** by default
 
 ### Header Actions
 Three icon buttons in the top-right of the header (all with 0.5s hover tooltips):
 - **Refresh** — Reload all epic and story data from Shortcut
-- **Edit Epic List** — Open the epic list configuration editor directly
+- **Edit Epic List** — Open the epic list configuration editor directly (wizard step 6)
 - **Settings** (gear) — Open the settings dropdown menu
 
+### Toolbar Controls
+Displayed below the "Found X of Y Epics" count:
+- **Expand Assignments / Collapse Assignments** — Toggle both assignment tables
+- **Show Ignored Users / Hide Ignored Users** — Toggle visibility of ignored users across assignment tables and Team Open Tickets
+- **Expand Charts / Collapse Charts** — Toggle the Workflow Status Pie Chart and Story Type Breakdown across all epics
+
 ### Settings Menu
-- **Setup** — Re-run the setup wizard (API token, workspace URL, workflow)
-- **Dark Mode / Light Mode** — Toggle dark colour scheme (persisted across sessions)
+- **Setup** — Re-run the setup wizard
 - **README.md** — View this documentation in-app
 - **Export/Import** — Backup and restore configuration as JSON
-- **Wipe Settings** — Clear all stored configuration data
+- **Wipe Settings** — Clear all localStorage data to start fresh
 - **About** — View application information
-
-### Dark Mode
-- Full dark colour scheme toggle via Settings menu
-- Covers all UI areas: header, cards, charts, tables, modals, sidebar, inputs
-- Preference persisted to localStorage
 
 ### Setup & Configuration
 
 #### Initial Setup Wizard
-- **4-Step Guided Setup**: Automatically launches on first use or when configuration is incomplete
-  - Step 1: Enter Shortcut API token (verified against the API before proceeding)
-  - Step 2: Set workspace URL for generating hyperlinks
-  - Step 3: Select workflow from all available workflows in your workspace
-  - Step 4: Configure epic list with team members
+Automatically launches on first use or when configuration is incomplete. **6 steps:**
+
+| Step | Description |
+|------|-------------|
+| 1 | Enter Shortcut API token (verified against the API before proceeding) |
+| 2 | Set workspace URL for generating Shortcut hyperlinks |
+| 3 | Select workflow from all available workflows in your workspace |
+| 4 | Select a Shortcut team to filter assignment and ticket tables |
+| 5 | Enter usernames to **ignore** in assignment and ticket tables (one per line) |
+| 6 | Enter the list of epic names to track (one per line) |
+
 - Visual workflow preview showing all states with colour-coded badges
-- Drag-and-drop epic reordering in Step 4
 - Settings saved to browser localStorage automatically
+- On completion, epics are loaded automatically
+
+---
 
 ## Prerequisites
 
@@ -155,7 +180,7 @@ npm start
 shortcut-search-app/
 ├── src/
 │   ├── App.js          # Main React component
-│   ├── App.css         # Application styles (includes dark mode)
+│   ├── App.css         # Application styles
 │   └── index.js        # React entry point
 ├── server.js           # Express proxy server (Shortcut API calls)
 ├── package.json        # Dependencies and scripts
@@ -170,13 +195,17 @@ All configuration is stored in **browser localStorage**:
 |-----|----------|
 | `shortcut_api_token` | Shortcut API token |
 | `shortcut_workflow_config` | Workflow ID, name, URL, and states |
-| `shortcut_epics_config` | Epic names and team members |
-| `shortcut_members_cache` | Owner ID → display name cache (reduces API calls on refresh) |
-| `dark_mode` | Dark mode preference (`true`/`false`) |
+| `shortcut_epics_config` | Tracked epic names |
+| `shortcut_team_config` | Selected Shortcut team ID and name |
+| `shortcut_ignored_users` | List of usernames to exclude from tables |
+| `shortcut_members_cache` | Owner ID → display name cache |
+| `shortcut_team_members_cache` | Team member IDs (keyed by team ID, auto-invalidates on team change) |
+| `shortcut_epic_workflow_cache` | Epic workflow states cache |
 
 **Backup & Portability:**
 - Use Export/Import in the Settings menu to save your configuration as a JSON file
 - Import to restore settings or transfer between browsers
+- Exported data includes: API token, workflow config, epic list, team config, and ignored users
 
 ## API Calls
 
@@ -184,13 +213,14 @@ The app makes the following calls to the Express proxy on page load:
 
 | Call | Frequency | Notes |
 |------|-----------|-------|
-| `GET /api/migrate-data` | Once ever | One-time migration from legacy files |
+| `GET /api/teams` | Once (cached) | Fetch team member IDs for selected team |
+| `GET /api/epic-workflow` | Once (cached) | Fetch epic workflow states |
 | `GET /api/search/epics?query=` | 1 per tracked epic | Run in parallel via `Promise.all` |
 | `GET /api/epics/:id` | 1 per epic found | Full epic details |
 | `GET /api/epics/:id/stories` | 1 per epic found | All non-archived stories |
 | `GET /api/users/:id` | 1 per unique owner **not in cache** | Cached to localStorage after first fetch |
 
-For 22 tracked epics: ~66 calls per refresh, with member lookups cached after the first session.
+Phase 1 calls (team members and epic workflow) are cached to localStorage and skipped on subsequent loads unless the selected team changes.
 
 ## API Endpoints (Express Proxy)
 
@@ -199,6 +229,8 @@ For 22 tracked epics: ~66 calls per refresh, with member lookups cached after th
 - `GET /api/epics/:id` — Full epic details
 - `GET /api/epics/:id/stories` — Stories for an epic (archived excluded)
 - `GET /api/workflows` — All workflows with states
+- `GET /api/epic-workflow` — Epic workflow states
+- `GET /api/teams` — All Shortcut teams (groups)
 - `GET /api/users/:id` — Member display name
 
 ## Technologies Used
@@ -209,7 +241,7 @@ For 22 tracked epics: ~66 calls per refresh, with member lookups cached after th
 - **Storage**: Browser localStorage
 - **HTTP Client**: Axios (server) / fetch (client)
 - **Markdown**: marked
-- **Styling**: Custom CSS with dark mode support
+- **Styling**: Custom CSS
 - **Development**: concurrently
 
 ## Usage
@@ -217,7 +249,7 @@ For 22 tracked epics: ~66 calls per refresh, with member lookups cached after th
 ### First-Time Setup
 1. Run `npm run dev`
 2. The Setup Wizard launches automatically
-3. Complete the 4 steps: API token → workspace URL → workflow → epic list
+3. Complete all 6 steps: API token → workspace URL → workflow → select team → ignore users → epic list
 4. The dashboard loads automatically once setup is complete
 
 ### Daily Use
@@ -229,8 +261,8 @@ For 22 tracked epics: ~66 calls per refresh, with member lookups cached after th
 6. Click legend items in pie charts to open filtered views in Shortcut
 
 ### Managing Configuration
-- **Edit Epic List** header icon — add/remove epics, manage team members, reorder via drag-and-drop
-- **Settings → Setup** — change workspace URL or workflow
+- **Edit Epic List** header icon — open the epic list editor (wizard step 6)
+- **Settings → Setup** — re-run the full setup wizard to change token, URL, workflow, team, or ignored users
 - **Settings → Export/Import** — backup configuration to JSON or restore from a previous backup
 - **Settings → Wipe Settings** — clear all localStorage data to start fresh
 
@@ -257,9 +289,11 @@ For 22 tracked epics: ~66 calls per refresh, with member lookups cached after th
 - Ensure browser localStorage is enabled
 - Use Export/Import to backup and restore if needed
 
+---
+
 ## Version Information
 
-**Version**: 2.0.0
+**Version**: 3.0.0
 **Project Name**: D.A.V.E. (Dashboards Are Very Effective)
 **Author**: Dave Woods
 
