@@ -2088,7 +2088,7 @@ function App() {
                 if (!summarySort.col) return 0;
                 const dir = summarySort.dir === 'asc' ? 1 : -1;
                 if (summarySort.col === 'name') return dir * a.name.localeCompare(b.name);
-                if (summarySort.col === 'status') return dir * (a.state || '').localeCompare(b.state || '');
+                if (summarySort.col === 'status') return dir * getEpicStateInfo(a).name.localeCompare(getEpicStateInfo(b).name);
                 if (summarySort.col === 'progress') return dir * (getCompletePct(a) - getCompletePct(b));
                 return 0;
               });
@@ -2201,6 +2201,7 @@ function App() {
                 id: epic.id,
                 name: epic.name,
                 isDone: getEpicStateInfo(epic).type === 'done',
+                isReadyForRelease: getEpicStateInfo(epic).name.toLowerCase().trim() === 'ready for release',
                 team: (epic.owner_ids || [])
                   .filter(id => !selectedTeamId || teamMemberIds.has(id))
                   .map(id => members[id] || id)
@@ -2209,10 +2210,10 @@ function App() {
 
               // Member → epics (inverted)
               const memberEpicMap = {};
-              epicTeamData.forEach(({ id, name, isDone, team }) => {
+              epicTeamData.forEach(({ id, name, isDone, isReadyForRelease, team }) => {
                 team.forEach(member => {
                   if (!memberEpicMap[member]) memberEpicMap[member] = [];
-                  memberEpicMap[member].push({ id, name, isDone });
+                  memberEpicMap[member].push({ id, name, isDone, isReadyForRelease });
                 });
               });
               const memberEpicData = Object.entries(memberEpicMap).map(([member, epicsForMember]) => ({ member, epics: epicsForMember }));
@@ -2276,12 +2277,14 @@ function App() {
               );
 
               const donePill = <span style={{ marginLeft: '0.4rem', backgroundColor: '#86efac', borderRadius: '999px', padding: '0.1rem 0.5rem', fontSize: '0.75rem', fontWeight: 500, display: 'inline-block', verticalAlign: 'middle' }}>Done</span>;
+              const readyForReleasePill = <span style={{ marginLeft: '0.4rem', backgroundColor: '#bbf7d0', borderRadius: '999px', padding: '0.1rem 0.5rem', fontSize: '0.75rem', fontWeight: 500, display: 'inline-block', verticalAlign: 'middle' }}>Ready for Release</span>;
 
               const renderEpicTeamRow = (row, idx) => (
                 <tr key={row.id} style={{ background: row.team.length === 0 ? '#fff9c4' : idx % 2 === 0 ? 'white' : '#fafafa' }}>
                   <td style={{ ...tdStyle, fontWeight: 600 }}>
                     <a href={`#epic-${row.id}`} style={{ color: '#494BCB', textDecoration: 'none' }}>{row.name}</a>
                     {row.isDone && donePill}
+                    {row.isReadyForRelease && readyForReleasePill}
                   </td>
                   <td style={tdStyle}>
                     {row.team.length === 0
@@ -2302,7 +2305,7 @@ function App() {
                   <td style={tdStyle}>
                     <ul style={{ margin: 0, paddingLeft: '1.2rem' }}>
                       {[...row.epics].sort((a, b) => a.name.localeCompare(b.name)).map((e) => (
-                        <li key={e.id}><a href={`#epic-${e.id}`} style={{ color: '#494BCB', textDecoration: 'none' }}>{e.name}</a>{e.isDone && donePill}</li>
+                        <li key={e.id}><a href={`#epic-${e.id}`} style={{ color: '#494BCB', textDecoration: 'none' }}>{e.name}</a>{e.isDone && donePill}{e.isReadyForRelease && readyForReleasePill}</li>
                       ))}
                     </ul>
                   </td>
