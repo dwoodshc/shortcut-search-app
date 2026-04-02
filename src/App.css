@@ -23,7 +23,9 @@ body {
   padding: 2rem;
   text-align: center;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  position: relative;
+  position: sticky;
+  top: 0;
+  z-index: 100;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -295,6 +297,7 @@ textarea.input-field {
 }
 
 .epic-card {
+  scroll-margin-top: 120px; /* Clears the sticky header (~90px) plus breathing room */
   background: white;
   border-radius: 8px;
   padding: 1rem;

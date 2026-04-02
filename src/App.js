@@ -199,7 +199,8 @@ function App() {
   const scrollToEpic = (epicId) => {
     const element = document.getElementById(`epic-${epicId}`);
     if (element) {
-      const yOffset = -20; // Offset to account for any spacing
+      const headerHeight = document.querySelector('.App-header')?.offsetHeight || 90;
+      const yOffset = -(headerHeight + 16); // Offset to clear sticky header plus a small gap
       const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset;
       window.scrollTo({ top: y, behavior: 'smooth' });
       setShowSidebar(false);
@@ -1744,11 +1745,13 @@ function App() {
 
       <header className="App-header">
         <div className="header-logo">
-          <img
-            src="https://images.squarespace-cdn.com/content/v1/608324e4b63c5e7e1b49aedf/4b87281c-8610-48e1-8f67-b3b3f20b2567/Slice-Logo-Screen_Yellow-BlackType.png?format=1500w"
-            alt="Slice Logo"
-            className="logo-image"
-          />
+          <a href="#top" title="Back to top">
+            <img
+              src="https://images.squarespace-cdn.com/content/v1/608324e4b63c5e7e1b49aedf/4b87281c-8610-48e1-8f67-b3b3f20b2567/Slice-Logo-Screen_Yellow-BlackType.png?format=1500w"
+              alt="Slice Logo"
+              className="logo-image"
+            />
+          </a>
         </div>
         <h1>Shortcut Dashboard</h1>
         <div className="settings-container">
