@@ -1816,7 +1816,7 @@ function App() {
                   setSetupWizardStep(1);
                 }}
               >
-                Setup
+                Setup Wizard
               </button>
               <button
                 className="settings-menu-item"
