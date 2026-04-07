@@ -122,6 +122,8 @@ function App() {
   const [epicStates, setEpicStates] = useState({});
   const [loadStats, setLoadStats] = useState(null);
   const [showRateLimitModal, setShowRateLimitModal] = useState(false);
+  const [storyDetailFilter, setStoryDetailFilter] = useState(null);
+  const [storyDetailSort, setStoryDetailSort] = useState({ col: null, dir: 'asc' });
 
   // Helper function to generate Shortcut URLs for epics
   const generateShortcutUrl = useCallback((epicId, stateName) => {
@@ -438,6 +440,8 @@ function App() {
           setShowReadmeModal(false);
         } else if (showExportImportModal) {
           setShowExportImportModal(false);
+        } else if (storyDetailFilter) {
+          setStoryDetailFilter(null);
         } else if (showSettingsMenu) {
           setShowSettingsMenu(false);
         } else if (showSidebar) {
@@ -450,7 +454,7 @@ function App() {
     return () => {
       document.removeEventListener('keydown', handleEscKey);
     };
-  }, [showSetupWizard, showAboutModal, showReadmeModal, showExportImportModal, showSettingsMenu, showSidebar]);
+  }, [showSetupWizard, showAboutModal, showReadmeModal, showExportImportModal, showSettingsMenu, showSidebar, storyDetailFilter]);
 
   // Fetch user name by ID
   // Convert text to title case (initial capitals)
@@ -1028,6 +1032,89 @@ function App() {
           </div>
         </div>
       )}
+
+      {storyDetailFilter && (() => {
+        const rawStories = epics
+          .filter(e => !e.notFound)
+          .flatMap(epic =>
+            getDisplayStories(epic)
+              .filter(story => workflowStates[story.workflow_state_id] === storyDetailFilter)
+              .map(story => ({ ...story, epicName: epic.name, epicId: epic.id }))
+          );
+
+        const toggleDetailSort = (col) =>
+          setStoryDetailSort(prev => prev.col === col && prev.dir === 'asc' ? { col, dir: 'desc' } : { col, dir: 'asc' });
+
+        const detailSortIcon = (col) => {
+          const label = storyDetailSort.col !== col ? 'Click to sort' : storyDetailSort.dir === 'asc' ? 'Sorted A→Z, click to reverse' : 'Sorted Z→A, click to reverse';
+          const icon = storyDetailSort.col !== col ? ' ↕' : storyDetailSort.dir === 'asc' ? ' ↑' : ' ↓';
+          return <span className="summary-sort-icon" data-tooltip={label}>{icon}</span>;
+        };
+
+        const sortedStories = [...rawStories].sort((a, b) => {
+          if (!storyDetailSort.col) return 0;
+          const dir = storyDetailSort.dir === 'asc' ? 1 : -1;
+          if (storyDetailSort.col === 'story') return dir * a.name.localeCompare(b.name);
+          if (storyDetailSort.col === 'epic') return dir * a.epicName.localeCompare(b.epicName);
+          return 0;
+        });
+
+        const thStyle = { cursor: 'pointer', userSelect: 'none', padding: '0.5rem 0.75rem', textAlign: 'left', fontWeight: 600, fontSize: '0.875rem' };
+
+        return (
+          <div className="modal-overlay" onClick={() => setStoryDetailFilter(null)}>
+            <div className="modal-content modal-content-large" onClick={e => e.stopPropagation()} style={{ maxWidth: '925px', width: '90%', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                <h2 style={{ margin: 0, fontSize: '1.2rem' }}>Stories — {storyDetailFilter}</h2>
+                <button onClick={() => setStoryDetailFilter(null)} style={{ background: 'none', border: 'none', fontSize: '1.25rem', cursor: 'pointer', color: '#718096', lineHeight: 1 }}>✕</button>
+              </div>
+              <p style={{ color: '#718096', fontSize: '0.8rem', margin: '0 0 0.75rem' }}>{rawStories.length} {rawStories.length === 1 ? 'story' : 'stories'}</p>
+              <div style={{ overflowY: 'auto', flex: 1 }}>
+                <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, border: '1px solid #F0F0F7', borderRadius: '8px' }}>
+                  <thead>
+                    <tr style={{ background: '#494BCB', color: 'white', position: 'sticky', top: 0 }}>
+                      <th onClick={() => toggleDetailSort('story')} style={{ ...thStyle, borderRadius: '8px 0 0 0' }}>
+                        Story{detailSortIcon('story')}
+                        {storyDetailSort.col === 'story' && (
+                          <span className="summary-sort-icon" data-tooltip="Restore original order" onClick={e => { e.stopPropagation(); setStoryDetailSort({ col: null, dir: 'asc' }); }} style={{ marginLeft: '6px', cursor: 'pointer' }}>
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style={{ width: '14px', height: '14px', verticalAlign: 'middle', display: 'inline-block' }}>
+                              <path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.95-2.05L6.64 18.36A8.955 8.955 0 0 0 13 21a9 9 0 0 0 0-18z"/>
+                            </svg>
+                          </span>
+                        )}
+                      </th>
+                      <th onClick={() => toggleDetailSort('epic')} style={{ ...thStyle, whiteSpace: 'nowrap', borderRadius: '0 8px 0 0' }}>
+                        Epic{detailSortIcon('epic')}
+                        {storyDetailSort.col === 'epic' && (
+                          <span className="summary-sort-icon" data-tooltip="Restore original order" onClick={e => { e.stopPropagation(); setStoryDetailSort({ col: null, dir: 'asc' }); }} style={{ marginLeft: '6px', cursor: 'pointer' }}>
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style={{ width: '14px', height: '14px', verticalAlign: 'middle', display: 'inline-block' }}>
+                              <path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.95-2.05L6.64 18.36A8.955 8.955 0 0 0 13 21a9 9 0 0 0 0-18z"/>
+                            </svg>
+                          </span>
+                        )}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sortedStories.map((story, idx) => (
+                      <tr key={story.id} style={{ background: idx % 2 === 0 ? 'white' : '#fafafa' }}>
+                        <td style={{ padding: '0.4rem 0.75rem', fontSize: '0.875rem', borderBottom: '1px solid #F0F0F7' }}>
+                          {story.app_url
+                            ? <a href={story.app_url} target="_blank" rel="noopener noreferrer" style={{ color: '#494BCB' }}>{story.name}</a>
+                            : story.name}
+                        </td>
+                        <td style={{ padding: '0.4rem 0.75rem', fontSize: '0.875rem', borderBottom: '1px solid #F0F0F7', whiteSpace: 'nowrap' }}>
+                          <a href={`#epic-${story.epicId}`} onClick={() => setStoryDetailFilter(null)} style={{ color: '#494BCB', textDecoration: 'none' }}>{story.epicName}</a>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {showRateLimitModal && (
         <div className="modal-overlay" onClick={() => setShowRateLimitModal(false)}>
@@ -2084,11 +2171,18 @@ function App() {
                     </thead>
                     <tbody>
                       <tr>
-                        {stateOrder.map(s => (
-                          <td key={s} style={{ padding: '0.5rem 0.75rem', textAlign: 'center', fontSize: '0.875rem', borderBottom: '1px solid #F0F0F7', fontWeight: stateCounts[s] > 0 ? 600 : 400, color: stateCounts[s] > 0 ? '#1a202c' : '#a0aec0' }}>
-                            {stateCounts[s]}
-                          </td>
-                        ))}
+                        {stateOrder.map(s => {
+                          const clickable = s !== 'Complete' && stateCounts[s] > 0;
+                          return (
+                            <td
+                              key={s}
+                              onClick={clickable ? () => { setStoryDetailFilter(s); setStoryDetailSort({ col: null, dir: 'asc' }); } : undefined}
+                              style={{ padding: '0.5rem 0.75rem', textAlign: 'center', fontSize: '0.875rem', borderBottom: '1px solid #F0F0F7', fontWeight: stateCounts[s] > 0 ? 600 : 400, color: clickable ? '#494BCB' : stateCounts[s] > 0 ? '#1a202c' : '#a0aec0', cursor: clickable ? 'pointer' : 'default', textDecoration: clickable ? 'underline' : 'none' }}
+                            >
+                              {stateCounts[s]}
+                            </td>
+                          );
+                        })}
                         <td style={{ padding: '0.5rem 0.75rem', textAlign: 'center', fontSize: '0.875rem', fontWeight: 700, borderBottom: '1px solid #F0F0F7' }}>{total}</td>
                         <td style={{ padding: '0.4rem 0.75rem', borderBottom: '1px solid #F0F0F7' }}>
                           <div className="summary-bar-wrapper">
