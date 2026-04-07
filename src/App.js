@@ -1774,6 +1774,7 @@ function App() {
           )}
         </div>
         <div className="settings-container">
+          <div className="settings-icon-row">
           <button
             className="settings-icon"
             aria-label="Refresh Epics"
@@ -1874,6 +1875,49 @@ function App() {
               >
                 About
               </button>
+            </div>
+          )}
+          </div>
+          {epics.length > 0 && (
+            <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => {
+                  const bothCollapsed = collapsedCharts['assignment-epic'] && collapsedCharts['assignment-member'];
+                  setCollapsedCharts(prev => ({ ...prev, 'assignment-epic': !bothCollapsed, 'assignment-member': !bothCollapsed }));
+                }}
+                className={`header-action-btn${!(collapsedCharts['assignment-epic'] && collapsedCharts['assignment-member']) ? ' active' : ''}`}
+                title="Show or hide the Epic Owner Assignment and Team Member Assignment tables"
+              >
+                {collapsedCharts['assignment-epic'] && collapsedCharts['assignment-member'] ? 'Expand Assignments' : 'Collapse Assignments'}
+              </button>
+              <button
+                onClick={() => setFilterIgnoredInTickets(prev => !prev)}
+                className={`header-action-btn${!filterIgnoredInTickets ? ' active' : ''}`}
+                title={filterIgnoredInTickets ? 'Currently hiding ignored users — click to show them highlighted in assignment and ticket tables' : 'Currently showing ignored users — click to hide them from assignment and ticket tables'}
+              >
+                {filterIgnoredInTickets ? 'Show Ignored Users' : 'Hide Ignored Users'}
+              </button>
+              <button
+                onClick={toggleAllCharts}
+                className={`header-action-btn${(() => { const keys = epics.filter(e => !e.notFound).flatMap(e => ['workflow-pie','type-pie'].map(t => `${e.id}-${t}`)); return !keys.every(k => collapsedCharts[k]); })() ? ' active' : ''}`}
+                title="Show or hide the Workflow Status Pie Chart and Story Type Breakdown across all epics"
+              >
+                {(() => {
+                  const allChartKeys = epics.filter(e => !e.notFound).flatMap(e => ['workflow-pie','type-pie'].map(t => `${e.id}-${t}`));
+                  return allChartKeys.every(key => collapsedCharts[key]) ? 'Expand Charts' : 'Collapse Charts';
+                })()}
+              </button>
+              {selectedTeamId && (
+                <button
+                  onClick={() => setFilterByTeam(prev => !prev)}
+                  className={`header-action-btn${filterByTeam ? ' active' : ''}`}
+                  title={filterByTeam
+                    ? `Currently showing only ${storage.getTeamConfig()?.name || 'team'} tickets — click to show all tickets`
+                    : `Currently showing all tickets — click to show only tickets assigned to ${storage.getTeamConfig()?.name || 'team'}`}
+                >
+                  {filterByTeam ? 'Show All Teams' : `Show ${storage.getTeamConfig()?.name || 'Team'} Team Only`}
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -2170,51 +2214,11 @@ function App() {
             })()}
 
             <div style={{ marginBottom: '0.5rem', paddingBottom: '0.75rem', borderBottom: '2px solid #e2e8f0' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center' }}>
                 <h2 style={{ margin: 0, fontSize: '1.0rem' }}>
                   {epics.filter(e => !e.notFound).length === filteredEpicNames.length ? '✅ ' : '⚠️ '}
                   Found {epics.filter(e => !e.notFound).length} of {filteredEpicNames.length} Epic{filteredEpicNames.length !== 1 ? 's' : ''}
                 </h2>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <button
-                    onClick={() => {
-                      const bothCollapsed = collapsedCharts['assignment-epic'] && collapsedCharts['assignment-member'];
-                      setCollapsedCharts(prev => ({ ...prev, 'assignment-epic': !bothCollapsed, 'assignment-member': !bothCollapsed }));
-                    }}
-                    className="btn-secondary"
-                    style={{ whiteSpace: 'nowrap' }}
-                    title="Show or hide the Epic Owner Assignment and Team Member Assignment tables"
-                  >
-                    {collapsedCharts['assignment-epic'] && collapsedCharts['assignment-member'] ? 'Expand Assignments' : 'Collapse Assignments'}
-                  </button>
-                  <button
-                    onClick={() => setFilterIgnoredInTickets(prev => !prev)}
-                    className="btn-secondary"
-                    style={{ whiteSpace: 'nowrap' }}
-                    title={filterIgnoredInTickets ? 'Currently hiding ignored users — click to show them highlighted in assignment and ticket tables' : 'Currently showing ignored users — click to hide them from assignment and ticket tables'}
-                  >
-                    {filterIgnoredInTickets ? 'Show Ignored Users' : 'Hide Ignored Users'}
-                  </button>
-                  <button onClick={toggleAllCharts} className="btn-secondary" style={{ whiteSpace: 'nowrap' }} title="Show or hide the Workflow Status Pie Chart and Story Type Breakdown across all epics">
-                    {(() => {
-                      const chartTypes = ['workflow-pie', 'type-pie'];
-                      const allChartKeys = epics.filter(e => !e.notFound).flatMap(e => chartTypes.map(t => `${e.id}-${t}`));
-                      return allChartKeys.every(key => collapsedCharts[key]) ? 'Expand Charts' : 'Collapse Charts';
-                    })()}
-                  </button>
-                  {selectedTeamId && (
-                    <button
-                      onClick={() => setFilterByTeam(prev => !prev)}
-                      className="btn-secondary"
-                      style={{ whiteSpace: 'nowrap' }}
-                      title={filterByTeam
-                        ? `Currently showing only ${storage.getTeamConfig()?.name || 'team'} tickets — click to show all tickets`
-                        : `Currently showing all tickets — click to show only tickets assigned to ${storage.getTeamConfig()?.name || 'team'}`}
-                    >
-                      {filterByTeam ? 'Show All Teams' : `Show ${storage.getTeamConfig()?.name || 'Team'} Team Only`}
-                    </button>
-                  )}
-                </div>
               </div>
               {epics.some(e => e.notFound) && (
                 <div style={{ marginTop: '0.4rem', fontSize: '0.8rem', color: '#dc2626' }}>

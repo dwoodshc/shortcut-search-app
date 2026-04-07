@@ -65,10 +65,44 @@ body {
 .settings-container {
   position: absolute;
   top: 2rem;
+  bottom: 1rem;
   right: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.settings-icon-row {
   display: flex;
   gap: 0.5rem;
   align-items: center;
+}
+
+.header-action-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  color: rgba(255, 255, 255, 0.88);
+  padding: 0.22rem 0.65rem;
+  font-size: 0.72rem;
+  font-weight: 500;
+  border-radius: 4px;
+  cursor: pointer;
+  letter-spacing: 0.02em;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+  white-space: nowrap;
+}
+
+.header-action-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.45);
+  color: #ffffff;
+}
+
+.header-action-btn.active {
+  background: rgba(255, 222, 135, 0.25);
+  border-color: #FFDE87;
+  color: #FFDE87;
 }
 
 .settings-icon {
