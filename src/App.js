@@ -2194,6 +2194,7 @@ function App() {
 
               return (
                 <div id="summary-table" style={{ marginBottom: '1rem' }}>
+                  <h2 style={{ margin: '0 0 0.75rem', fontSize: '1.1rem', fontWeight: 600, color: '#1a202c' }}>Epic Status</h2>
                   <div className="summary-table-grid">
                     <div style={{ flex: 1 }}>
                       <table style={tableStyle}>
