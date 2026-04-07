@@ -101,6 +101,7 @@ function App() {
   const [teamMemberIds, setTeamMemberIds] = useState(new Set());
   const [ignoredUsers, setIgnoredUsers] = useState(() => storage.getIgnoredUsers());
   const [filterIgnoredInTickets, setFilterIgnoredInTickets] = useState(true);
+  const [filterByTeam, setFilterByTeam] = useState(false);
   const [summarySort, setSummarySort] = useState({ col: null, dir: 'asc' });
   const [epicTeamSort, setEpicTeamSort] = useState({ col: null, dir: 'asc' });
   const [memberEpicSort, setMemberEpicSort] = useState({ col: 'member', dir: 'asc' });
@@ -216,6 +217,17 @@ function App() {
     const stateName = workflowStates[stateId];
     return stateName && NORMALIZED_WORKFLOW_STATES.includes(stateName.toLowerCase().trim());
   });
+
+  // Returns stories for an epic, filtered to the selected team when filterByTeam is on
+  const getDisplayStories = (epic) => {
+    if (!filterByTeam || !selectedTeamId) {
+      return epic.stories || [];
+    }
+    return (epic.stories || []).filter(story =>
+      // Include stories assigned to the selected team, or with no team assigned
+      !story.group_id || story.group_id === selectedTeamId
+    );
+  };
 
   // Creates an SVG path string for a pie slice
   const createPieSlice = (startAngle, angle, radius = 80) => {
@@ -1753,7 +1765,14 @@ function App() {
             />
           </a>
         </div>
-        <h1>Shortcut Dashboard</h1>
+        <div style={{ textAlign: 'center' }}>
+          <h1>Shortcut Dashboard</h1>
+          {storage.getTeamConfig()?.name && (
+            <div style={{ fontSize: '1.4rem', fontWeight: 400, opacity: 0.85, marginTop: '0.15rem', letterSpacing: '0.03em' }}>
+              {filterByTeam ? `${storage.getTeamConfig().name} Team Only` : 'All Teams'}
+            </div>
+          )}
+        </div>
         <div className="settings-container">
           <button
             className="settings-icon"
@@ -2005,12 +2024,11 @@ function App() {
 
               const renderRow = (epic, idx) => {
                 const stateCounts = {};
-                if (epic.stories) {
-                  epic.stories.forEach(story => {
-                    stateCounts[story.workflow_state_id] = (stateCounts[story.workflow_state_id] || 0) + 1;
-                  });
-                }
-                const total = epic.stories ? epic.stories.length : 0;
+                const epicDisplayStories = getDisplayStories(epic);
+                epicDisplayStories.forEach(story => {
+                  stateCounts[story.workflow_state_id] = (stateCounts[story.workflow_state_id] || 0) + 1;
+                });
+                const total = epicDisplayStories.length;
                 let backlogCount = 0, inProgressCount = 0, completeCount = 0;
                 summaryStateIds.forEach(stateId => {
                   const group = getGroup(workflowStates[stateId]);
@@ -2076,7 +2094,7 @@ function App() {
               const getCompletePct = (epic) => {
                 const stateCounts = {};
                 summaryStateIds.forEach(id => { stateCounts[id] = 0; });
-                (epic.stories || []).forEach(story => {
+                getDisplayStories(epic).forEach(story => {
                   if (stateCounts[story.workflow_state_id] !== undefined) stateCounts[story.workflow_state_id]++;
                 });
                 const total = Object.values(stateCounts).reduce((a, b) => a + b, 0);
@@ -2184,6 +2202,18 @@ function App() {
                       return allChartKeys.every(key => collapsedCharts[key]) ? 'Expand Charts' : 'Collapse Charts';
                     })()}
                   </button>
+                  {selectedTeamId && (
+                    <button
+                      onClick={() => setFilterByTeam(prev => !prev)}
+                      className="btn-secondary"
+                      style={{ whiteSpace: 'nowrap' }}
+                      title={filterByTeam
+                        ? `Currently showing only ${storage.getTeamConfig()?.name || 'team'} tickets — click to show all tickets`
+                        : `Currently showing all tickets — click to show only tickets assigned to ${storage.getTeamConfig()?.name || 'team'}`}
+                    >
+                      {filterByTeam ? 'Show All Teams' : `Show ${storage.getTeamConfig()?.name || 'Team'} Team Only`}
+                    </button>
+                  )}
                 </div>
               </div>
               {epics.some(e => e.notFound) && (
@@ -2386,8 +2416,9 @@ function App() {
               );
             })()}
 
-            {epics.map((epic) => (
-              epic.notFound ? (
+            {epics.map((epic) => {
+              const displayStories = getDisplayStories(epic);
+              return epic.notFound ? (
                 <div key={epic.id} className="epic-not-found">
                   <h3>{epic.name}</h3>
                   <p>Epic not found in Shortcut</p>
@@ -2440,8 +2471,8 @@ function App() {
                       {(() => {
                         // Calculate workflow state counts
                         const stateCounts = {};
-                        let total = epic.stories.length || 0;
-                        epic.stories.forEach(story => {
+                        let total = displayStories.length;
+                        displayStories.forEach(story => {
                           const stateId = story.workflow_state_id;
                           stateCounts[stateId] = (stateCounts[stateId] || 0) + 1;
                         });
@@ -2487,8 +2518,8 @@ function App() {
                       {(() => {
                         // Calculate workflow state counts
                         const stateCounts = {};
-                        let total = epic.stories.length || 0;
-                        epic.stories.forEach(story => {
+                        let total = displayStories.length;
+                        displayStories.forEach(story => {
                           const stateId = story.workflow_state_id;
                           stateCounts[stateId] = (stateCounts[stateId] || 0) + 1;
                         });
@@ -2592,7 +2623,7 @@ function App() {
                       {(() => {
                         // Calculate story type counts
                         const typeCounts = {};
-                        epic.stories.forEach(story => {
+                        displayStories.forEach(story => {
                           const storyType = story.story_type || 'unknown';
                           typeCounts[storyType] = (typeCounts[storyType] || 0) + 1;
                         });
@@ -2705,7 +2736,7 @@ function App() {
                         const ownerCounts = {};
                         let unassignedCount = 0;
 
-                        epic.stories.forEach(story => {
+                        displayStories.forEach(story => {
                           if (story.owner_ids && story.owner_ids.length > 0) {
                             story.owner_ids.forEach(ownerId => {
                               const ownerName = members[ownerId] || ownerId;
@@ -2784,7 +2815,7 @@ function App() {
                         });
 
                         // Count open tickets for owners (exclude Complete state)
-                        epic.stories.forEach(story => {
+                        displayStories.forEach(story => {
                           const stateName = workflowStates[story.workflow_state_id] || '';
                           const isComplete = stateName.toLowerCase().trim() === 'complete';
 
@@ -2841,12 +2872,12 @@ function App() {
                     </h4>
                     {!collapsedCharts[`${epic.id}-stories`] && (
                     <div style={{ borderTop: '2px solid #e2e8f0', paddingTop: '0.75rem' }}>
-                        {epic.stories.length === 0 ? (
+                        {displayStories.length === 0 ? (
                           <p className="no-stories">No stories found for this epic</p>
                         ) : (
                           <div className="stories-columns">
                             {['Backlog', 'Ready for Development', 'In Development', 'In Review', 'Ready for Release', 'Complete'].map((columnState) => {
-                              const storiesInColumn = epic.stories.filter(story => {
+                              const storiesInColumn = displayStories.filter(story => {
                                 const storyState = (workflowStates[story.workflow_state_id] || '').toLowerCase().trim();
                                 const targetState = columnState.toLowerCase().trim();
                                 return storyState === targetState;
@@ -2902,8 +2933,8 @@ function App() {
                   </a>
                 </div>
               </div>
-              )
-            ))}
+              );
+            })}
           </div>
         )}
       </main>
