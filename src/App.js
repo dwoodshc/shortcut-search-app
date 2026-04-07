@@ -2044,6 +2044,92 @@ function App() {
 
         {epics.length > 0 && (
           <div className="epics-list">
+            {/* Story Totals Summary */}
+            {(() => {
+              const allStories = epics.filter(e => !e.notFound).flatMap(epic => getDisplayStories(epic));
+              if (allStories.length === 0) return null;
+
+              const stateOrder = ['Backlog', 'Ready for Development', 'In Development', 'In Review', 'Ready for Release', 'Complete'];
+              const stateCounts = {};
+              stateOrder.forEach(s => { stateCounts[s] = 0; });
+              allStories.forEach(story => {
+                const name = workflowStates[story.workflow_state_id];
+                if (name && stateCounts[name] !== undefined) stateCounts[name]++;
+              });
+
+              const total = allStories.length;
+              const completeCount = (stateCounts['Complete'] || 0) + (stateCounts['Ready for Release'] || 0);
+              const inProgressCount = (stateCounts['Ready for Development'] || 0) + (stateCounts['In Development'] || 0) + (stateCounts['In Review'] || 0);
+              const backlogCount = stateCounts['Backlog'] || 0;
+              const completePct = total > 0 ? (completeCount / total) * 100 : 0;
+              const inProgressPct = total > 0 ? (inProgressCount / total) * 100 : 0;
+              const backlogPct = total > 0 ? (backlogCount / total) * 100 : 0;
+
+              const tblStyle = { width: '100%', borderCollapse: 'separate', borderSpacing: 0, background: 'white', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.08)', border: '1px solid #F0F0F7' };
+
+              return (
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <h2 style={{ margin: '0 0 0.75rem', fontSize: '1.1rem', fontWeight: 600, color: '#1a202c' }}>Story Summary</h2>
+                  <table style={tblStyle}>
+                    <thead>
+                      <tr style={{ background: '#494BCB', color: 'white' }}>
+                        {stateOrder.map((s, i) => (
+                          <th key={s} style={{ padding: '0.5rem 0.75rem', textAlign: 'center', fontWeight: 600, fontSize: '0.8rem', whiteSpace: 'nowrap', borderRadius: i === 0 ? '8px 0 0 0' : undefined }}>
+                            {s.replace('Ready for Development', 'Ready for Dev')}
+                          </th>
+                        ))}
+                        <th style={{ padding: '0.5rem 0.75rem', textAlign: 'center', fontWeight: 600, fontSize: '0.8rem', whiteSpace: 'nowrap' }}>Total</th>
+                        <th style={{ padding: '0.5rem 0.75rem', textAlign: 'center', fontWeight: 600, fontSize: '0.8rem', borderRadius: '0 8px 0 0', minWidth: '160px' }}>Overall Progress</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        {stateOrder.map(s => (
+                          <td key={s} style={{ padding: '0.5rem 0.75rem', textAlign: 'center', fontSize: '0.875rem', borderBottom: '1px solid #F0F0F7', fontWeight: stateCounts[s] > 0 ? 600 : 400, color: stateCounts[s] > 0 ? '#1a202c' : '#a0aec0' }}>
+                            {stateCounts[s]}
+                          </td>
+                        ))}
+                        <td style={{ padding: '0.5rem 0.75rem', textAlign: 'center', fontSize: '0.875rem', fontWeight: 700, borderBottom: '1px solid #F0F0F7' }}>{total}</td>
+                        <td style={{ padding: '0.4rem 0.75rem', borderBottom: '1px solid #F0F0F7' }}>
+                          <div className="summary-bar-wrapper">
+                            <div style={{ display: 'flex', height: '22px', borderRadius: '999px', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
+                              {total === 0 ? (
+                                <div style={{ width: '100%', background: '#f1f5f9' }} />
+                              ) : (
+                                <>
+                                  {completePct > 0 && <div style={{ ...(inProgressPct > 0 || backlogPct > 0 ? { width: `${completePct}%`, clipPath: 'polygon(0 0, calc(100% - 7px) 0, 100% 50%, calc(100% - 7px) 100%, 0 100%)', marginRight: '-7px' } : { flex: 1 }), background: '#059669', height: '100%', minWidth: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', zIndex: 3 }}>{completePct >= 8 && <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#ffffff', whiteSpace: 'nowrap', paddingRight: inProgressPct > 0 || backlogPct > 0 ? '7px' : '0' }}>{Math.round(completePct)}%</span>}</div>}
+                                  {inProgressPct > 0 && <div style={{ ...(backlogPct > 0 ? { width: `${inProgressPct}%`, clipPath: 'polygon(0 0, calc(100% - 7px) 0, 100% 50%, calc(100% - 7px) 100%, 0 100%)', marginRight: '-7px' } : { flex: 1 }), background: '#fde68a', height: '100%', minWidth: '2px', position: 'relative', zIndex: 2 }} />}
+                                  {backlogPct > 0 && <div style={{ flex: 1, background: '#f1f5f9', height: '100%', minWidth: '2px', position: 'relative', zIndex: 1 }} />}
+                                </>
+                              )}
+                            </div>
+                            <div className="summary-bar-tooltip">
+                              {[
+                                { label: 'Complete', count: completeCount, pct: completePct, color: '#059669' },
+                                { label: 'In Progress', count: inProgressCount, pct: inProgressPct, color: '#fde68a' },
+                                { label: 'Backlog', count: backlogCount, pct: backlogPct, color: '#f1f5f9' },
+                              ].filter(({ count }) => count > 0).map(({ label, count, pct, color }) => (
+                                <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.15rem 0' }}>
+                                  <span style={{ width: '10px', height: '10px', borderRadius: '2px', background: color, flexShrink: 0, border: '1px solid rgba(255,255,255,0.3)', display: 'inline-block' }} />
+                                  <span style={{ flex: 1 }}>{label}</span>
+                                  <span style={{ fontWeight: 700, marginLeft: '0.75rem' }}>{count} ({Math.round(pct)}%)</span>
+                                </div>
+                              ))}
+                              <div style={{ borderTop: '1px solid rgba(255,255,255,0.15)', marginTop: '0.4rem', paddingTop: '0.4rem', fontSize: '0.68rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.4 }}>
+                                <div><strong style={{ color: 'rgba(255,255,255,0.85)' }}>Complete:</strong> Complete + Ready for Release</div>
+                                <div><strong style={{ color: 'rgba(255,255,255,0.85)' }}>In Progress:</strong> Ready for Dev + In Dev + In Review</div>
+                                <div><strong style={{ color: 'rgba(255,255,255,0.85)' }}>Backlog:</strong> Backlog</div>
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              );
+            })()}
+
             {/* Summary Table */}
             {(() => {
               const backlogStates = ['backlog'];
