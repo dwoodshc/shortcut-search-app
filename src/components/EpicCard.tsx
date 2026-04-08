@@ -169,14 +169,12 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
         </div>
         <div className="epic-meta">
           <span className="epic-owner">
-            {epic.owner_ids && epic.owner_ids.length > 1 ? 'Owners: ' : 'Owner: '}
+            <strong>{epic.owner_ids && epic.owner_ids.length > 1 ? 'Owners: ' : 'Owner: '}</strong>
             {epic.owner_ids && epic.owner_ids.length > 0
               ? epic.owner_ids.map(id => members[id] || id).join(', ')
               : 'No Owner'}
           </span>
-          {epic.stats && (
-            <span className="story-count">{epic.stats.num_stories_total || 0} stories</span>
-          )}
+          <span className="story-count">{displayStories.length} stories</span>
           <span className={`epic-state ${getEpicStateClass(si.type, si.name)}`}>
             {si.type.toLowerCase() === 'done' ? 'Done ✓' : si.name}
           </span>

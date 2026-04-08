@@ -118,6 +118,7 @@ export default function AssignmentTables(): React.JSX.Element | null {
   const epicTeamHalf = Math.ceil(sortedEpicTeam.length / 2);
   const memberEpicHalf = Math.ceil(sortedMemberEpic.length / 2);
   const colgroup = <colgroup><col style={{ width: '50%' }} /><col style={{ width: '50%' }} /></colgroup>;
+  const memberColgroup = <colgroup><col style={{ width: '30%' }} /><col style={{ width: '70%' }} /></colgroup>;
 
   return (
     <>
@@ -164,14 +165,14 @@ export default function AssignmentTables(): React.JSX.Element | null {
             <div className="summary-table-grid">
               <div>
                 <table style={tableStyle}>
-                  {colgroup}
+                  {memberColgroup}
                   <thead>{memberEpicHead}</thead>
                   <tbody>{sortedMemberEpic.slice(0, memberEpicHalf).map((row, idx) => renderMemberEpicRow(row, idx))}</tbody>
                 </table>
               </div>
               <div>
                 <table style={tableStyle}>
-                  {colgroup}
+                  {memberColgroup}
                   <thead>{memberEpicHead}</thead>
                   <tbody>{sortedMemberEpic.slice(memberEpicHalf).map((row, idx) => renderMemberEpicRow(row, idx))}</tbody>
                 </table>
