@@ -18,7 +18,7 @@ A React-based web application for visualizing and managing Shortcut.com epics an
 - Sortable columns: **Epic Name** (A→Z / Z→A) and **Epic Progress** (% complete)
 - Restore icon to return epics to their configured list order
 - Epic name links scroll to the epic's detail section on the page
-- "↑ Summary Table" link at the bottom of each epic card returns to the summary
+- "↑ Top of Page" link at the bottom of each epic card returns to the top
 
 ### Epic Management
 - Epics loaded automatically on page load (no manual search required)
@@ -91,19 +91,20 @@ Per epic, three visualizations are available. Each has a **▶/▼ toggle** in i
 - **▶/▼ toggle** in the "User Story Board" heading — starts **collapsed** by default
 
 ### Header Actions
-Three icon buttons in the top-right of the header (all with 0.5s hover tooltips):
+Three icon buttons in the top-right of the header (all with hover tooltips):
 - **Refresh** — Reload all epic and story data from Shortcut
 - **Edit Epic List** — Open the epic list configuration editor directly (wizard step 6)
 - **Settings** (gear) — Open the settings dropdown menu
 
 ### Toolbar Controls
-Displayed below the "Found X of Y Epics" count:
+Displayed in the header when epics are loaded:
 - **Expand Assignments / Collapse Assignments** — Toggle both assignment tables
 - **Show Ignored Users / Hide Ignored Users** — Toggle visibility of ignored users across assignment tables and Team Open Tickets
 - **Expand Charts / Collapse Charts** — Toggle the Workflow Status Pie Chart and Story Type Breakdown across all epics
+- **Show Team Only / Show All Teams** — Filter tickets to the selected team (shown when a team is configured)
 
 ### Settings Menu
-- **Setup** — Re-run the setup wizard
+- **Setup Wizard** — Re-run the setup wizard
 - **README.md** — View this documentation in-app
 - **Export/Import** — Backup and restore configuration as JSON
 - **Wipe Settings** — Clear all localStorage data to start fresh
@@ -179,28 +180,49 @@ npm start
 ```
 shortcut-search-app/
 ├── src/
-│   ├── App.js          # Main React component
-│   ├── App.css         # Application styles
-│   └── index.js        # React entry point
-├── server.js           # Express proxy server (Shortcut API calls)
-├── package.json        # Dependencies and scripts
-└── README.md           # This file
+│   ├── App.tsx                       # Root component — orchestration, context assembly, render
+│   ├── App.css                       # Application styles
+│   ├── index.tsx                     # React entry point
+│   ├── types.ts                      # Shared TypeScript interfaces (Epic, Story, WorkflowConfig, …)
+│   ├── utils.ts                      # Storage abstraction, API base URL, SVG utilities
+│   ├── components/
+│   │   ├── AppHeader.tsx             # Sticky header: logo, icon buttons, action toolbar
+│   │   ├── AppFooter.tsx             # Static footer with version (sourced from package.json)
+│   │   ├── EpicSidebar.tsx           # Slide-out epic navigation sidebar
+│   │   ├── EpicCard.tsx              # Per-epic card: charts, tables, story board
+│   │   ├── SummaryTable.tsx          # Story totals summary + epic status table
+│   │   ├── AssignmentTables.tsx      # Epic owner and team member assignment tables
+│   │   ├── StoryDetailModal.tsx      # Modal listing stories filtered by workflow state
+│   │   ├── SetupWizard.tsx           # 6-step guided setup wizard
+│   │   └── ErrorBoundary.tsx         # Top-level render error fallback
+│   ├── hooks/
+│   │   ├── useEpicsData.ts           # Shortcut API calls, caching, member resolution
+│   │   ├── useWorkflowConfig.ts      # Workflow state, URL, epic names, state ID derivation
+│   │   ├── useModals.ts              # Modal state, ESC/click-outside handlers, README
+│   │   ├── useFilters.ts             # Filters, sort, sidebar, chart collapse, display stories
+│   │   └── useConfigIO.ts            # Configuration export and import logic
+│   └── context/
+│       └── DashboardContext.tsx      # Shared dashboard state + useDashboard() hook
+├── tsconfig.json                     # TypeScript config (strict, es2015, react-jsx)
+├── server.js                         # Express proxy server (Shortcut API calls)
+├── package.json                      # Dependencies, scripts, and app version
+└── README.md                         # This file
 ```
 
 ## Configuration Storage
 
-All configuration is stored in **browser localStorage**:
+All configuration is stored in **browser localStorage** (API token uses **sessionStorage** and clears when the browser closes):
 
-| Key | Contents |
-|-----|----------|
-| `shortcut_api_token` | Shortcut API token |
-| `shortcut_workflow_config` | Workflow ID, name, URL, and states |
-| `shortcut_epics_config` | Tracked epic names |
-| `shortcut_team_config` | Selected Shortcut team ID and name |
-| `shortcut_ignored_users` | List of usernames to exclude from tables |
-| `shortcut_members_cache` | Owner ID → display name cache |
-| `shortcut_team_members_cache` | Team member IDs (keyed by team ID, auto-invalidates on team change) |
-| `shortcut_epic_workflow_cache` | Epic workflow states cache |
+| Key | Storage | Contents |
+|-----|---------|----------|
+| `shortcut_api_token` | sessionStorage | Shortcut API token |
+| `shortcut_workflow_config` | localStorage | Workflow ID, name, URL, and states |
+| `shortcut_epics_config` | localStorage | Tracked epic names |
+| `shortcut_team_config` | localStorage | Selected Shortcut team ID and name |
+| `shortcut_ignored_users` | localStorage | List of usernames to exclude from tables |
+| `shortcut_members_cache` | localStorage | Owner ID → display name cache |
+| `shortcut_team_members_cache` | localStorage | Team member IDs (keyed by team ID, auto-invalidates on team change) |
+| `shortcut_epic_workflow_cache` | localStorage | Epic workflow states cache |
 
 **Backup & Portability:**
 - Use Export/Import in the Settings menu to save your configuration as a JSON file
@@ -232,15 +254,18 @@ Phase 1 calls (team members and epic workflow) are cached to localStorage and sk
 - `GET /api/epic-workflow` — Epic workflow states
 - `GET /api/teams` — All Shortcut teams (groups)
 - `GET /api/users/:id` — Member display name
+- `GET /api/migrate-data` — One-time migration of legacy server-side config to localStorage
 
 ## Technologies Used
 
-- **Frontend**: React 19.2.0 with Hooks (useState, useEffect, useCallback, useRef)
-- **Backend**: Express 5.1.0
+- **Frontend**: React 19.2.1 with Hooks (useState, useEffect, useCallback, useMemo, useRef, useContext)
+- **Language**: TypeScript (strict mode) — all source files are `.ts` / `.tsx`
+- **State management**: React Context API with a custom `useDashboard()` hook and five domain-specific custom hooks
+- **Backend**: Express 5.2.1
 - **API**: Shortcut API v3
-- **Storage**: Browser localStorage
-- **HTTP Client**: Axios (server) / fetch (client)
-- **Markdown**: marked
+- **Storage**: Browser localStorage / sessionStorage
+- **HTTP client**: fetch (client) / Axios (server)
+- **Markdown rendering**: marked + DOMPurify
 - **Styling**: Custom CSS
 - **Development**: concurrently
 
@@ -262,7 +287,7 @@ Phase 1 calls (team members and epic workflow) are cached to localStorage and sk
 
 ### Managing Configuration
 - **Edit Epic List** header icon — open the epic list editor (wizard step 6)
-- **Settings → Setup** — re-run the full setup wizard to change token, URL, workflow, team, or ignored users
+- **Settings → Setup Wizard** — re-run the full setup wizard to change token, URL, workflow, team, or ignored users
 - **Settings → Export/Import** — backup configuration to JSON or restore from a previous backup
 - **Settings → Wipe Settings** — clear all localStorage data to start fresh
 
@@ -274,7 +299,7 @@ Phase 1 calls (team members and epic workflow) are cached to localStorage and sk
 - Check the epic is not archived or deleted in Shortcut
 
 ### API Token Issues
-- Re-run Setup (Settings → Setup) to update your token
+- Re-run Setup (Settings → Setup Wizard) to update your token
 - Token is verified against the Shortcut API during setup
 
 ### Workflow States Not Showing
@@ -293,7 +318,7 @@ Phase 1 calls (team members and epic workflow) are cached to localStorage and sk
 
 ## Version Information
 
-**Version**: 3.0.0
+**Version**: see `version` field in `package.json`
 **Project Name**: D.A.V.E. (Dashboards Are Very Effective)
 **Author**: Dave Woods
 
