@@ -35,14 +35,15 @@ export default function SetupWizard({ step, onStepChange, onClose }: Props): Rea
   const [tokenError, setTokenError] = useState('');
   const [hasExistingToken, setHasExistingToken] = useState(() => !!storage.getApiToken());
   const [epicListError, setEpicListError] = useState('');
-  const [epicsList, setEpicsList] = useState<Array<{ name: string }>>(() => storage.getEpicsConfig()?.epics || []);
+  const [epicsText, setEpicsText] = useState(() => (storage.getEpicsConfig()?.epics || []).map(e => e.name).join('\n'));
   const [allTeams, setAllTeams] = useState<Team[]>([]);
 
   const handleSaveEpicList = () => {
     setEpicListError('');
     try {
-      storage.setEpicsConfig({ epics: epicsList });
-      setFilteredEpicNames(epicsList.map(e => e.name));
+      const epics = epicsText.split('\n').filter(name => name.trim() !== '').map(name => ({ name: name.trim() }));
+      storage.setEpicsConfig({ epics });
+      setFilteredEpicNames(epics.map(e => e.name));
       return true;
     } catch (err) {
       setEpicListError('Failed to save epics configuration. Please try again.');
@@ -388,8 +389,8 @@ export default function SetupWizard({ step, onStepChange, onClose }: Props): Rea
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
                 <textarea
                   className="input-field"
-                  value={epicsList.map(e => e.name).join('\n')}
-                  onChange={(e) => setEpicsList(e.target.value.split('\n').filter(name => name.trim() !== '').map(name => ({ name })))}
+                  value={epicsText}
+                  onChange={(e) => setEpicsText(e.target.value)}
                   placeholder={"Epic Alpha\nEpic Beta\nEpic Gamma"}
                   style={{ flex: 1, width: '100%', resize: 'none', fontFamily: 'inherit', fontSize: '1rem', padding: '0.5rem 0.75rem', boxSizing: 'border-box' }}
                 />
