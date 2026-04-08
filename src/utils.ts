@@ -49,20 +49,37 @@ export const storage = {
   },
   setMembersCache: (cache: Record<string, string>): void => { localStorage.setItem(STORAGE_KEYS.MEMBERS_CACHE, JSON.stringify(cache)); },
 
-  getTeamConfig: (): TeamConfig | null => {
+  getTeamConfig: (): TeamConfig[] => {
     const data = localStorage.getItem(STORAGE_KEYS.TEAM_CONFIG);
-    return data ? JSON.parse(data) : null;
+    if (!data) return [];
+    const parsed = JSON.parse(data);
+    // Migrate from old single-team format { id, name } to array
+    if (Array.isArray(parsed)) return parsed;
+    return [parsed];
   },
-  setTeamConfig: (config: TeamConfig): void => { localStorage.setItem(STORAGE_KEYS.TEAM_CONFIG, JSON.stringify(config)); },
+  setTeamConfig: (configs: TeamConfig[]): void => { localStorage.setItem(STORAGE_KEYS.TEAM_CONFIG, JSON.stringify(configs)); },
 
   getTeamMembersCache: (teamId: string): string[] | null => {
     const data = localStorage.getItem(STORAGE_KEYS.TEAM_MEMBERS_CACHE);
     if (!data) return null;
-    const parsed: { teamId: string; memberIds: string[] } = JSON.parse(data);
-    return parsed.teamId === teamId ? parsed.memberIds : null;
+    try {
+      const parsed = JSON.parse(data);
+      // Old format had a 'memberIds' key — not compatible with new map format
+      if ('memberIds' in parsed) return null;
+      return parsed[teamId] || null;
+    } catch { return null; }
   },
   setTeamMembersCache: (teamId: string, memberIds: string[]): void => {
-    localStorage.setItem(STORAGE_KEYS.TEAM_MEMBERS_CACHE, JSON.stringify({ teamId, memberIds }));
+    const data = localStorage.getItem(STORAGE_KEYS.TEAM_MEMBERS_CACHE);
+    let cache: Record<string, string[]> = {};
+    if (data) {
+      try {
+        const parsed = JSON.parse(data);
+        if (!('memberIds' in parsed)) cache = parsed;
+      } catch {}
+    }
+    cache[teamId] = memberIds;
+    localStorage.setItem(STORAGE_KEYS.TEAM_MEMBERS_CACHE, JSON.stringify(cache));
   },
 
   getEpicWorkflowCache: (): Record<number, { name: string; type: string }> | null => {

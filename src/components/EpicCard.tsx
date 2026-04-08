@@ -8,7 +8,7 @@
  */
 import React, { useState } from 'react';
 import { useDashboard } from '../context/DashboardContext';
-import { storage, createPieSlice } from '../utils';
+import { createPieSlice } from '../utils';
 import { Epic } from '../types';
 
 interface Props {
@@ -56,7 +56,7 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
     collapsedCharts, toggleChart,
     generateShortcutUrl, shortcutWebUrl,
     getDisplayStories, getEpicStateInfo, getEpicStateClass,
-    selectedTeamId, teamMemberIds, filterIgnoredInTickets, ignoredUsers,
+    selectedTeamIds, selectedTeamLabel, teamMemberIds, filterByTeam, filterIgnoredInTickets, ignoredUsers,
   } = useDashboard();
 
   const [hoveredPieSegment, setHoveredPieSegment] = useState<WorkflowSegment | null>(null);
@@ -134,7 +134,7 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
 
   // --- Team open tickets table ---
   const nameList = (epic.owner_ids || [])
-    .filter(id => !selectedTeamId || teamMemberIds.has(id))
+    .filter(id => selectedTeamIds.length === 0 || teamMemberIds.has(id))
     .map(id => members[id] || id)
     .filter(name => !filterIgnoredInTickets || !ignoredUsers.includes(name));
 
@@ -153,7 +153,7 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
     }
   });
   const sortedNames = Object.entries(nameCounts).sort((a, b) => b[1] - a[1]);
-  const teamConfigName = storage.getTeamConfig()?.name;
+  const teamConfigName = selectedTeamIds.length > 0 ? (filterByTeam ? selectedTeamLabel : 'All Teams') : null;
 
   return (
     <div id={`epic-${epic.id}`} className="epic-card">

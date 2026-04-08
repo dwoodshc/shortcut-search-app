@@ -125,13 +125,20 @@ export function useEpicsData({ epicNames, loadSelectedWorkflow, setCollapsedChar
 
       const token = storage.getApiToken();
 
-      const teamConfig = storage.getTeamConfig();
+      const teamConfigs = storage.getTeamConfig();
       let teamApiCall = false;
-      if (teamConfig?.id) {
-        const cachedMemberIds = storage.getTeamMembersCache(teamConfig.id);
-        if (cachedMemberIds) {
-          setTeamMemberIds(new Set(cachedMemberIds));
-        } else {
+      if (teamConfigs.length > 0) {
+        const allMemberIds = new Set<string>();
+        const uncachedTeamIds: string[] = [];
+        for (const teamConfig of teamConfigs) {
+          const cachedMemberIds = storage.getTeamMembersCache(teamConfig.id);
+          if (cachedMemberIds) {
+            cachedMemberIds.forEach(id => allMemberIds.add(id));
+          } else {
+            uncachedTeamIds.push(teamConfig.id);
+          }
+        }
+        if (uncachedTeamIds.length > 0) {
           teamApiCall = true;
           try {
             const teamsRes = await fetch(`${getApiBaseUrl()}/api/teams`, {
@@ -139,14 +146,17 @@ export function useEpicsData({ epicNames, loadSelectedWorkflow, setCollapsedChar
             });
             if (teamsRes.ok) {
               const teams = await teamsRes.json();
-              const team = teams.find((t: { id: string; member_ids?: string[] }) => t.id === teamConfig.id);
-              if (team?.member_ids) {
-                setTeamMemberIds(new Set(team.member_ids));
-                storage.setTeamMembersCache(teamConfig.id, team.member_ids);
+              for (const teamId of uncachedTeamIds) {
+                const team = teams.find((t: { id: string; member_ids?: string[] }) => t.id === teamId);
+                if (team?.member_ids) {
+                  team.member_ids.forEach((id: string) => allMemberIds.add(id));
+                  storage.setTeamMembersCache(teamId, team.member_ids);
+                }
               }
             }
           } catch (err) {}
         }
+        setTeamMemberIds(allMemberIds);
       }
 
       let workflowApiCall = false;

@@ -79,6 +79,7 @@ Per epic, three visualizations are available. Each has a **▶/▼ toggle** in i
 
 #### Team Open Tickets Table
 - Shows open ticket counts for configured team members within the epic
+- Header label reflects the active filter state — matches the header subtitle (e.g. **Team Open Tickets — Engineering & Design** or **Team Open Tickets — All Teams**)
 - Excludes completed tickets from the count
 - Sorted by workload (descending)
 - Highlights team members with zero open tickets
@@ -101,7 +102,7 @@ Displayed in the header when epics are loaded:
 - **Expand Assignments / Collapse Assignments** — Toggle both assignment tables
 - **Show Ignored Users / Hide Ignored Users** — Toggle visibility of ignored users across assignment tables and Team Open Tickets
 - **Expand Charts / Collapse Charts** — Toggle the Workflow Status Pie Chart and Story Type Breakdown across all epics
-- **Show Team Only / Show All Teams** — Filter tickets to the selected team (shown when a team is configured)
+- **Show [Team Names] Only / Show All Teams** — Toggle filtering tickets to only the selected teams (shown when one or more teams are configured). The button label and header subtitle both reflect the currently selected team names (e.g. **Show Engineering & Design Only**)
 
 ### Settings Menu
 - **Setup Wizard** — Re-run the setup wizard
@@ -120,7 +121,7 @@ Automatically launches on first use or when configuration is incomplete. **6 ste
 | 1 | Enter Shortcut API token (verified against the API before proceeding) |
 | 2 | Set workspace URL for generating Shortcut hyperlinks |
 | 3 | Select workflow from all available workflows in your workspace |
-| 4 | Select a Shortcut team to filter assignment and ticket tables |
+| 4 | Select one or more Shortcut teams to filter assignment and ticket tables (click to toggle each team; multiple selections supported) |
 | 5 | Enter usernames to **ignore** in assignment and ticket tables (one per line) |
 | 6 | Enter the list of epic names to track (one per line) |
 
@@ -218,10 +219,10 @@ All configuration is stored in **browser localStorage** (API token uses **sessio
 | `shortcut_api_token` | sessionStorage | Shortcut API token |
 | `shortcut_workflow_config` | localStorage | Workflow ID, name, URL, and states |
 | `shortcut_epics_config` | localStorage | Tracked epic names |
-| `shortcut_team_config` | localStorage | Selected Shortcut team ID and name |
+| `shortcut_team_config` | localStorage | Array of selected Shortcut teams (each with ID and name) |
 | `shortcut_ignored_users` | localStorage | List of usernames to exclude from tables |
 | `shortcut_members_cache` | localStorage | Owner ID → display name cache |
-| `shortcut_team_members_cache` | localStorage | Team member IDs (keyed by team ID, auto-invalidates on team change) |
+| `shortcut_team_members_cache` | localStorage | Team member IDs keyed by team ID; cached per team, populated on demand |
 | `shortcut_epic_workflow_cache` | localStorage | Epic workflow states cache |
 
 **Backup & Portability:**
@@ -235,14 +236,14 @@ The app makes the following calls to the Express proxy on page load:
 
 | Call | Frequency | Notes |
 |------|-----------|-------|
-| `GET /api/teams` | Once (cached) | Fetch team member IDs for selected team |
+| `GET /api/teams` | Once (cached per team) | Fetch member IDs for each selected team; results cached individually by team ID |
 | `GET /api/epic-workflow` | Once (cached) | Fetch epic workflow states |
 | `GET /api/search/epics?query=` | 1 per tracked epic | Run in parallel via `Promise.all` |
 | `GET /api/epics/:id` | 1 per epic found | Full epic details |
 | `GET /api/epics/:id/stories` | 1 per epic found | All non-archived stories |
 | `GET /api/users/:id` | 1 per unique owner **not in cache** | Cached to localStorage after first fetch |
 
-Phase 1 calls (team members and epic workflow) are cached to localStorage and skipped on subsequent loads unless the selected team changes.
+Phase 1 calls (team members and epic workflow) are cached to localStorage and skipped on subsequent loads. Team member IDs are cached per team ID, so adding a new team only fetches members for that team.
 
 ## API Endpoints (Express Proxy)
 
@@ -274,7 +275,7 @@ Phase 1 calls (team members and epic workflow) are cached to localStorage and sk
 ### First-Time Setup
 1. Run `npm run dev`
 2. The Setup Wizard launches automatically
-3. Complete all 6 steps: API token → workspace URL → workflow → select team → ignore users → epic list
+3. Complete all 6 steps: API token → workspace URL → workflow → select teams (one or more) → ignore users → epic list
 4. The dashboard loads automatically once setup is complete
 
 ### Daily Use
@@ -287,7 +288,7 @@ Phase 1 calls (team members and epic workflow) are cached to localStorage and sk
 
 ### Managing Configuration
 - **Edit Epic List** header icon — open the epic list editor (wizard step 6)
-- **Settings → Setup Wizard** — re-run the full setup wizard to change token, URL, workflow, team, or ignored users
+- **Settings → Setup Wizard** — re-run the full setup wizard to change token, URL, workflow, teams, or ignored users
 - **Settings → Export/Import** — backup configuration to JSON or restore from a previous backup
 - **Settings → Wipe Settings** — clear all localStorage data to start fresh
 

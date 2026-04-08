@@ -158,8 +158,10 @@ export interface DashboardContextValue {
   setIgnoredUsers: React.Dispatch<React.SetStateAction<string[]>>;
   filterIgnoredInTickets: boolean;
   setFilterIgnoredInTickets: React.Dispatch<React.SetStateAction<boolean>>;
-  selectedTeamId: string | null;
-  setSelectedTeamId: React.Dispatch<React.SetStateAction<string | null>>;
+  selectedTeams: TeamConfig[];
+  setSelectedTeams: React.Dispatch<React.SetStateAction<TeamConfig[]>>;
+  selectedTeamIds: string[];
+  selectedTeamLabel: string;
   shortcutWebUrl: string;
   setShortcutWebUrl: React.Dispatch<React.SetStateAction<string>>;
   showSidebar: boolean;

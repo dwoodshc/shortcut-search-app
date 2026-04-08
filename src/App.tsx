@@ -45,7 +45,7 @@ function App(): React.JSX.Element {
     filterByTeam, setFilterByTeam,
     filterIgnoredInTickets, setFilterIgnoredInTickets,
     ignoredUsers, setIgnoredUsers,
-    selectedTeamId, setSelectedTeamId,
+    selectedTeams, setSelectedTeams, selectedTeamIds, selectedTeamLabel,
     showSidebar, setShowSidebar,
     sortState, toggleSortState, resetSortState,
     collapsedCharts, setCollapsedCharts, toggleChart,
@@ -129,7 +129,7 @@ function App(): React.JSX.Element {
     setWorkflowConfig({ states: {}, stateOrder: [], stateIds: {}, workflows: [], selectedId: null, savedId: null });
     setMembers({});
     setShortcutWebUrl('');
-    setSelectedTeamId(null);
+    setSelectedTeams([]);
     setTeamMemberIds(new Set());
     setIgnoredUsers([]);
     setError(null);
@@ -227,11 +227,11 @@ function App(): React.JSX.Element {
       isDone: getEpicStateInfo(epic).type === 'done',
       isReadyForRelease: getEpicStateInfo(epic).name.toLowerCase().trim() === 'ready for release',
       team: (epic.owner_ids || [])
-        .filter(id => !selectedTeamId || teamMemberIds.has(id))
+        .filter(id => selectedTeamIds.length === 0 || teamMemberIds.has(id))
         .map(id => members[id] || id)
         .filter(name => !filterIgnoredInTickets || !ignoredUsers.includes(name)),
     }));
-  }, [epics, selectedTeamId, teamMemberIds, members, filterIgnoredInTickets, ignoredUsers, getEpicStateInfo]);
+  }, [epics, selectedTeamIds, teamMemberIds, members, filterIgnoredInTickets, ignoredUsers, getEpicStateInfo]);
 
   const memberEpicMap = useMemo(() => {
     const map: Record<string, Array<{ id: number | string; name: string; isDone: boolean; isReadyForRelease: boolean }>> = {};
@@ -255,7 +255,7 @@ function App(): React.JSX.Element {
     filterByTeam, setFilterByTeam,
     ignoredUsers, setIgnoredUsers,
     filterIgnoredInTickets, setFilterIgnoredInTickets,
-    selectedTeamId, setSelectedTeamId,
+    selectedTeams, setSelectedTeams, selectedTeamIds, selectedTeamLabel,
     shortcutWebUrl, setShortcutWebUrl,
     showSidebar, setShowSidebar,
     error, setError, loading, successMessage,
@@ -269,7 +269,7 @@ function App(): React.JSX.Element {
     searchEpics, scrollToEpic,
     handleSaveShortcutUrl, handleSelectWorkflow,
     toggleAllCharts, handleOpenReadme,
-  }), [epics, members, epicStates, teamMemberIds, loadStats, workflowConfig, setWorkflowField, modals, setModal, sortState, toggleSortState, resetSortState, collapsedCharts, setCollapsedCharts, toggleChart, filterByTeam, setFilterByTeam, ignoredUsers, setIgnoredUsers, filterIgnoredInTickets, setFilterIgnoredInTickets, selectedTeamId, setSelectedTeamId, shortcutWebUrl, setShortcutWebUrl, showSidebar, setShowSidebar, error, setError, loading, successMessage, filteredEpicNames, setFilteredEpicNames, setupWizardStep, setSetupWizardStep, getDisplayStories, generateShortcutUrl, getEpicStateInfo, getEpicStateClass, filteredStateIds, summaryStateIds, epicTeamData, memberEpicMap, allDisplayStories, searchEpics, scrollToEpic, handleSaveShortcutUrl, handleSelectWorkflow, toggleAllCharts, handleOpenReadme]); // eslint-disable-line react-hooks/exhaustive-deps
+  }), [epics, members, epicStates, teamMemberIds, loadStats, workflowConfig, setWorkflowField, modals, setModal, sortState, toggleSortState, resetSortState, collapsedCharts, setCollapsedCharts, toggleChart, filterByTeam, setFilterByTeam, ignoredUsers, setIgnoredUsers, filterIgnoredInTickets, setFilterIgnoredInTickets, selectedTeams, setSelectedTeams, selectedTeamIds, selectedTeamLabel, shortcutWebUrl, setShortcutWebUrl, showSidebar, setShowSidebar, error, setError, loading, successMessage, filteredEpicNames, setFilteredEpicNames, setupWizardStep, setSetupWizardStep, getDisplayStories, generateShortcutUrl, getEpicStateInfo, getEpicStateClass, filteredStateIds, summaryStateIds, epicTeamData, memberEpicMap, allDisplayStories, searchEpics, scrollToEpic, handleSaveShortcutUrl, handleSelectWorkflow, toggleAllCharts, handleOpenReadme]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <DashboardContext.Provider value={dashboardContext}>

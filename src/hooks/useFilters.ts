@@ -8,13 +8,13 @@
  */
 import { useState, useCallback } from 'react';
 import { storage } from '../utils';
-import { Epic, Story, SortState, SortStateKey } from '../types';
+import { Epic, Story, SortState, SortStateKey, TeamConfig } from '../types';
 
 export function useFilters() {
   const [filterByTeam, setFilterByTeam] = useState(false);
   const [filterIgnoredInTickets, setFilterIgnoredInTickets] = useState(true);
   const [ignoredUsers, setIgnoredUsers] = useState<string[]>(() => storage.getIgnoredUsers());
-  const [selectedTeamId, setSelectedTeamId] = useState<string | null>(() => storage.getTeamConfig()?.id || null);
+  const [selectedTeams, setSelectedTeams] = useState<TeamConfig[]>(() => storage.getTeamConfig());
   const [showSidebar, setShowSidebar] = useState(false);
   const [sortState, setSortState] = useState<SortState>({
     summary:    { col: null, dir: 'asc' },
@@ -23,6 +23,9 @@ export function useFilters() {
     storyDetail:{ col: null, dir: 'asc' },
   });
   const [collapsedCharts, setCollapsedCharts] = useState<Record<string, boolean>>({});
+
+  const selectedTeamIds = selectedTeams.map(t => t.id);
+  const selectedTeamLabel = selectedTeams.map(t => t.name).join(' & ');
 
   const toggleSortState = useCallback((key: SortStateKey, col: string) => setSortState(prev => {
     const curr = prev[key];
@@ -51,15 +54,17 @@ export function useFilters() {
   }, []);
 
   const getDisplayStories = useCallback((epic: Epic): Story[] => {
-    if (!filterByTeam || !selectedTeamId) return epic.stories || [];
-    return (epic.stories || []).filter(story => !story.group_id || story.group_id === selectedTeamId);
-  }, [filterByTeam, selectedTeamId]);
+    if (!filterByTeam || selectedTeamIds.length === 0) return epic.stories || [];
+    return (epic.stories || []).filter(story => !story.group_id || selectedTeamIds.includes(story.group_id));
+  }, [filterByTeam, selectedTeamIds]);
 
   return {
     filterByTeam, setFilterByTeam,
     filterIgnoredInTickets, setFilterIgnoredInTickets,
     ignoredUsers, setIgnoredUsers,
-    selectedTeamId, setSelectedTeamId,
+    selectedTeams, setSelectedTeams,
+    selectedTeamIds,
+    selectedTeamLabel,
     showSidebar, setShowSidebar,
     sortState, toggleSortState, resetSortState,
     collapsedCharts, setCollapsedCharts, toggleChart,

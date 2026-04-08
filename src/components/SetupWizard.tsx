@@ -20,7 +20,7 @@ interface Props {
 export default function SetupWizard({ step, onStepChange, onClose }: Props): React.JSX.Element {
   const {
     ignoredUsers, setIgnoredUsers,
-    selectedTeamId, setSelectedTeamId,
+    selectedTeams, setSelectedTeams, selectedTeamIds,
     shortcutWebUrl, setShortcutWebUrl,
     workflowConfig, setWorkflowField,
     handleSaveShortcutUrl, handleSelectWorkflow,
@@ -294,11 +294,11 @@ export default function SetupWizard({ step, onStepChange, onClose }: Props): Rea
             </div>
           )}
 
-          {/* Step 4: Select Team */}
+          {/* Step 4: Select Teams */}
           {step === 4 && (
             <div>
-              <h3 style={{ color: '#1e293b', marginBottom: '1rem' }}>Step 4: Select Team</h3>
-              <p style={{ marginBottom: '1.5rem' }}>Choose the Shortcut team you want to track in this dashboard.</p>
+              <h3 style={{ color: '#1e293b', marginBottom: '1rem' }}>Step 4: Select Teams</h3>
+              <p style={{ marginBottom: '1.5rem' }}>Choose one or more Shortcut teams to track in this dashboard.</p>
               {allTeams.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '2rem 0' }}>
                   <p style={{ color: '#94a3b8', fontStyle: 'italic', marginBottom: '1rem' }}>No teams found. You can skip this step if you don't use teams.</p>
@@ -321,30 +321,42 @@ export default function SetupWizard({ step, onStepChange, onClose }: Props): Rea
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  {allTeams.map((team) => (
-                    <div
-                      key={team.id}
-                      onClick={() => setSelectedTeamId(team.id)}
-                      style={{
-                        padding: '0.75rem 1rem',
-                        backgroundColor: selectedTeamId === team.id ? '#eff6ff' : '#ffffff',
-                        border: selectedTeamId === team.id ? '2px solid #494BCB' : '1px solid #e2e8f0',
-                        borderRadius: '8px',
-                        cursor: 'pointer',
-                        transition: 'all 0.15s ease'
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <span style={{ fontWeight: 600, fontSize: '0.95rem', color: '#494BCB' }}>{team.name}</span>
-                        {selectedTeamId === team.id && (
-                          <span style={{ color: '#22c55e', fontSize: '0.8rem' }}>✓ Selected</span>
+                  {allTeams.map((team) => {
+                    const isSelected = selectedTeamIds.includes(team.id);
+                    return (
+                      <div
+                        key={team.id}
+                        onClick={() => setSelectedTeams(prev =>
+                          prev.some(t => t.id === team.id)
+                            ? prev.filter(t => t.id !== team.id)
+                            : [...prev, { id: team.id, name: team.name }]
+                        )}
+                        style={{
+                          padding: '0.75rem 1rem',
+                          backgroundColor: isSelected ? '#eff6ff' : '#ffffff',
+                          border: isSelected ? '2px solid #494BCB' : '1px solid #e2e8f0',
+                          borderRadius: '8px',
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease'
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <span style={{ fontWeight: 600, fontSize: '0.95rem', color: '#494BCB' }}>{team.name}</span>
+                          {isSelected && (
+                            <span style={{ color: '#22c55e', fontSize: '0.8rem' }}>✓ Selected</span>
+                          )}
+                        </div>
+                        {team.description && (
+                          <p style={{ color: '#64748b', fontSize: '0.85rem', margin: '0.25rem 0 0' }}>{team.description}</p>
                         )}
                       </div>
-                      {team.description && (
-                        <p style={{ color: '#64748b', fontSize: '0.85rem', margin: '0.25rem 0 0' }}>{team.description}</p>
-                      )}
-                    </div>
-                  ))}
+                    );
+                  })}
+                  {selectedTeamIds.length > 1 && (
+                    <p style={{ color: '#64748b', fontSize: '0.85rem', margin: '0.25rem 0 0' }}>
+                      {selectedTeamIds.length} teams selected
+                    </p>
+                  )}
                 </div>
               )}
             </div>
@@ -507,12 +519,7 @@ export default function SetupWizard({ step, onStepChange, onClose }: Props): Rea
                     onStepChange(4);
                   }
                 } else if (step === 4) {
-                  if (selectedTeamId) {
-                    const selectedTeam = allTeams.find(t => t.id === selectedTeamId);
-                    if (selectedTeam) {
-                      storage.setTeamConfig({ id: selectedTeam.id, name: selectedTeam.name });
-                    }
-                  }
+                  storage.setTeamConfig(selectedTeams);
                   onStepChange(5);
                 } else if (step === 5) {
                   storage.setIgnoredUsers(ignoredUsers);

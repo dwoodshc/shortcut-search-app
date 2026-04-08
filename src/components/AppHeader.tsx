@@ -7,7 +7,6 @@
  * filtering.
  */
 import React from 'react';
-import { storage } from '../utils';
 import { useDashboard } from '../context/DashboardContext';
 
 export default function AppHeader(): React.JSX.Element {
@@ -17,7 +16,7 @@ export default function AppHeader(): React.JSX.Element {
     collapsedCharts, setCollapsedCharts,
     filterByTeam, setFilterByTeam,
     filterIgnoredInTickets, setFilterIgnoredInTickets,
-    selectedTeamId,
+    selectedTeamIds, selectedTeamLabel,
     searchEpics,
     toggleAllCharts,
     handleOpenReadme,
@@ -37,9 +36,9 @@ export default function AppHeader(): React.JSX.Element {
       </div>
       <div style={{ textAlign: 'center' }}>
         <h1>Shortcut Dashboard</h1>
-        {storage.getTeamConfig()?.name && (
+        {selectedTeamLabel && (
           <div style={{ fontSize: '1.4rem', fontWeight: 400, opacity: 0.85, marginTop: '0.15rem', letterSpacing: '0.03em' }}>
-            {filterByTeam ? `${storage.getTeamConfig()!.name} Team Only` : 'All Teams'}
+            {filterByTeam ? `${selectedTeamLabel} Only` : 'All Teams'}
           </div>
         )}
       </div>
@@ -159,15 +158,15 @@ export default function AppHeader(): React.JSX.Element {
                 return allChartKeys.every(key => collapsedCharts[key]) ? 'Expand Charts' : 'Collapse Charts';
               })()}
             </button>
-            {selectedTeamId && (
+            {selectedTeamIds.length > 0 && (
               <button
                 onClick={() => setFilterByTeam(prev => !prev)}
                 className={`header-action-btn${filterByTeam ? ' active' : ''}`}
                 title={filterByTeam
-                  ? `Currently showing only ${storage.getTeamConfig()?.name || 'team'} tickets — click to show all tickets`
-                  : `Currently showing all tickets — click to show only tickets assigned to ${storage.getTeamConfig()?.name || 'team'}`}
+                  ? `Currently showing only ${selectedTeamLabel || 'team'} tickets — click to show all tickets`
+                  : `Currently showing all tickets — click to show only tickets assigned to ${selectedTeamLabel || 'team'}`}
               >
-                {filterByTeam ? 'Show All Teams' : `Show ${storage.getTeamConfig()?.name || 'Team'} Team Only`}
+                {filterByTeam ? 'Show All Teams' : `Show ${selectedTeamLabel || 'Team'} Only`}
               </button>
             )}
           </div>
