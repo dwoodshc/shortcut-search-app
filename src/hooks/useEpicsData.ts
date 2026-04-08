@@ -268,7 +268,7 @@ export function useEpicsData({ epicNames, loadSelectedWorkflow, setCollapsedChar
     members, setMembers,
     loading, loadProgress, loadStats,
     error, setError,
-    apiTokenIssue, setApiTokenIssue,
+    apiTokenIssue,
     epicStates,
     teamMemberIds, setTeamMemberIds,
     loadEpics, cancelSearch,

@@ -93,12 +93,7 @@ export function useWorkflowConfig() {
     }),
   [workflowConfig.stateOrder, workflowConfig.states]);
 
-  const summaryStateIds = useMemo(() =>
-    workflowConfig.stateOrder.filter(stateId => {
-      const name = workflowConfig.states[stateId];
-      return name && NORMALIZED_WORKFLOW_STATES.includes(name.toLowerCase().trim());
-    }),
-  [workflowConfig.stateOrder, workflowConfig.states]);
+  const summaryStateIds = filteredStateIds;
 
   const generateShortcutUrl = useCallback((epicId: number | string, stateName?: string): string => {
     if (!epicId) return '#';
