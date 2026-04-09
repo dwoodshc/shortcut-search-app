@@ -28,6 +28,9 @@ import { useConfigIO } from './hooks/useConfigIO';
 import { DashboardContext } from './context/DashboardContext';
 import { Epic, EpicState } from './types';
 
+const toTitleCase = (str: string): string =>
+  str.toLowerCase().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+
 function App(): React.JSX.Element {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -141,7 +144,8 @@ function App(): React.JSX.Element {
     }, 2000);
   };
 
-  // Check if API token and config exist on mount, trigger setup wizard if not
+  // Intentional empty dep array: this runs once on mount only. searchEpics is stable
+  // at mount time; adding it as a dep would cause re-runs as filteredEpicNames changes.
   useEffect(() => {
     const checkConfig = async () => {
       try {
@@ -198,8 +202,6 @@ function App(): React.JSX.Element {
   }, [modals.setupWizard, loadSelectedWorkflow, setFilteredEpicNames]);
 
   // Epic state helpers
-  const toTitleCase = (str: string): string => str.toLowerCase().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-
   const getEpicStateClass = useCallback((stateType: string, stateName: string): string => {
     const lowerName = (stateName || '').toLowerCase().trim();
     if (lowerName === 'blocked') return 'epic-state-blocked';
@@ -213,7 +215,7 @@ function App(): React.JSX.Element {
   const getEpicStateInfo = useCallback((epic: Epic): EpicState => {
     if (epic.epic_state_id && epicStates[epic.epic_state_id]) return epicStates[epic.epic_state_id];
     return { name: toTitleCase(epic.state || ''), type: epic.state || '' };
-  }, [epicStates]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [epicStates]);
 
   // Derived data that assembles outputs from multiple hooks
   const allDisplayStories = useMemo(() =>
@@ -269,7 +271,7 @@ function App(): React.JSX.Element {
     searchEpics, scrollToEpic,
     handleSaveShortcutUrl, handleSelectWorkflow,
     toggleAllCharts, handleOpenReadme,
-  }), [epics, members, epicStates, teamMemberIds, loadStats, workflowConfig, setWorkflowField, modals, setModal, sortState, toggleSortState, resetSortState, collapsedCharts, setCollapsedCharts, toggleChart, filterByTeam, setFilterByTeam, ignoredUsers, setIgnoredUsers, filterIgnoredInTickets, setFilterIgnoredInTickets, selectedTeams, setSelectedTeams, selectedTeamIds, selectedTeamLabel, shortcutWebUrl, setShortcutWebUrl, showSidebar, setShowSidebar, error, setError, loading, successMessage, filteredEpicNames, setFilteredEpicNames, setupWizardStep, setSetupWizardStep, getDisplayStories, generateShortcutUrl, getEpicStateInfo, getEpicStateClass, filteredStateIds, summaryStateIds, epicTeamData, memberEpicMap, allDisplayStories, searchEpics, scrollToEpic, handleSaveShortcutUrl, handleSelectWorkflow, toggleAllCharts, handleOpenReadme]); // eslint-disable-line react-hooks/exhaustive-deps
+  }), [epics, members, epicStates, teamMemberIds, loadStats, workflowConfig, setWorkflowField, modals, setModal, sortState, toggleSortState, resetSortState, collapsedCharts, setCollapsedCharts, toggleChart, filterByTeam, setFilterByTeam, ignoredUsers, setIgnoredUsers, filterIgnoredInTickets, setFilterIgnoredInTickets, selectedTeams, setSelectedTeams, selectedTeamIds, selectedTeamLabel, shortcutWebUrl, setShortcutWebUrl, showSidebar, setShowSidebar, error, setError, loading, successMessage, filteredEpicNames, setFilteredEpicNames, setupWizardStep, setSetupWizardStep, getDisplayStories, generateShortcutUrl, getEpicStateInfo, getEpicStateClass, filteredStateIds, summaryStateIds, epicTeamData, memberEpicMap, allDisplayStories, searchEpics, scrollToEpic, handleSaveShortcutUrl, handleSelectWorkflow, toggleAllCharts, handleOpenReadme]);
 
   return (
     <DashboardContext.Provider value={dashboardContext}>
@@ -429,7 +431,7 @@ function App(): React.JSX.Element {
             <h2>README.md</h2>
             <div
               className="markdown-content max-h-[60vh] overflow-y-auto mb-4 bg-white p-6 rounded-md border border-slate-200"
-              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked(readmeContent || '') as string) }}
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(readmeContent || '') as string, { FORBID_TAGS: ['script', 'style', 'iframe', 'object', 'embed', 'form'], FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 'javascript'] }) }}
             />
             <div className="modal-buttons">
               <button type="button" onClick={() => setModal('readme', false)} className="btn-primary">Close</button>
