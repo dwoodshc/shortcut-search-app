@@ -216,7 +216,7 @@ All configuration is stored in **browser localStorage** (API token uses **sessio
 
 | Key | Storage | Contents |
 |-----|---------|----------|
-| `shortcut_api_token` | sessionStorage | Shortcut API token |
+| `shortcut_api_token` | localStorage | Shortcut API token |
 | `shortcut_workflow_config` | localStorage | Workflow ID, name, URL, and states |
 | `shortcut_epics_config` | localStorage | Tracked epic names |
 | `shortcut_team_config` | localStorage | Array of selected Shortcut teams (each with ID and name) |

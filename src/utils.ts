@@ -1,9 +1,9 @@
 /**
  * Copyright (c) 2026 Dave Woods <dave.woods@slice.com>. All rights reserved.
  *
- * utils.ts — Browser utility module. Provides a typed storage facade over localStorage
- * and sessionStorage, a dynamic API base URL helper (getApiBaseUrl), and an SVG
- * arc-path generator for pie chart slices (createPieSlice).
+ * utils.ts — Browser utility module. Provides a typed storage facade over localStorage,
+ * a dynamic API base URL helper (getApiBaseUrl), and an SVG arc-path generator for
+ * pie chart slices (createPieSlice).
  */
 import { WorkflowStorageConfig, EpicConfig, TeamConfig } from './types';
 
@@ -19,17 +19,17 @@ export const STORAGE_KEYS = {
 } as const;
 
 const migrateApiToken = (): void => {
-  const legacy = localStorage.getItem(STORAGE_KEYS.API_TOKEN);
-  if (legacy) {
-    sessionStorage.setItem(STORAGE_KEYS.API_TOKEN, legacy);
-    localStorage.removeItem(STORAGE_KEYS.API_TOKEN);
+  const inSession = sessionStorage.getItem(STORAGE_KEYS.API_TOKEN);
+  if (inSession) {
+    localStorage.setItem(STORAGE_KEYS.API_TOKEN, inSession);
+    sessionStorage.removeItem(STORAGE_KEYS.API_TOKEN);
   }
 };
 migrateApiToken();
 
 export const storage = {
-  getApiToken: (): string | null => sessionStorage.getItem(STORAGE_KEYS.API_TOKEN),
-  setApiToken: (token: string): void => { sessionStorage.setItem(STORAGE_KEYS.API_TOKEN, token); },
+  getApiToken: (): string | null => localStorage.getItem(STORAGE_KEYS.API_TOKEN),
+  setApiToken: (token: string): void => { localStorage.setItem(STORAGE_KEYS.API_TOKEN, token); },
 
   getWorkflowConfig: (): WorkflowStorageConfig | null => {
     const data = localStorage.getItem(STORAGE_KEYS.WORKFLOW_CONFIG);
