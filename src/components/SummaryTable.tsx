@@ -201,7 +201,7 @@ function EpicStatusTable(): React.JSX.Element | null {
     const si = getEpicStateInfo(epic);
     return (
       <tr key={epic.id as React.Key} className={idx % 2 === 0 ? 'bg-white' : 'bg-[#fafafa]'}>
-        <td className="px-3 py-2 font-semibold text-sm border-b border-[#F0F0F7]">
+        <td className="px-3 py-2 font-semibold text-sm sm:whitespace-nowrap border-b border-[#F0F0F7]">
           <a href={`#epic-${epic.id}`} className="text-[#494BCB] no-underline">
             {epic.name}
           </a>
