@@ -34,10 +34,10 @@ export default function AppHeader(): React.JSX.Element {
           />
         </a>
       </div>
-      <div style={{ textAlign: 'center' }}>
+      <div className="text-center">
         <h1>Shortcut Dashboard</h1>
         {selectedTeamLabel && (
-          <div style={{ fontSize: '1.4rem', fontWeight: 400, opacity: 0.85, marginTop: '0.15rem', letterSpacing: '0.03em' }}>
+          <div className="text-[1.4rem] font-normal opacity-85 mt-[0.15rem] tracking-[0.03em]">
             {filterByTeam ? `${selectedTeamLabel} Only` : 'All Teams'}
           </div>
         )}
@@ -48,7 +48,7 @@ export default function AppHeader(): React.JSX.Element {
             className="settings-icon"
             aria-label="Refresh Epics"
             data-tooltip="Refresh Epics"
-            onClick={(e) => searchEpics()}
+            onClick={() => searchEpics()}
           >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
               <path d="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
@@ -108,12 +108,11 @@ export default function AppHeader(): React.JSX.Element {
                 Export/Import
               </button>
               <button
-                className="settings-menu-item"
+                className="settings-menu-item !text-red-600"
                 onClick={() => {
                   setModal('settingsMenu', false);
                   setModal('wipeConfirm', true);
                 }}
-                style={{ color: '#dc2626' }}
               >
                 Wipe Settings
               </button>
@@ -130,7 +129,7 @@ export default function AppHeader(): React.JSX.Element {
           )}
         </div>
         {epics.length > 0 && (
-          <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+          <div className="flex gap-[0.4rem] flex-wrap justify-center sm:justify-end mt-3 sm:mt-0">
             <button
               onClick={() => {
                 const bothCollapsed = collapsedCharts['assignment-epic'] && collapsedCharts['assignment-member'];

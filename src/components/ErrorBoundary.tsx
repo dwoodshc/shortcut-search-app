@@ -32,18 +32,18 @@ export default class ErrorBoundary extends React.Component<Props, State> {
   render(): React.ReactNode {
     if (this.state.error) {
       return (
-        <div style={{ padding: '2rem', maxWidth: '600px', margin: '4rem auto', fontFamily: 'sans-serif' }}>
-          <h2 style={{ color: '#dc2626' }}>Something went wrong</h2>
-          <p style={{ color: '#4b5563' }}>
+        <div className="p-8 max-w-xl mx-auto mt-16">
+          <h2 className="text-red-600">Something went wrong</h2>
+          <p className="text-gray-600">
             An unexpected error occurred. Try refreshing the page. If the problem persists, use
             {' '}<strong>Settings → Wipe Settings</strong> to reset your configuration.
           </p>
-          <pre style={{ background: '#f3f4f6', padding: '1rem', borderRadius: '6px', fontSize: '0.75rem', overflowX: 'auto', color: '#374151' }}>
+          <pre className="bg-gray-100 p-4 rounded-md text-xs overflow-x-auto text-gray-700">
             {this.state.error.message}
           </pre>
           <button
             onClick={() => window.location.reload()}
-            style={{ marginTop: '1rem', padding: '0.5rem 1.25rem', background: '#494BCB', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.875rem' }}
+            className="mt-4 px-5 py-2 bg-[#494BCB] text-white border-0 rounded-md cursor-pointer text-sm"
           >
             Reload page
           </button>

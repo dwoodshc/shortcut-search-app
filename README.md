@@ -14,8 +14,8 @@ A React-based web application for visualizing and managing Shortcut.com epics an
   - Backlog = "Backlog"
 - Percentage label shown inside the Complete segment
 - Hover tooltip showing counts and percentages for each group, plus a legend explaining the groupings
-- Two-column responsive layout (stacks to single column on narrow screens)
-- Sortable columns: **Epic Name** (A→Z / Z→A) and **Epic Progress** (% complete)
+- Two-column responsive layout (stacks to single column on narrow screens); table columns automatically wrap text on small screens to stay within the viewport
+- Sortable columns: **Epic Name** (A→Z / Z→A), **Epic Status**, and **Epic Progress** (% complete)
 - Restore icon to return epics to their configured list order
 - Epic name links scroll to the epic's detail section on the page
 - "↑ Top of Page" link at the bottom of each epic card returns to the top
@@ -267,7 +267,7 @@ Phase 1 calls (team members and epic workflow) are cached to localStorage and sk
 - **Storage**: Browser localStorage / sessionStorage
 - **HTTP client**: fetch (client) / Axios (server)
 - **Markdown rendering**: marked + DOMPurify
-- **Styling**: Custom CSS
+- **Styling**: Tailwind CSS 3 with custom brand colours; residual App.css for pseudo-elements, keyframes, and complex selectors
 - **Development**: concurrently
 
 ## Usage
@@ -319,7 +319,7 @@ Phase 1 calls (team members and epic workflow) are cached to localStorage and sk
 
 ## Version Information
 
-**Version**: see `version` field in `package.json`
+**Version**: 4.1.0
 **Project Name**: D.A.V.E. (Dashboards Are Very Effective)
 **Author**: Dave Woods
 

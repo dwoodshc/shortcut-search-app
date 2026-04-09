@@ -185,7 +185,7 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
         <div className="epic-stats-container">
           <div className="workflow-status-chart-container">
             <h4>Ticket Status Breakdown</h4>
-            <div className="workflow-status-chart" style={{ marginTop: '0.5rem' }}>
+            <div className="workflow-status-chart mt-2">
               {filteredStateIds.map(stateId => {
                 const count = workflowStateCounts[stateId] || 0;
                 const percentage = workflowTotal > 0 ? (count / workflowTotal) * 100 : 0;
@@ -211,14 +211,14 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
             </div>
 
             {/* Workflow Pie Chart */}
-            <div>
-              <h4 style={{ marginTop: '0.5rem', cursor: 'pointer', userSelect: 'none', display: 'flex', alignItems: 'center', gap: '0.4rem' }} onClick={() => toggleChart(epic.id, 'workflow-pie')} title="Show or hide the Workflow Status Pie Chart for this epic">
+            <div className="mt-[0.8rem]">
+              <h4 className="cursor-pointer select-none flex items-center gap-[0.4rem]" onClick={() => toggleChart(epic.id, 'workflow-pie')} title="Show or hide the Workflow Status Pie Chart for this epic">
                 <span>{collapsedCharts[`${epic.id}-workflow-pie`] ? '▶' : '▼'}</span> Workflow Status Pie Chart
               </h4>
               {!collapsedCharts[`${epic.id}-workflow-pie`] && workflowTotal > 0 && (
-                <div style={{ marginTop: '0.5rem' }} className="workflow-status-pie-chart">
+                <div className="workflow-status-pie-chart mt-2">
                   <div className="pie-chart-wrapper">
-                    <div style={{ position: 'relative' }}>
+                    <div className="relative">
                       <svg viewBox="0 0 200 200" className="pie-chart-svg">
                         {workflowSegmentsWithAngles.map(seg => (
                           <g key={seg.stateId}>
@@ -254,8 +254,7 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
                             href={epicUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="legend-item"
-                            style={{ textDecoration: 'none', color: 'inherit' }}
+                            className="legend-item no-underline text-inherit"
                             title={`View ${epic.name} filtered by ${seg.stateName} in Shortcut`}
                           >
                             <span className="legend-color" style={{ backgroundColor: color }}></span>
@@ -271,15 +270,15 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
             </div>
 
             {/* Story Type Pie Chart */}
-            <div>
-              <h4 style={{ marginTop: '0.5rem', cursor: 'pointer', userSelect: 'none', display: 'flex', alignItems: 'center', gap: '0.4rem' }} onClick={() => toggleChart(epic.id, 'type-pie')} title="Show or hide the Story Type Breakdown chart for this epic">
+            <div className="mt-[0.8rem]">
+              <h4 className="cursor-pointer select-none flex items-center gap-[0.4rem]" onClick={() => toggleChart(epic.id, 'type-pie')} title="Show or hide the Story Type Breakdown chart for this epic">
                 <span>{collapsedCharts[`${epic.id}-type-pie`] ? '▶' : '▼'}</span> Story Type Breakdown
               </h4>
               {!collapsedCharts[`${epic.id}-type-pie`] && typeTotal > 0 && (
                 <div>
                   <div className="workflow-status-pie-chart">
                     <div className="pie-chart-wrapper">
-                      <div style={{ position: 'relative' }}>
+                      <div className="relative">
                         <svg viewBox="0 0 200 200" className="pie-chart-svg">
                           {typeSegmentsWithAngles.map(seg => (
                             <g key={seg.type}>
@@ -315,8 +314,7 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
                               href={storyTypeUrl}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="legend-item"
-                              style={{ textDecoration: 'none', color: 'inherit' }}
+                              className="legend-item no-underline text-inherit"
                               title={`View ${epic.name} grouped by story type in Shortcut`}
                             >
                               <span className="legend-color" style={{ backgroundColor: color }}></span>
@@ -339,7 +337,7 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
               <h4>Story Owners</h4>
               {sortedOwners.length > 0 || unassignedCount > 0 ? (
                 <>
-                  <table style={{ marginTop: '0.5rem' }}>
+                  <table className="mt-2">
                     <thead>
                       <tr>
                         <th>Owner</th>
@@ -353,18 +351,18 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
                           <td>{count}</td>
                         </tr>
                       ))}
-                      <tr style={{ backgroundColor: '#f7fafc' }}>
+                      <tr className="bg-[#f7fafc]">
                         <td>Unassigned</td>
                         <td>{unassignedCount}</td>
                       </tr>
                     </tbody>
                   </table>
-                  <p style={{ color: '#718096', fontSize: '0.75rem', fontStyle: 'italic', marginTop: '0.5rem' }}>
+                  <p className="text-[#718096] text-xs italic mt-2">
                     NOTE: Counts may not add up if a story has more than one owner
                   </p>
                 </>
               ) : (
-                <p style={{ color: '#718096', fontSize: '0.875rem', fontStyle: 'italic' }}>No assigned owners</p>
+                <p className="text-[#718096] text-sm italic">No assigned owners</p>
               )}
             </div>
 
@@ -372,10 +370,10 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
             <div className="email-ticket-counts-table">
               <h4>Team Open Tickets{teamConfigName ? ` — ${teamConfigName}` : ''}</h4>
               {nameList.length === 0 ? (
-                <p style={{ color: '#718096', fontSize: '0.875rem', fontStyle: 'italic' }}>No epic owners assigned</p>
+                <p className="text-[#718096] text-sm italic">No epic owners assigned</p>
               ) : (
                 <>
-                  <table style={{ marginTop: '0.5rem' }}>
+                  <table className="mt-2">
                     <thead>
                       <tr>
                         <th>Owner</th>
@@ -387,7 +385,7 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
                         <tr key={name} className={count === 0 ? 'zero-count-row' : ''}>
                           <td>
                             {!filterIgnoredInTickets && ignoredUsers.includes(name)
-                              ? <span style={{ backgroundColor: '#e5e7eb', borderRadius: '999px', padding: '0.1rem 0.5rem', display: 'inline-block' }}>{name}</span>
+                              ? <span className="bg-[#e5e7eb] rounded-full px-2 py-[0.1rem] inline-block">{name}</span>
                               : name}
                           </td>
                           <td>{count}</td>
@@ -395,7 +393,7 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
                       ))}
                     </tbody>
                   </table>
-                  <p style={{ color: '#718096', fontSize: '0.75rem', fontStyle: 'italic', marginTop: '0.5rem' }}>
+                  <p className="text-[#718096] text-xs italic mt-2">
                     NOTE: This table shows the count of open tickets only for the team
                   </p>
                 </>
@@ -408,11 +406,11 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
       {/* User Story Board */}
       {epic.stories && (
         <div className="stories-section">
-          <h4 style={{ cursor: 'pointer', userSelect: 'none', display: 'flex', alignItems: 'center', gap: '0.4rem' }} onClick={() => toggleChart(epic.id, 'stories')} title="Show or hide the User Story Board for this epic">
+          <h4 className="cursor-pointer select-none flex items-center gap-[0.4rem]" onClick={() => toggleChart(epic.id, 'stories')} title="Show or hide the User Story Board for this epic">
             <span>{collapsedCharts[`${epic.id}-stories`] ? '▶' : '▼'}</span> User Story Board
           </h4>
           {!collapsedCharts[`${epic.id}-stories`] && (
-            <div style={{ borderTop: '2px solid #e2e8f0', paddingTop: '0.75rem' }}>
+            <div className="border-t-2 border-slate-200 pt-3">
               {displayStories.length === 0 ? (
                 <p className="no-stories">No stories found for this epic</p>
               ) : (
@@ -460,8 +458,8 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
         </div>
       )}
 
-      <div style={{ textAlign: 'left', marginTop: '0.5rem' }}>
-        <a href="#top" style={{ color: '#494BCB', fontSize: '0.8rem', textDecoration: 'none', fontWeight: 500 }}>
+      <div className="text-left mt-2">
+        <a href="#top" className="text-[#494BCB] text-[0.8rem] no-underline font-medium">
           ↑ Top of Page
         </a>
       </div>

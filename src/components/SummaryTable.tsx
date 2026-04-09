@@ -35,9 +35,9 @@ interface ProgressBarProps {
 function ProgressBar({ completePct, inProgressPct, backlogPct, total, completeCount, inProgressCount, backlogCount }: ProgressBarProps): React.JSX.Element {
   return (
     <div className="summary-bar-wrapper">
-      <div style={{ display: 'flex', height: '22px', borderRadius: '999px', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
+      <div className="flex h-[22px] rounded-full overflow-hidden border border-slate-200">
         {total === 0 ? (
-          <div style={{ width: '100%', background: '#f1f5f9' }} />
+          <div className="w-full bg-slate-100" />
         ) : (
           <>
             {completePct > 0 && <div style={{ ...(inProgressPct > 0 || backlogPct > 0 ? { width: `${completePct}%`, clipPath: 'polygon(0 0, calc(100% - 7px) 0, 100% 50%, calc(100% - 7px) 100%, 0 100%)', marginRight: '-7px' } : { flex: 1 }), background: '#059669', height: '100%', minWidth: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', zIndex: 3 }}>{completePct >= 8 && <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#ffffff', whiteSpace: 'nowrap', paddingRight: inProgressPct > 0 || backlogPct > 0 ? '7px' : '0' }}>{Math.round(completePct)}%</span>}</div>}
@@ -52,16 +52,16 @@ function ProgressBar({ completePct, inProgressPct, backlogPct, total, completeCo
           { label: 'In Progress', count: inProgressCount, pct: inProgressPct, color: '#fde68a' },
           { label: 'Backlog', count: backlogCount, pct: backlogPct, color: '#f1f5f9' },
         ].filter(({ count }) => count > 0).map(({ label, count, pct, color }) => (
-          <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.15rem 0' }}>
+          <div key={label} className="flex items-center gap-2 py-[0.15rem]">
             <span style={{ width: '10px', height: '10px', borderRadius: '2px', background: color, flexShrink: 0, border: '1px solid rgba(255,255,255,0.3)', display: 'inline-block' }} />
-            <span style={{ flex: 1 }}>{label}</span>
-            <span style={{ fontWeight: 700, marginLeft: '0.75rem' }}>{count} ({Math.round(pct)}%)</span>
+            <span className="flex-1">{label}</span>
+            <span className="font-bold ml-3">{count} ({Math.round(pct)}%)</span>
           </div>
         ))}
-        <div style={{ borderTop: '1px solid rgba(255,255,255,0.15)', marginTop: '0.4rem', paddingTop: '0.4rem', fontSize: '0.68rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.4 }}>
-          <div><strong style={{ color: 'rgba(255,255,255,0.85)' }}>Complete:</strong> Complete + Ready for Release</div>
-          <div><strong style={{ color: 'rgba(255,255,255,0.85)' }}>In Progress:</strong> Ready for Dev + In Dev + In Review</div>
-          <div><strong style={{ color: 'rgba(255,255,255,0.85)' }}>Backlog:</strong> Backlog</div>
+        <div className="border-t border-white/15 mt-[0.4rem] pt-[0.4rem] text-[0.68rem] text-white/60 leading-[1.4]">
+          <div><strong className="text-white/85">Complete:</strong> Complete + Ready for Release</div>
+          <div><strong className="text-white/85">In Progress:</strong> Ready for Dev + In Dev + In Review</div>
+          <div><strong className="text-white/85">Backlog:</strong> Backlog</div>
         </div>
       </div>
     </div>
@@ -88,21 +88,19 @@ function StoryTotalsSummary(): React.JSX.Element | null {
   const inProgressPct = total > 0 ? (inProgressCount / total) * 100 : 0;
   const backlogPct = total > 0 ? (backlogCount / total) * 100 : 0;
 
-  const tblStyle: React.CSSProperties = { width: '100%', borderCollapse: 'separate', borderSpacing: 0, background: 'white', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.08)', border: '1px solid #F0F0F7' };
-
   return (
-    <div style={{ marginBottom: '1.5rem' }}>
-      <h2 style={{ margin: '0 0 0.75rem', fontSize: '1.1rem', fontWeight: 600, color: '#1a202c' }}>Story Summary</h2>
-      <table style={tblStyle}>
+    <div className="mb-6">
+      <h2 className="m-0 mb-3 text-[1.1rem] font-semibold text-[#1a202c]">Story Summary</h2>
+      <table className="w-full border-separate border-spacing-0 bg-white rounded-lg shadow-[0_2px_4px_rgba(0,0,0,0.08)] border border-[#F0F0F7]" style={{ borderCollapse: 'separate' }}>
         <thead>
-          <tr style={{ background: '#494BCB', color: 'white' }}>
+          <tr className="bg-[#494BCB] text-white">
             {STATE_ORDER.map((s, i) => (
-              <th key={s} style={{ padding: '0.5rem 0.75rem', textAlign: 'center', fontWeight: 600, fontSize: '0.8rem', whiteSpace: 'nowrap', borderRadius: i === 0 ? '8px 0 0 0' : undefined }}>
+              <th key={s} className={`px-2 py-2 text-center font-semibold text-[0.8rem]${i === 0 ? ' rounded-tl-lg' : ''}`}>
                 {s.replace('Ready for Development', 'Ready for Dev')}
               </th>
             ))}
-            <th style={{ padding: '0.5rem 0.75rem', textAlign: 'center', fontWeight: 600, fontSize: '0.8rem', whiteSpace: 'nowrap' }}>Total</th>
-            <th style={{ padding: '0.5rem 0.75rem', textAlign: 'center', fontWeight: 600, fontSize: '0.8rem', borderRadius: '0 8px 0 0', minWidth: '160px' }}>Overall Progress</th>
+            <th className="px-2 py-2 text-center font-semibold text-[0.8rem]">Total</th>
+            <th className="px-2 py-2 text-center font-semibold text-[0.8rem] rounded-tr-lg min-w-[100px]">Overall Progress</th>
           </tr>
         </thead>
         <tbody>
@@ -113,14 +111,14 @@ function StoryTotalsSummary(): React.JSX.Element | null {
                 <td
                   key={s}
                   onClick={clickable ? () => { setModal('storyDetailFilter', s); resetSortState('storyDetail'); } : undefined}
-                  style={{ padding: '0.5rem 0.75rem', textAlign: 'center', fontSize: '0.875rem', borderBottom: '1px solid #F0F0F7', fontWeight: stateCounts[s] > 0 ? 600 : 400, color: clickable ? '#494BCB' : stateCounts[s] > 0 ? '#1a202c' : '#a0aec0', cursor: clickable ? 'pointer' : 'default', textDecoration: clickable ? 'underline' : 'none' }}
+                  className={`px-3 py-2 text-center text-sm border-b border-[#F0F0F7] ${stateCounts[s] > 0 ? 'font-semibold' : 'font-normal'} ${clickable ? 'text-[#494BCB] cursor-pointer underline' : stateCounts[s] > 0 ? 'text-[#1a202c] cursor-default no-underline' : 'text-[#a0aec0] cursor-default no-underline'}`}
                 >
                   {stateCounts[s]}
                 </td>
               );
             })}
-            <td style={{ padding: '0.5rem 0.75rem', textAlign: 'center', fontSize: '0.875rem', fontWeight: 700, borderBottom: '1px solid #F0F0F7' }}>{total}</td>
-            <td style={{ padding: '0.4rem 0.75rem', borderBottom: '1px solid #F0F0F7' }}>
+            <td className="px-3 py-2 text-center text-sm font-bold border-b border-[#F0F0F7]">{total}</td>
+            <td className="px-3 py-[0.4rem] border-b border-[#F0F0F7]">
               <ProgressBar
                 completePct={completePct}
                 inProgressPct={inProgressPct}
@@ -139,7 +137,7 @@ function StoryTotalsSummary(): React.JSX.Element | null {
 }
 
 const resetIcon = (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style={{ width: '14px', height: '14px', verticalAlign: 'middle', display: 'inline-block' }}>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-[14px] h-[14px] align-middle inline-block">
     <path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.95-2.05L6.64 18.36A8.955 8.955 0 0 0 13 21a9 9 0 0 0 0-18z"/>
   </svg>
 );
@@ -202,20 +200,20 @@ function EpicStatusTable(): React.JSX.Element | null {
     const completePct = total > 0 ? (completeCount / total) * 100 : 0;
     const si = getEpicStateInfo(epic);
     return (
-      <tr key={epic.id as React.Key} style={{ background: idx % 2 === 0 ? 'white' : '#fafafa' }}>
-        <td style={{ padding: '0.5rem 0.75rem', fontWeight: 600, fontSize: '0.875rem', whiteSpace: 'nowrap', borderBottom: '1px solid #F0F0F7' }}>
-          <a href={`#epic-${epic.id}`} style={{ color: '#494BCB', textDecoration: 'none' }}>
+      <tr key={epic.id as React.Key} className={idx % 2 === 0 ? 'bg-white' : 'bg-[#fafafa]'}>
+        <td className="px-3 py-2 font-semibold text-sm border-b border-[#F0F0F7]">
+          <a href={`#epic-${epic.id}`} className="text-[#494BCB] no-underline">
             {epic.name}
           </a>
         </td>
-        <td style={{ padding: '0.4rem 0.75rem', textAlign: 'center', whiteSpace: 'nowrap', borderBottom: '1px solid #F0F0F7' }}>
+        <td className="px-3 py-[0.4rem] text-center border-b border-[#F0F0F7]">
           {si.name ? (
-            <span className={`epic-state ${getEpicStateClass(si.type, si.name)}`} style={{ fontSize: '0.75rem', padding: '0.15rem 0.5rem' }}>
+            <span className={`epic-state ${getEpicStateClass(si.type, si.name)} !text-[0.75rem] !py-[0.15rem] !px-2`}>
               {si.type.toLowerCase() === 'done' ? 'Done ✓' : si.name}
             </span>
           ) : null}
         </td>
-        <td style={{ padding: '0.4rem 0.75rem', width: '100%', borderBottom: '1px solid #F0F0F7' }}>
+        <td className="px-3 py-[0.4rem] w-full border-b border-[#F0F0F7]">
           <ProgressBar
             completePct={completePct}
             inProgressPct={inProgressPct}
@@ -234,39 +232,38 @@ function EpicStatusTable(): React.JSX.Element | null {
   const leftEpics = sortedEpics.slice(0, half);
   const rightEpics = sortedEpics.slice(half);
 
-  const tableStyle: React.CSSProperties = { width: '100%', borderCollapse: 'separate', borderSpacing: 0, background: 'white', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.08)', border: '1px solid #F0F0F7' };
-  const thStyle: React.CSSProperties = { cursor: 'pointer', userSelect: 'none' };
+  const tableClass = "w-full bg-white rounded-lg shadow-[0_2px_4px_rgba(0,0,0,0.08)] border border-[#F0F0F7]";
   const theadRow = (
-    <tr style={{ background: '#494BCB', color: 'white' }}>
-      <th style={{ ...thStyle, padding: '0.5rem 0.75rem', textAlign: 'left', fontWeight: 600, fontSize: '0.875rem', whiteSpace: 'nowrap', borderRadius: '8px 0 0 0' }}>
-        <span onClick={() => toggleSortState('summary', 'name')} style={{ cursor: 'pointer', userSelect: 'none' }}>Epic Name{sortIcon('name')}</span>
-        <span className="summary-sort-icon" data-tooltip="Restore original order" onClick={(e) => { e.stopPropagation(); resetSortState('summary'); }} style={{ marginLeft: '6px', cursor: 'pointer', opacity: sortState.summary.col ? 1 : 0.4 }}>
+    <tr className="bg-[#494BCB] text-white">
+      <th className="cursor-pointer select-none px-3 py-2 text-left font-semibold text-sm rounded-tl-lg w-[35%]">
+        <span onClick={() => toggleSortState('summary', 'name')} className="cursor-pointer select-none">Epic Name{sortIcon('name')}</span>
+        <span className="summary-sort-icon ml-[6px] cursor-pointer" data-tooltip="Restore original order" onClick={(e) => { e.stopPropagation(); resetSortState('summary'); }} style={{ opacity: sortState.summary.col ? 1 : 0.4 }}>
           {resetIcon}
         </span>
       </th>
-      <th onClick={() => toggleSortState('summary', 'status')} style={{ ...thStyle, padding: '0.5rem 0.75rem', textAlign: 'center', fontWeight: 600, fontSize: '0.875rem', whiteSpace: 'nowrap' }}>Epic Status{sortIcon('status')}</th>
-      <th onClick={() => toggleSortState('summary', 'progress')} style={{ ...thStyle, padding: '0.5rem 0.75rem', textAlign: 'center', fontWeight: 600, fontSize: '0.875rem', borderRadius: '0 8px 0 0' }}>Epic Progress{sortIcon('progress', true)}</th>
+      <th onClick={() => toggleSortState('summary', 'status')} className="cursor-pointer select-none px-3 py-2 text-center font-semibold text-sm w-[25%] whitespace-nowrap">Epic Status{sortIcon('status')}</th>
+      <th onClick={() => toggleSortState('summary', 'progress')} className="cursor-pointer select-none px-3 py-2 text-center font-semibold text-sm rounded-tr-lg w-[40%]">Epic Progress{sortIcon('progress', true)}</th>
     </tr>
   );
 
   return (
-    <div id="summary-table" style={{ marginBottom: '1rem' }}>
-      <h2 style={{ margin: '0 0 0.75rem', fontSize: '1.1rem', fontWeight: 600, color: '#1a202c' }}>Epic Status</h2>
+    <div id="summary-table" className="mb-4">
+      <h2 className="m-0 mb-3 text-[1.1rem] font-semibold text-[#1a202c]">Epic Status</h2>
       <div className="summary-table-grid">
-        <div style={{ flex: 1 }}>
-          <table style={tableStyle}>
+        <div className="flex-1">
+          <table className={tableClass} style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
             <thead>{theadRow}</thead>
             <tbody>{leftEpics.map((epic, idx) => renderRow(epic, idx))}</tbody>
           </table>
         </div>
-        <div style={{ flex: 1 }}>
-          <table style={tableStyle}>
+        <div className="flex-1">
+          <table className={tableClass} style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
             <thead>{theadRow}</thead>
             <tbody>{rightEpics.map((epic, idx) => renderRow(epic, idx))}</tbody>
           </table>
         </div>
       </div>
-      <hr style={{ border: 'none', borderTop: '2px solid #e2e8f0', marginTop: '1rem' }} />
+      <hr className="border-0 border-t-2 border-slate-200 mt-4" />
     </div>
   );
 }

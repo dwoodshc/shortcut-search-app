@@ -57,37 +57,35 @@ export default function StoryDetailModal({
   };
 
   const resetIcon = (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style={{ width: '14px', height: '14px', verticalAlign: 'middle', display: 'inline-block' }}>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-[14px] h-[14px] align-middle inline-block">
       <path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.95-2.05L6.64 18.36A8.955 8.955 0 0 0 13 21a9 9 0 0 0 0-18z"/>
     </svg>
   );
 
-  const thStyle: React.CSSProperties = { cursor: 'pointer', userSelect: 'none', padding: '0.5rem 0.75rem', textAlign: 'left', fontWeight: 600, fontSize: '0.875rem' };
-
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content modal-content-large" onClick={e => e.stopPropagation()} style={{ maxWidth: '925px', width: '90%', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
-          <h2 style={{ margin: 0, fontSize: '1.2rem' }}>Stories — {filter}</h2>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '1.25rem', cursor: 'pointer', color: '#718096', lineHeight: 1 }}>✕</button>
+      <div className="modal-content modal-content-large flex flex-col" onClick={e => e.stopPropagation()} style={{ maxWidth: '925px', width: '90%', maxHeight: '80vh' }}>
+        <div className="flex justify-between items-center mb-[0.25rem]">
+          <h2 className="m-0 text-[1.2rem]">Stories — {filter}</h2>
+          <button onClick={onClose} className="bg-transparent border-0 text-[1.25rem] cursor-pointer text-[#718096] leading-none">✕</button>
         </div>
-        <p style={{ color: '#718096', fontSize: '0.8rem', margin: '0 0 0.75rem' }}>{rawStories.length} {rawStories.length === 1 ? 'story' : 'stories'}</p>
-        <div style={{ overflowY: 'auto', flex: 1 }}>
-          <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, border: '1px solid #F0F0F7', borderRadius: '8px' }}>
+        <p className="text-[#718096] text-[0.8rem] m-0 mb-3">{rawStories.length} {rawStories.length === 1 ? 'story' : 'stories'}</p>
+        <div className="overflow-y-auto flex-1">
+          <table className="w-full border border-[#F0F0F7] rounded-lg" style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
             <thead>
-              <tr style={{ background: '#494BCB', color: 'white', position: 'sticky', top: 0 }}>
-                <th onClick={() => onSort('story')} style={{ ...thStyle, borderRadius: '8px 0 0 0' }}>
+              <tr className="bg-[#494BCB] text-white sticky top-0">
+                <th onClick={() => onSort('story')} className="cursor-pointer select-none px-3 py-2 text-left font-semibold text-sm rounded-tl-lg">
                   Story{sortIcon('story')}
                   {sort.col === 'story' && (
-                    <span className="summary-sort-icon" data-tooltip="Restore original order" onClick={e => { e.stopPropagation(); onResetSort(); }} style={{ marginLeft: '6px', cursor: 'pointer' }}>
+                    <span className="summary-sort-icon ml-[6px] cursor-pointer" data-tooltip="Restore original order" onClick={e => { e.stopPropagation(); onResetSort(); }}>
                       {resetIcon}
                     </span>
                   )}
                 </th>
-                <th onClick={() => onSort('epic')} style={{ ...thStyle, whiteSpace: 'nowrap', borderRadius: '0 8px 0 0' }}>
+                <th onClick={() => onSort('epic')} className="cursor-pointer select-none px-3 py-2 text-left font-semibold text-sm whitespace-nowrap rounded-tr-lg">
                   Epic{sortIcon('epic')}
                   {sort.col === 'epic' && (
-                    <span className="summary-sort-icon" data-tooltip="Restore original order" onClick={e => { e.stopPropagation(); onResetSort(); }} style={{ marginLeft: '6px', cursor: 'pointer' }}>
+                    <span className="summary-sort-icon ml-[6px] cursor-pointer" data-tooltip="Restore original order" onClick={e => { e.stopPropagation(); onResetSort(); }}>
                       {resetIcon}
                     </span>
                   )}
@@ -96,14 +94,14 @@ export default function StoryDetailModal({
             </thead>
             <tbody>
               {sortedStories.map((story, idx) => (
-                <tr key={story.id} style={{ background: idx % 2 === 0 ? 'white' : '#fafafa' }}>
-                  <td style={{ padding: '0.4rem 0.75rem', fontSize: '0.875rem', borderBottom: '1px solid #F0F0F7' }}>
+                <tr key={story.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-[#fafafa]'}>
+                  <td className="px-3 py-[0.4rem] text-sm border-b border-[#F0F0F7]">
                     {story.app_url
-                      ? <a href={story.app_url} target="_blank" rel="noopener noreferrer" style={{ color: '#494BCB' }}>{story.name}</a>
+                      ? <a href={story.app_url} target="_blank" rel="noopener noreferrer" className="text-[#494BCB]">{story.name}</a>
                       : story.name}
                   </td>
-                  <td style={{ padding: '0.4rem 0.75rem', fontSize: '0.875rem', borderBottom: '1px solid #F0F0F7', whiteSpace: 'nowrap' }}>
-                    <a href={`#epic-${story.epicId}`} onClick={onClose} style={{ color: '#494BCB', textDecoration: 'none' }}>{story.epicName}</a>
+                  <td className="px-3 py-[0.4rem] text-sm border-b border-[#F0F0F7] whitespace-nowrap">
+                    <a href={`#epic-${story.epicId}`} onClick={onClose} className="text-[#494BCB] no-underline">{story.epicName}</a>
                   </td>
                 </tr>
               ))}

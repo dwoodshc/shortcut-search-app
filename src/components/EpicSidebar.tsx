@@ -62,13 +62,12 @@ export default function EpicSidebar(): React.JSX.Element | null {
           ))}
 
           <button
-            className="sidebar-nav-item sidebar-nav-top"
+            className="sidebar-nav-item sidebar-nav-top mt-4 pt-4 border-b-0 border-t-2 border-t-[#F0F0F7]"
             onClick={(_e: React.MouseEvent) => {
               setShowSidebar(false);
               searchEpics();
             }}
             title="Refresh epics data"
-            style={{ marginTop: '1rem', paddingTop: '1rem', borderBottom: 'none', borderTop: '2px solid #F0F0F7' }}
           >
             <span className="sidebar-nav-number">↻</span>
             <span className="sidebar-nav-text">Refresh Epics</span>

@@ -276,18 +276,18 @@ function App(): React.JSX.Element {
     <div className="App" id="top">
       {loading && (
         <div className="modal-overlay" style={{ zIndex: 9999 }}>
-          <div className="modal-content" style={{ textAlign: 'center', padding: '2.5rem 3rem', maxWidth: '360px' }}>
-            <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>⏳</div>
-            <h2 style={{ margin: '0 0 0.5rem', fontSize: '1.2rem', color: '#03045E' }}>Loading Epics…</h2>
-            <p style={{ color: '#718096', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
+          <div className="modal-content text-center !px-12 !py-10" style={{ maxWidth: '360px' }}>
+            <div className="text-[2.5rem] mb-4">⏳</div>
+            <h2 className="m-0 mb-2 text-[1.2rem] text-[#03045E]">Loading Epics…</h2>
+            <p className="text-[#718096] mb-6 text-[0.9rem]">
               {loadProgress.total > 0
                 ? `Loading ${loadProgress.loaded} of ${loadProgress.total} epics`
                 : 'Fetching epic and story data from Shortcut'}
             </p>
-            <div style={{ width: '100%', height: '4px', background: '#e2e8f0', borderRadius: '2px', overflow: 'hidden', marginBottom: '1.5rem' }}>
-              <div style={{ height: '100%', background: '#494BCB', borderRadius: '2px', animation: 'loading-bar 1.5s ease-in-out infinite' }} />
+            <div className="w-full h-1 bg-slate-200 rounded-sm overflow-hidden mb-6">
+              <div className="h-full bg-[#494BCB] rounded-sm" style={{ animation: 'loading-bar 1.5s ease-in-out infinite' }} />
             </div>
-            <button className="btn-secondary" onClick={cancelSearch} style={{ minWidth: '100px' }}>Cancel</button>
+            <button className="btn-secondary min-w-[100px]" onClick={cancelSearch}>Cancel</button>
           </div>
         </div>
       )}
@@ -305,16 +305,16 @@ function App(): React.JSX.Element {
 
       {modals.rateLimit && (
         <div className="modal-overlay" onClick={() => setModal('rateLimit', false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ textAlign: 'center', padding: '2.5rem 3rem', maxWidth: '420px' }}>
-            <div style={{ fontSize: '3rem', marginBottom: '0.75rem' }}>🚦</div>
-            <h2 style={{ margin: '0 0 0.75rem', fontSize: '1.3rem', color: '#b91c1c' }}>Too Many Requests</h2>
-            <p style={{ color: '#4a5568', marginBottom: '0.5rem' }}>
+          <div className="modal-content text-center !px-12 !py-10" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '420px' }}>
+            <div className="text-[3rem] mb-3">🚦</div>
+            <h2 className="m-0 mb-3 text-[1.3rem] text-[#b91c1c]">Too Many Requests</h2>
+            <p className="text-[#4a5568] mb-2">
               The Shortcut API has rate-limited this session <strong>(HTTP 429)</strong>.
             </p>
-            <p style={{ color: '#718096', fontSize: '0.875rem', marginBottom: '1.75rem' }}>
+            <p className="text-[#718096] text-sm mb-7">
               This happens when too many API calls are made in a short period. Please wait a few minutes before trying again.
             </p>
-            <button className="btn-primary" onClick={() => setModal('rateLimit', false)} style={{ minWidth: '100px' }}>OK</button>
+            <button className="btn-primary min-w-[100px]" onClick={() => setModal('rateLimit', false)}>OK</button>
           </div>
         </div>
       )}
@@ -330,9 +330,9 @@ function App(): React.JSX.Element {
       {modals.about && (
         <div className="modal-overlay" onClick={() => setModal('about', false)}>
           <div className="modal-content modal-content-about" onClick={(e) => e.stopPropagation()}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
-              <img src="/dave.png" alt="D.A.V.E." style={{ width: '72px', height: '72px', flexShrink: 0 }} />
-              <h2 style={{ margin: 0 }}>About Shortcut Dashboard</h2>
+            <div className="flex items-center gap-4 mb-4">
+              <img src="/dave.png" alt="D.A.V.E." className="w-[72px] h-[72px] shrink-0" />
+              <h2 className="m-0">About Shortcut Dashboard</h2>
             </div>
             <p>A React-based dashboard for tracking Shortcut.com epics, visualising progress, and monitoring team workload.</p>
             <ul>
@@ -351,7 +351,7 @@ function App(): React.JSX.Element {
               <li><strong>Setup Wizard:</strong> 6-step guided setup — token, URL, workflow, team, ignored users, epic list</li>
               <li><strong>Configuration Management:</strong> Export / Import of all settings as JSON</li>
             </ul>
-            <p style={{ marginTop: '1rem', fontSize: '0.875rem', color: '#718096' }}>
+            <p className="mt-4 text-sm text-[#718096]">
               Version {pkg.version} | Project D.A.V.E. (Dashboards Are Very Effective)
             </p>
             <div className="modal-buttons">
@@ -366,25 +366,25 @@ function App(): React.JSX.Element {
           <div className="modal-content modal-content-export-import" onClick={(e) => e.stopPropagation()}>
             <h2>Export/Import Configuration</h2>
             {importSuccess && (
-              <div style={{ padding: '0.75rem', marginBottom: '1rem', backgroundColor: '#d1fae5', border: '1px solid #6ee7b7', borderRadius: '0.375rem', color: '#065f46' }}>
+              <div className="p-3 mb-4 bg-[#d1fae5] border border-[#6ee7b7] rounded-md text-[#065f46]">
                 {importSuccess}
               </div>
             )}
             {importError && (
-              <div style={{ padding: '0.75rem', marginBottom: '1rem', backgroundColor: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '0.375rem', color: '#dc2626' }}>
+              <div className="p-3 mb-4 bg-[#fef2f2] border border-[#fca5a5] rounded-md text-[#dc2626]">
                 {importError}
               </div>
             )}
-            <div style={{ marginBottom: '2rem' }}>
-              <h3 style={{ marginBottom: '0.5rem' }}>Export Configuration</h3>
-              <p style={{ marginBottom: '1rem', color: '#64748b' }}>Download your current configuration as a JSON file for backup.</p>
+            <div className="mb-8">
+              <h3 className="mb-2">Export Configuration</h3>
+              <p className="mb-4 text-[#64748b]">Download your current configuration as a JSON file for backup.</p>
               <button type="button" onClick={handleExportData} className="btn-primary">Export Configuration</button>
             </div>
-            <div style={{ marginBottom: '1.5rem' }}>
-              <h3 style={{ marginBottom: '0.5rem' }}>Import Configuration</h3>
-              <p style={{ marginBottom: '1rem', color: '#64748b' }}>Upload a previously exported configuration file to restore your settings.</p>
-              <input type="file" id="import-file-input" accept=".json" onChange={handleImportData} style={{ display: 'none' }} />
-              <label htmlFor="import-file-input" className="btn-secondary" style={{ display: 'inline-block', textAlign: 'center' }}>
+            <div className="mb-6">
+              <h3 className="mb-2">Import Configuration</h3>
+              <p className="mb-4 text-[#64748b]">Upload a previously exported configuration file to restore your settings.</p>
+              <input type="file" id="import-file-input" accept=".json" onChange={handleImportData} className="hidden" />
+              <label htmlFor="import-file-input" className="btn-secondary inline-block text-center">
                 Choose File
               </label>
             </div>
@@ -398,15 +398,15 @@ function App(): React.JSX.Element {
       {modals.wipeConfirm && (
         <div className="modal-overlay" onClick={() => setModal('wipeConfirm', false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h2 style={{ color: '#dc2626' }}>Wipe All Settings?</h2>
-            <p style={{ marginBottom: '1.5rem' }}>This action will permanently delete all stored data including:</p>
-            <ul style={{ marginBottom: '1.5rem', textAlign: 'left', paddingLeft: '2rem' }}>
+            <h2 className="text-[#dc2626]">Wipe All Settings?</h2>
+            <p className="mb-6">This action will permanently delete all stored data including:</p>
+            <ul className="mb-6 text-left pl-8">
               <li>API Token</li>
               <li>Workflow Configuration</li>
               <li>Epic List and Team Members</li>
               <li>All other settings</li>
             </ul>
-            <p style={{ marginBottom: '1.5rem', fontWeight: 'bold', color: '#dc2626' }}>
+            <p className="mb-6 font-bold text-[#dc2626]">
               This action cannot be undone. Are you sure you want to continue?
             </p>
             <div className="modal-buttons">
@@ -414,7 +414,7 @@ function App(): React.JSX.Element {
               <button
                 type="button"
                 onClick={handleWipeSettings}
-                style={{ backgroundColor: '#dc2626', color: 'white', padding: '0.5rem 1rem', border: 'none', borderRadius: '0.375rem', cursor: 'pointer', fontSize: '0.875rem', fontWeight: '500' }}
+                className="bg-[#dc2626] text-white px-4 py-2 border-0 rounded-md cursor-pointer text-sm font-medium"
               >
                 Yes, Wipe All Settings
               </button>
@@ -428,8 +428,7 @@ function App(): React.JSX.Element {
           <div className="modal-content modal-content-large" onClick={(e) => e.stopPropagation()}>
             <h2>README.md</h2>
             <div
-              className="markdown-content"
-              style={{ maxHeight: '60vh', overflowY: 'auto', marginBottom: '1rem', backgroundColor: '#ffffff', padding: '1.5rem', borderRadius: '6px', border: '1px solid #e2e8f0' }}
+              className="markdown-content max-h-[60vh] overflow-y-auto mb-4 bg-white p-6 rounded-md border border-slate-200"
               dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked(readmeContent || '') as string) }}
             />
             <div className="modal-buttons">
@@ -444,8 +443,8 @@ function App(): React.JSX.Element {
 
       <main className="container">
         {successMessage && (
-          <div style={{ backgroundColor: '#d1fae5', border: '1px solid #6ee7b7', color: '#065f46', padding: '1rem', borderRadius: '6px', marginBottom: '1rem' }}>
-            <p style={{ margin: 0 }}>{successMessage}</p>
+          <div className="bg-[#d1fae5] border border-[#6ee7b7] text-[#065f46] p-4 rounded-md mb-4">
+            <p className="m-0">{successMessage}</p>
           </div>
         )}
 
@@ -453,11 +452,10 @@ function App(): React.JSX.Element {
           <div className="error-message">
             <p>{error}</p>
             {apiTokenIssue && (
-              <p style={{ marginTop: '0.5rem' }}>
+              <p className="mt-2">
                 <button
                   onClick={() => { setModal('setupWizard', true); setSetupWizardStep(1); }}
-                  className="btn-primary"
-                  style={{ fontSize: '0.875rem', padding: '0.5rem 1rem' }}
+                  className="btn-primary text-sm px-4 py-2"
                 >
                   Open Setup
                 </button>
@@ -470,16 +468,16 @@ function App(): React.JSX.Element {
           <div className="epics-list">
             <SummaryTable />
 
-            <div style={{ marginBottom: '0.5rem', paddingBottom: '0.75rem', borderBottom: '2px solid #e2e8f0' }}>
-              <div style={{ display: 'flex', alignItems: 'center' }}>
-                <h2 style={{ margin: 0, fontSize: '1.0rem' }}>
+            <div className="mb-2 pb-3 border-b-2 border-slate-200">
+              <div className="flex items-center">
+                <h2 className="m-0 text-[1.0rem]">
                   {epics.filter(e => !e.notFound).length === filteredEpicNames.length ? '✅ ' : '⚠️ '}
                   Found {epics.filter(e => !e.notFound).length} of {filteredEpicNames.length} Epic{filteredEpicNames.length !== 1 ? 's' : ''}
                 </h2>
               </div>
               {epics.some(e => e.notFound) && (
-                <div style={{ marginTop: '0.4rem', fontSize: '0.8rem', color: '#dc2626' }}>
-                  <span style={{ fontWeight: 600 }}>Not found: </span>
+                <div className="mt-[0.4rem] text-[0.8rem] text-[#dc2626]">
+                  <span className="font-semibold">Not found: </span>
                   {epics.filter(e => e.notFound).map(e => e.name).join(', ')}
                 </div>
               )}
@@ -506,21 +504,21 @@ function App(): React.JSX.Element {
           a.click();
           URL.revokeObjectURL(url);
         };
-        const statStyle: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#718096', fontSize: '0.78rem' };
-        const divider = <span style={{ color: '#cbd5e0' }}>|</span>;
+        const statClass = "flex items-center gap-[0.35rem] text-[#718096] text-[0.78rem]";
+        const divider = <span className="text-[#cbd5e0]">|</span>;
         return (
-          <div style={{ background: '#f8fafc', borderTop: '1px solid #e2e8f0', padding: '0.5rem 2rem', display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={statStyle}><span>⏱</span><span>Load time: <strong>{(loadStats.loadTime / 1000).toFixed(2)}s</strong></span></div>
+          <div className="bg-[#f8fafc] border-t border-slate-200 px-8 py-2 flex flex-wrap gap-4 items-center justify-center">
+            <div className={statClass}><span>⏱</span><span>Load time: <strong>{(loadStats.loadTime / 1000).toFixed(2)}s</strong></span></div>
             {divider}
-            <div style={statStyle}><span>🔗</span><span>API calls: <strong>{loadStats.apiCallCount}</strong></span></div>
+            <div className={statClass}><span>🔗</span><span>API calls: <strong>{loadStats.apiCallCount}</strong></span></div>
             {divider}
-            <div style={statStyle}><span>🕐</span><span>Generated: <strong>{loadStats.loadedAt.toLocaleString()}</strong></span></div>
+            <div className={statClass}><span>🕐</span><span>Generated: <strong>{loadStats.loadedAt.toLocaleString()}</strong></span></div>
             {divider}
-            <div style={statStyle}><span>📄</span><span>Page size: <strong>{pageSizeKb} KB</strong></span></div>
+            <div className={statClass}><span>📄</span><span>Page size: <strong>{pageSizeKb} KB</strong></span></div>
             {divider}
-            <div style={statStyle}>
+            <div className={statClass}>
               <span>💾</span>
-              <button onClick={handleDownload} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#494BCB', fontSize: '0.78rem', fontWeight: 600, padding: 0, textDecoration: 'underline' }}>
+              <button onClick={handleDownload} className="bg-transparent border-0 cursor-pointer text-[#494BCB] text-[0.78rem] font-semibold p-0 underline">
                 Download page
               </button>
             </div>
