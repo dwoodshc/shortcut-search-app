@@ -74,6 +74,7 @@ export interface EpicTeamEntry {
   name: string;
   isDone: boolean;
   isReadyForRelease: boolean;
+  isBlocked: boolean;
   team: string[];
 }
 
@@ -82,6 +83,7 @@ export interface EpicRef {
   name: string;
   isDone: boolean;
   isReadyForRelease: boolean;
+  isBlocked: boolean;
 }
 
 export interface ModalState {

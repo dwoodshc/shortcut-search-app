@@ -18,6 +18,7 @@ const resetIcon = (
 
 const donePill = <span className="ml-[0.4rem] bg-[#86efac] rounded-full px-2 py-[0.1rem] text-xs font-medium inline-block align-middle">Done</span>;
 const readyForReleasePill = <span className="ml-[0.4rem] bg-[#bbf7d0] rounded-full px-2 py-[0.1rem] text-xs font-medium inline-block align-middle">Ready for Release</span>;
+const blockedPill = <span className="ml-[0.4rem] bg-[#fca5a5] rounded-full px-2 py-[0.1rem] text-xs font-medium inline-block align-middle">Blocked</span>;
 
 export default function AssignmentTables(): React.JSX.Element | null {
   const {
@@ -88,6 +89,7 @@ export default function AssignmentTables(): React.JSX.Element | null {
         <a href={`#epic-${row.id}`} className="text-[#494BCB] no-underline">{row.name}</a>
         {row.isDone && donePill}
         {row.isReadyForRelease && readyForReleasePill}
+        {row.isBlocked && blockedPill}
       </td>
       <td className={tdClass}>
         {row.team.length === 0
@@ -108,7 +110,7 @@ export default function AssignmentTables(): React.JSX.Element | null {
       <td className={tdClass}>
         <ul className="m-0 pl-5">
           {[...row.epics].sort((a, b) => a.name.localeCompare(b.name)).map((e) => (
-            <li key={e.id as React.Key}><a href={`#epic-${e.id}`} className="text-[#494BCB] no-underline">{e.name}</a>{e.isDone && donePill}{e.isReadyForRelease && readyForReleasePill}</li>
+            <li key={e.id as React.Key}><a href={`#epic-${e.id}`} className="text-[#494BCB] no-underline">{e.name}</a>{e.isDone && donePill}{e.isReadyForRelease && readyForReleasePill}{e.isBlocked && blockedPill}</li>
           ))}
         </ul>
       </td>

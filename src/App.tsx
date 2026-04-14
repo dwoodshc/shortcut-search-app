@@ -228,6 +228,7 @@ function App(): React.JSX.Element {
       name: epic.name,
       isDone: getEpicStateInfo(epic).type === 'done',
       isReadyForRelease: getEpicStateInfo(epic).name.toLowerCase().trim() === 'ready for release',
+      isBlocked: getEpicStateInfo(epic).name.toLowerCase().trim() === 'blocked',
       team: (epic.owner_ids || [])
         .filter(id => selectedTeamIds.length === 0 || teamMemberIds.has(id))
         .map(id => members[id] || id)
@@ -236,11 +237,11 @@ function App(): React.JSX.Element {
   }, [epics, selectedTeamIds, teamMemberIds, members, filterIgnoredInTickets, ignoredUsers, getEpicStateInfo]);
 
   const memberEpicMap = useMemo(() => {
-    const map: Record<string, Array<{ id: number | string; name: string; isDone: boolean; isReadyForRelease: boolean }>> = {};
-    epicTeamData.forEach(({ id, name, isDone, isReadyForRelease, team }) => {
+    const map: Record<string, Array<{ id: number | string; name: string; isDone: boolean; isReadyForRelease: boolean; isBlocked: boolean }>> = {};
+    epicTeamData.forEach(({ id, name, isDone, isReadyForRelease, isBlocked, team }) => {
       team.forEach(member => {
         if (!map[member]) map[member] = [];
-        map[member].push({ id, name, isDone, isReadyForRelease });
+        map[member].push({ id, name, isDone, isReadyForRelease, isBlocked });
       });
     });
     return map;
