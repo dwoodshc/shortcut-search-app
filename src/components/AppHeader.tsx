@@ -21,6 +21,7 @@ export default function AppHeader(): React.JSX.Element {
     toggleAllCharts,
     handleOpenReadme,
     setSetupWizardStep,
+    darkMode, toggleDarkMode,
   } = useDashboard();
 
   return (
@@ -97,6 +98,15 @@ export default function AppHeader(): React.JSX.Element {
                 }}
               >
                 README.md
+              </button>
+              <button
+                className="settings-menu-item"
+                onClick={() => {
+                  setModal('settingsMenu', false);
+                  toggleDarkMode();
+                }}
+              >
+                {darkMode ? '☀ Normal Mode' : '🌙 Dark Mode'}
               </button>
               <button
                 className="settings-menu-item"

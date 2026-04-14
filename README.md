@@ -107,6 +107,7 @@ Displayed in the header when epics are loaded:
 ### Settings Menu
 - **Setup Wizard** — Re-run the setup wizard
 - **README.md** — View this documentation in-app
+- **🌙 Dark Mode / ☀ Normal Mode** — Toggle between the default light theme and a dark green theme; preference is saved to localStorage
 - **Export/Import** — Backup and restore configuration as JSON
 - **Wipe Settings** — Clear all localStorage data to start fresh
 - **About** — View application information
@@ -224,6 +225,7 @@ All configuration is stored in **browser localStorage** (API token uses **sessio
 | `shortcut_members_cache` | localStorage | Owner ID → display name cache |
 | `shortcut_team_members_cache` | localStorage | Team member IDs keyed by team ID; cached per team, populated on demand |
 | `shortcut_epic_workflow_cache` | localStorage | Epic workflow states cache |
+| `shortcut_display_mode` | localStorage | Display mode preference (`normal` or `dark`) |
 
 **Backup & Portability:**
 - Use Export/Import in the Settings menu to save your configuration as a JSON file

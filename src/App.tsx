@@ -33,6 +33,15 @@ const toTitleCase = (str: string): string =>
 
 function App(): React.JSX.Element {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [darkMode, setDarkMode] = useState<boolean>(() => storage.getDisplayMode() === 'dark');
+
+  const toggleDarkMode = useCallback(() => {
+    setDarkMode(prev => {
+      const next = !prev;
+      storage.setDisplayMode(next ? 'dark' : 'normal');
+      return next;
+    });
+  }, []);
 
   const {
     workflowConfig, setWorkflowConfig, setWorkflowField,
@@ -272,11 +281,12 @@ function App(): React.JSX.Element {
     searchEpics, scrollToEpic,
     handleSaveShortcutUrl, handleSelectWorkflow,
     toggleAllCharts, handleOpenReadme,
-  }), [epics, members, epicStates, teamMemberIds, loadStats, workflowConfig, setWorkflowField, modals, setModal, sortState, toggleSortState, resetSortState, collapsedCharts, setCollapsedCharts, toggleChart, filterByTeam, setFilterByTeam, ignoredUsers, setIgnoredUsers, filterIgnoredInTickets, setFilterIgnoredInTickets, selectedTeams, setSelectedTeams, selectedTeamIds, selectedTeamLabel, shortcutWebUrl, setShortcutWebUrl, showSidebar, setShowSidebar, error, setError, loading, successMessage, filteredEpicNames, setFilteredEpicNames, setupWizardStep, setSetupWizardStep, getDisplayStories, generateShortcutUrl, getEpicStateInfo, getEpicStateClass, filteredStateIds, summaryStateIds, epicTeamData, memberEpicMap, allDisplayStories, searchEpics, scrollToEpic, handleSaveShortcutUrl, handleSelectWorkflow, toggleAllCharts, handleOpenReadme]);
+    darkMode, toggleDarkMode,
+  }), [epics, members, epicStates, teamMemberIds, loadStats, workflowConfig, setWorkflowField, modals, setModal, sortState, toggleSortState, resetSortState, collapsedCharts, setCollapsedCharts, toggleChart, filterByTeam, setFilterByTeam, ignoredUsers, setIgnoredUsers, filterIgnoredInTickets, setFilterIgnoredInTickets, selectedTeams, setSelectedTeams, selectedTeamIds, selectedTeamLabel, shortcutWebUrl, setShortcutWebUrl, showSidebar, setShowSidebar, error, setError, loading, successMessage, filteredEpicNames, setFilteredEpicNames, setupWizardStep, setSetupWizardStep, getDisplayStories, generateShortcutUrl, getEpicStateInfo, getEpicStateClass, filteredStateIds, summaryStateIds, epicTeamData, memberEpicMap, allDisplayStories, searchEpics, scrollToEpic, handleSaveShortcutUrl, handleSelectWorkflow, toggleAllCharts, handleOpenReadme, darkMode, toggleDarkMode]);
 
   return (
     <DashboardContext.Provider value={dashboardContext}>
-    <div className="App" id="top">
+    <div className="App" id="top" data-theme={darkMode ? 'dark' : 'normal'}>
       {loading && (
         <div className="modal-overlay" style={{ zIndex: 9999 }}>
           <div className="modal-content text-center !px-12 !py-10" style={{ maxWidth: '360px' }}>
@@ -353,6 +363,7 @@ function App(): React.JSX.Element {
               <li><strong>Ignored Users:</strong> Configurable list of users excluded from assignment and ticket tables</li>
               <li><strong>Setup Wizard:</strong> 6-step guided setup — token, URL, workflow, team, ignored users, epic list</li>
               <li><strong>Configuration Management:</strong> Export / Import of all settings as JSON</li>
+              <li><strong>Dark Mode:</strong> Toggle between Normal and Dark display modes via Settings</li>
             </ul>
             <p className="mt-4 text-sm text-[#718096]">
               Version {pkg.version} | Project D.A.V.E. (Dashboards Are Very Effective)

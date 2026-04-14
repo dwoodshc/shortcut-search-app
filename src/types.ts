@@ -192,4 +192,6 @@ export interface DashboardContextValue {
   handleSelectWorkflow: (workflow: Workflow) => void;
   toggleAllCharts: () => void;
   handleOpenReadme: () => Promise<void>;
+  darkMode: boolean;
+  toggleDarkMode: () => void;
 }

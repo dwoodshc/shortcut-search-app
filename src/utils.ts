@@ -15,7 +15,8 @@ export const STORAGE_KEYS = {
   TEAM_CONFIG: 'shortcut_team_config',
   TEAM_MEMBERS_CACHE: 'shortcut_team_members_cache',
   EPIC_WORKFLOW_CACHE: 'shortcut_epic_workflow_cache',
-  IGNORED_USERS: 'shortcut_ignored_users'
+  IGNORED_USERS: 'shortcut_ignored_users',
+  DISPLAY_MODE: 'shortcut_display_mode',
 } as const;
 
 const migrateApiToken = (): void => {
@@ -94,7 +95,13 @@ export const storage = {
     const data = localStorage.getItem(STORAGE_KEYS.IGNORED_USERS);
     return data ? JSON.parse(data) : [];
   },
-  setIgnoredUsers: (users: string[]): void => { localStorage.setItem(STORAGE_KEYS.IGNORED_USERS, JSON.stringify(users)); }
+  setIgnoredUsers: (users: string[]): void => { localStorage.setItem(STORAGE_KEYS.IGNORED_USERS, JSON.stringify(users)); },
+
+  getDisplayMode: (): 'normal' | 'dark' => {
+    const val = localStorage.getItem(STORAGE_KEYS.DISPLAY_MODE);
+    return val === 'dark' ? 'dark' : 'normal';
+  },
+  setDisplayMode: (mode: 'normal' | 'dark'): void => { localStorage.setItem(STORAGE_KEYS.DISPLAY_MODE, mode); },
 };
 
 export const getApiBaseUrl = (): string => `http://${window.location.hostname}:3001`;
