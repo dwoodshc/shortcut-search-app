@@ -97,6 +97,8 @@ Three icon buttons in the top-right of the header (all with hover tooltips):
 - **Edit Epic List** — Open the epic list configuration editor directly (wizard step 6)
 - **Settings** (gear) — Open the settings dropdown menu
 
+> **Note:** The sidebar navigation panel has been removed. Epic name links in the Summary Table scroll directly to the epic card on the page.
+
 ### Toolbar Controls
 Displayed in the header when epics are loaded:
 - **Expand Assignments / Collapse Assignments** — Toggle both assignment tables
@@ -190,7 +192,6 @@ shortcut-search-app/
 │   ├── components/
 │   │   ├── AppHeader.tsx             # Sticky header: logo, icon buttons, action toolbar
 │   │   ├── AppFooter.tsx             # Static footer with version (sourced from package.json)
-│   │   ├── EpicSidebar.tsx           # Slide-out epic navigation sidebar
 │   │   ├── EpicCard.tsx              # Per-epic card: charts, tables, story board
 │   │   ├── SummaryTable.tsx          # Story totals summary + epic status table
 │   │   ├── AssignmentTables.tsx      # Epic owner and team member assignment tables

@@ -166,8 +166,6 @@ export interface DashboardContextValue {
   selectedTeamLabel: string;
   shortcutWebUrl: string;
   setShortcutWebUrl: React.Dispatch<React.SetStateAction<string>>;
-  showSidebar: boolean;
-  setShowSidebar: React.Dispatch<React.SetStateAction<boolean>>;
   error: string | null;
   setError: React.Dispatch<React.SetStateAction<string | null>>;
   loading: boolean;
@@ -187,7 +185,6 @@ export interface DashboardContextValue {
   memberEpicMap: Record<string, EpicRef[]>;
   allDisplayStories: Story[];
   searchEpics: () => void;
-  scrollToEpic: (epicId: number | string) => void;
   handleSaveShortcutUrl: () => boolean | void;
   handleSelectWorkflow: (workflow: Workflow) => void;
   toggleAllCharts: () => void;

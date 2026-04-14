@@ -15,7 +15,6 @@ import SummaryTable from './components/SummaryTable';
 import AssignmentTables from './components/AssignmentTables';
 import EpicCard from './components/EpicCard';
 import SetupWizard from './components/SetupWizard';
-import EpicSidebar from './components/EpicSidebar';
 import AppHeader from './components/AppHeader';
 import AppFooter from './components/AppFooter';
 import { storage, getApiBaseUrl } from './utils';
@@ -58,10 +57,8 @@ function App(): React.JSX.Element {
     filterIgnoredInTickets, setFilterIgnoredInTickets,
     ignoredUsers, setIgnoredUsers,
     selectedTeams, setSelectedTeams, selectedTeamIds, selectedTeamLabel,
-    showSidebar, setShowSidebar,
     sortState, toggleSortState, resetSortState,
     collapsedCharts, setCollapsedCharts, toggleChart,
-    scrollToEpic,
     getDisplayStories,
   } = useFilters();
 
@@ -70,7 +67,7 @@ function App(): React.JSX.Element {
     setupWizardStep, setSetupWizardStep,
     readmeContent,
     handleOpenReadme,
-  } = useModals({ showSidebar, setShowSidebar });
+  } = useModals();
 
   const {
     epics, setEpics,
@@ -269,7 +266,6 @@ function App(): React.JSX.Element {
     filterIgnoredInTickets, setFilterIgnoredInTickets,
     selectedTeams, setSelectedTeams, selectedTeamIds, selectedTeamLabel,
     shortcutWebUrl, setShortcutWebUrl,
-    showSidebar, setShowSidebar,
     error, setError, loading, successMessage,
     filteredEpicNames, setFilteredEpicNames,
     setupWizardStep, setSetupWizardStep,
@@ -278,11 +274,11 @@ function App(): React.JSX.Element {
     getEpicStateInfo, getEpicStateClass,
     filteredStateIds, summaryStateIds,
     epicTeamData, memberEpicMap, allDisplayStories,
-    searchEpics, scrollToEpic,
+    searchEpics,
     handleSaveShortcutUrl, handleSelectWorkflow,
     toggleAllCharts, handleOpenReadme,
     darkMode, toggleDarkMode,
-  }), [epics, members, epicStates, teamMemberIds, loadStats, workflowConfig, setWorkflowField, modals, setModal, sortState, toggleSortState, resetSortState, collapsedCharts, setCollapsedCharts, toggleChart, filterByTeam, setFilterByTeam, ignoredUsers, setIgnoredUsers, filterIgnoredInTickets, setFilterIgnoredInTickets, selectedTeams, setSelectedTeams, selectedTeamIds, selectedTeamLabel, shortcutWebUrl, setShortcutWebUrl, showSidebar, setShowSidebar, error, setError, loading, successMessage, filteredEpicNames, setFilteredEpicNames, setupWizardStep, setSetupWizardStep, getDisplayStories, generateShortcutUrl, getEpicStateInfo, getEpicStateClass, filteredStateIds, summaryStateIds, epicTeamData, memberEpicMap, allDisplayStories, searchEpics, scrollToEpic, handleSaveShortcutUrl, handleSelectWorkflow, toggleAllCharts, handleOpenReadme, darkMode, toggleDarkMode]);
+  }), [epics, members, epicStates, teamMemberIds, loadStats, workflowConfig, setWorkflowField, modals, setModal, sortState, toggleSortState, resetSortState, collapsedCharts, setCollapsedCharts, toggleChart, filterByTeam, setFilterByTeam, ignoredUsers, setIgnoredUsers, filterIgnoredInTickets, setFilterIgnoredInTickets, selectedTeams, setSelectedTeams, selectedTeamIds, selectedTeamLabel, shortcutWebUrl, setShortcutWebUrl, error, setError, loading, successMessage, filteredEpicNames, setFilteredEpicNames, setupWizardStep, setSetupWizardStep, getDisplayStories, generateShortcutUrl, getEpicStateInfo, getEpicStateClass, filteredStateIds, summaryStateIds, epicTeamData, memberEpicMap, allDisplayStories, searchEpics, handleSaveShortcutUrl, handleSelectWorkflow, toggleAllCharts, handleOpenReadme, darkMode, toggleDarkMode]);
 
   return (
     <DashboardContext.Provider value={dashboardContext}>
@@ -359,7 +355,6 @@ function App(): React.JSX.Element {
               <li><strong>Story Owners Table:</strong> Per-epic story owner counts including unassigned</li>
               <li><strong>Team Open Tickets:</strong> Open ticket counts per team member, excluding completed stories</li>
               <li><strong>User Story Board:</strong> Kanban view (Backlog → Complete) with collapsible story cards</li>
-              <li><strong>Sidebar Navigation:</strong> Slide-out panel for quick jumping between epics</li>
               <li><strong>Ignored Users:</strong> Configurable list of users excluded from assignment and ticket tables</li>
               <li><strong>Setup Wizard:</strong> 6-step guided setup — token, URL, workflow, team, ignored users, epic list</li>
               <li><strong>Configuration Management:</strong> Export / Import of all settings as JSON</li>
@@ -453,7 +448,6 @@ function App(): React.JSX.Element {
       )}
 
       <AppHeader />
-      <EpicSidebar />
 
       <main className="container">
         {successMessage && (

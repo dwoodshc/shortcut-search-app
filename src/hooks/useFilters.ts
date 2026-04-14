@@ -2,9 +2,9 @@
  * Copyright (c) 2026 Dave Woods <dave.woods@slice.com>. All rights reserved.
  *
  * useFilters.ts — UI filter and view-state hook. Manages the team filter, ignored-user
- * list, per-table sort state, chart collapse flags, sidebar visibility, and smooth-scroll
- * navigation. Exposes getDisplayStories, which applies the active team filter to a
- * given epic's story list.
+ * list, per-table sort state, chart collapse flags, and smooth-scroll navigation.
+ * Exposes getDisplayStories, which applies the active team filter to a given epic's
+ * story list.
  */
 import { useState, useCallback } from 'react';
 import { storage } from '../utils';
@@ -15,7 +15,6 @@ export function useFilters() {
   const [filterIgnoredInTickets, setFilterIgnoredInTickets] = useState(true);
   const [ignoredUsers, setIgnoredUsers] = useState<string[]>(() => storage.getIgnoredUsers());
   const [selectedTeams, setSelectedTeams] = useState<TeamConfig[]>(() => storage.getTeamConfig());
-  const [showSidebar, setShowSidebar] = useState(false);
   const [sortState, setSortState] = useState<SortState>({
     summary:    { col: null, dir: 'asc' },
     epicTeam:   { col: null, dir: 'asc' },
@@ -41,18 +40,6 @@ export function useFilters() {
     }));
   }, []);
 
-  const scrollToEpic = useCallback((epicId: number | string) => {
-    const element = document.getElementById(`epic-${epicId}`);
-    if (element) {
-      const headerEl = document.querySelector('.App-header') as HTMLElement | null;
-      const headerHeight = headerEl?.offsetHeight || 90;
-      const yOffset = -(headerHeight + 16);
-      const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset;
-      window.scrollTo({ top: y, behavior: 'smooth' });
-      setShowSidebar(false);
-    }
-  }, []);
-
   const getDisplayStories = useCallback((epic: Epic): Story[] => {
     if (!filterByTeam || selectedTeamIds.length === 0) return epic.stories || [];
     return (epic.stories || []).filter(story => !story.group_id || selectedTeamIds.includes(story.group_id));
@@ -65,10 +52,8 @@ export function useFilters() {
     selectedTeams, setSelectedTeams,
     selectedTeamIds,
     selectedTeamLabel,
-    showSidebar, setShowSidebar,
     sortState, toggleSortState, resetSortState,
     collapsedCharts, setCollapsedCharts, toggleChart,
-    scrollToEpic,
     getDisplayStories,
   };
 }

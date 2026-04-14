@@ -5,16 +5,11 @@
  * tracks the setup wizard step, and holds fetched README content. Registers global
  * keyboard (ESC) and click-outside listeners to close open panels.
  */
-import { useState, useCallback, useEffect, Dispatch, SetStateAction } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { getApiBaseUrl } from '../utils';
 import { ModalState, ModalKey } from '../types';
 
-interface UseModalsParams {
-  showSidebar: boolean;
-  setShowSidebar: Dispatch<SetStateAction<boolean>>;
-}
-
-export function useModals({ showSidebar, setShowSidebar }: UseModalsParams) {
+export function useModals() {
   const [modals, setModals] = useState<ModalState>({
     settingsMenu: false,
     about: false,
@@ -56,14 +51,12 @@ export function useModals({ showSidebar, setShowSidebar }: UseModalsParams) {
           setModal('storyDetailFilter', null);
         } else if (modals.settingsMenu) {
           setModal('settingsMenu', false);
-        } else if (showSidebar) {
-          setShowSidebar(false);
         }
       }
     };
     document.addEventListener('keydown', handleEscKey);
     return () => document.removeEventListener('keydown', handleEscKey);
-  }, [modals.setupWizard, modals.about, modals.readme, modals.exportImport, modals.settingsMenu, modals.storyDetailFilter, showSidebar, setModal, setShowSidebar]);
+  }, [modals.setupWizard, modals.about, modals.readme, modals.exportImport, modals.settingsMenu, modals.storyDetailFilter, setModal]);
 
   const handleOpenReadme = useCallback(async () => {
     try {
