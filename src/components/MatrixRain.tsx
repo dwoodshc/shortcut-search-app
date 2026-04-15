@@ -9,6 +9,7 @@ import { useEffect, useRef } from 'react';
 
 const CHARS = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ@#$%^&*<>[]{}';
 const FONT_SIZE = 14;
+const FRAME_INTERVAL = 60; // ms between drop advances (~16fps); increase to slow further
 
 export default function MatrixRain() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -21,6 +22,7 @@ export default function MatrixRain() {
 
     let animId: number;
     let drops: number[] = [];
+    let lastTime = 0;
 
     const resize = () => {
       canvas.width = window.innerWidth;
@@ -36,7 +38,12 @@ export default function MatrixRain() {
     resize();
     window.addEventListener('resize', resize);
 
-    const draw = () => {
+    const draw = (timestamp: number) => {
+      animId = requestAnimationFrame(draw);
+
+      if (timestamp - lastTime < FRAME_INTERVAL) return;
+      lastTime = timestamp;
+
       // Fade each frame with a semi-transparent black fill — creates the trail effect
       ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -58,8 +65,6 @@ export default function MatrixRain() {
         }
         drops[i]++;
       }
-
-      animId = requestAnimationFrame(draw);
     };
 
     animId = requestAnimationFrame(draw);
