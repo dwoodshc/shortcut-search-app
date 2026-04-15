@@ -18,6 +18,7 @@ import SetupWizard from './components/SetupWizard';
 import AppHeader from './components/AppHeader';
 import AppFooter from './components/AppFooter';
 import MatrixRain from './components/MatrixRain';
+import OceanTide from './components/OceanTide';
 import ThemeSelector from './components/ThemeSelector';
 import { storage, getApiBaseUrl } from './utils';
 import pkg from '../package.json';
@@ -304,6 +305,7 @@ function App(): React.JSX.Element {
     <DashboardContext.Provider value={dashboardContext}>
     <div className="App" id="top" data-theme={theme}>
         {matrixMode && <MatrixRain />}
+        {darkMode && <OceanTide />}
       {loading && (
         <div className="modal-overlay" style={{ zIndex: 9999 }}>
           <div className="modal-content text-center !px-12 !py-10" style={{ maxWidth: '360px' }}>
