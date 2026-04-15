@@ -16,17 +16,18 @@ const resetIcon = (
   </svg>
 );
 
-const donePill = <span className="ml-[0.4rem] bg-[#86efac] rounded-full px-2 py-[0.1rem] text-xs font-medium inline-block align-middle">Done</span>;
-const readyForReleasePill = <span className="ml-[0.4rem] bg-[#bbf7d0] rounded-full px-2 py-[0.1rem] text-xs font-medium inline-block align-middle">Ready for Release</span>;
-const blockedPill = <span className="ml-[0.4rem] bg-[#fca5a5] rounded-full px-2 py-[0.1rem] text-xs font-medium inline-block align-middle">Blocked</span>;
-
 export default function AssignmentTables(): React.JSX.Element | null {
   const {
     epicTeamData, memberEpicMap,
     sortState, toggleSortState, resetSortState,
     collapsedCharts, setCollapsedCharts,
     filterIgnoredInTickets, ignoredUsers,
+    getEpicStateClass,
   } = useDashboard();
+
+  const donePill = <span className={`epic-state ${getEpicStateClass('done', 'Done')} !text-[0.75rem] !py-[0.15rem] !px-2 ml-[0.4rem]`}>Done ✓</span>;
+  const readyForReleasePill = <span className={`epic-state ${getEpicStateClass('', 'Ready for Release')} !text-[0.75rem] !py-[0.15rem] !px-2 ml-[0.4rem]`}>Ready for Release</span>;
+  const blockedPill = <span className={`epic-state ${getEpicStateClass('', 'blocked')} !text-[0.75rem] !py-[0.15rem] !px-2 ml-[0.4rem]`}>Blocked</span>;
 
   if (epicTeamData.length === 0) return null;
 
@@ -94,7 +95,7 @@ export default function AssignmentTables(): React.JSX.Element | null {
       <td className={tdClass}>
         {row.team.length === 0
           ? <span className="text-[#1a202c]">None</span>
-          : <ul className="m-0 pl-5">{[...row.team].sort((a, b) => a.localeCompare(b)).map((m, i) => <li key={i}>{!filterIgnoredInTickets && ignoredUsers.includes(m) ? <span className="bg-[#e5e7eb] rounded-full px-2 py-[0.1rem] inline-block">{m}</span> : m}</li>)}</ul>}
+          : <ul className="m-0 pl-5">{[...row.team].sort((a, b) => a.localeCompare(b)).map((m, i) => <li key={i}>{!filterIgnoredInTickets && ignoredUsers.includes(m) ? <span className="bg-[#e5e7eb] rounded-full px-2 py-[0.1rem] inline-block text-[#1a202c]">{m}</span> : m}</li>)}</ul>}
       </td>
     </tr>
   );
@@ -103,7 +104,7 @@ export default function AssignmentTables(): React.JSX.Element | null {
     <tr key={row.member}>
       <td className={tdClass}>
         {!filterIgnoredInTickets && ignoredUsers.includes(row.member)
-          ? <span className="bg-[#e5e7eb] rounded-full px-2 py-[0.1rem] inline-block">{row.member}</span>
+          ? <span className="bg-[#e5e7eb] rounded-full px-2 py-[0.1rem] inline-block text-[#1a202c]">{row.member}</span>
           : row.member}{' '}
         <span className="text-[#1a202c] text-[0.8rem]">({row.epics.length})</span>
       </td>
