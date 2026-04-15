@@ -265,7 +265,10 @@ export default function SetupWizard({ step, onStepChange, onClose }: Props): Rea
                           headers: { 'Authorization': `Bearer ${token}` }
                         });
                         if (teamsRes.ok) setAllTeams(await teamsRes.json());
-                      } catch (err) {}
+                        else setError('Failed to load teams. Check your connection and try again.');
+                      } catch (err) {
+                        setError('Failed to load teams. Check your connection and try again.');
+                      }
                     }}
                   >
                     Retry
@@ -425,8 +428,12 @@ export default function SetupWizard({ step, onStepChange, onClose }: Props): Rea
                       if (workflowsResponse.ok) {
                         const workflows = await workflowsResponse.json();
                         setWorkflowField('workflows', workflows);
+                      } else {
+                        setError('Failed to load workflows. You may need to go back and retry.');
                       }
-                    } catch (err) {}
+                    } catch (err) {
+                      setError('Failed to load workflows. Check your connection and try again.');
+                    }
                     onStepChange(3);
                   }
                 } else if (step === 3) {
@@ -443,7 +450,10 @@ export default function SetupWizard({ step, onStepChange, onClose }: Props): Rea
                         headers: { 'Authorization': `Bearer ${token}` }
                       });
                       if (teamsRes.ok) setAllTeams(await teamsRes.json());
-                    } catch (err) {}
+                      else setError('Failed to load teams. You can still proceed and skip team selection.');
+                    } catch (err) {
+                      setError('Failed to load teams. Check your connection and try again.');
+                    }
                     onStepChange(4);
                   }
                 } else if (step === 4) {

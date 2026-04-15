@@ -5,12 +5,23 @@
  * to a downloadable JSON file; import reads an uploaded JSON file, writes each setting
  * back to storage, and reloads the page. Tracks success and error feedback for both.
  */
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { storage } from '../utils';
 
 export function useConfigIO() {
   const [importError, setImportError] = useState('');
   const [importSuccess, setImportSuccess] = useState('');
+  const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  useEffect(() => {
+    return () => { timersRef.current.forEach(clearTimeout); };
+  }, []);
+
+  const addTimer = (fn: () => void, delay: number) => {
+    const id = setTimeout(fn, delay);
+    timersRef.current.push(id);
+    return id;
+  };
 
   const handleExportData = (): void => {
     try {
@@ -42,10 +53,10 @@ export function useConfigIO() {
       URL.revokeObjectURL(url);
 
       setImportSuccess('Configuration exported successfully!');
-      setTimeout(() => setImportSuccess(''), 3000);
+      addTimer(() => setImportSuccess(''), 3000);
     } catch (err) {
       setImportError('Failed to export configuration. Please try again.');
-      setTimeout(() => setImportError(''), 3000);
+      addTimer(() => setImportError(''), 3000);
     }
   };
 
@@ -60,7 +71,7 @@ export function useConfigIO() {
 
         if (!importData.version) {
           setImportError('Invalid configuration file format.');
-          setTimeout(() => setImportError(''), 3000);
+          addTimer(() => setImportError(''), 3000);
           return;
         }
 
@@ -77,16 +88,16 @@ export function useConfigIO() {
         if (importData.migrationCompleted) localStorage.setItem('migration_completed', importData.migrationCompleted);
 
         setImportSuccess('Configuration imported successfully! Reloading page...');
-        setTimeout(() => window.location.reload(), 2000);
+        addTimer(() => window.location.reload(), 2000);
       } catch (err) {
         setImportError('Failed to import configuration. Please ensure the file is valid.');
-        setTimeout(() => setImportError(''), 3000);
+        addTimer(() => setImportError(''), 3000);
       }
     };
 
     reader.onerror = () => {
       setImportError('Failed to read file. Please try again.');
-      setTimeout(() => setImportError(''), 3000);
+      addTimer(() => setImportError(''), 3000);
     };
 
     reader.readAsText(file);

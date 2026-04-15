@@ -6,7 +6,7 @@
  * configuration check, wipe-settings, and derived data (epicTeamData, memberEpicMap)
  * that depends on outputs from more than one hook.
  */
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import './App.css';
@@ -143,6 +143,9 @@ function App(): React.JSX.Element {
     setCollapsedCharts(newState);
   }, [epics, collapsedCharts, setCollapsedCharts]);
 
+  const wipeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => { return () => { if (wipeTimerRef.current) clearTimeout(wipeTimerRef.current); }; }, []);
+
   // Resets state from every hook — orchestration, belongs in App
   const handleWipeSettings = () => {
     localStorage.clear();
@@ -158,7 +161,7 @@ function App(): React.JSX.Element {
     setError(null);
     setModal('wipeConfirm', false);
     setSuccessMessage('All settings have been wiped successfully!');
-    setTimeout(() => {
+    wipeTimerRef.current = setTimeout(() => {
       setSuccessMessage(null);
       window.location.reload();
     }, 2000);
