@@ -91,6 +91,7 @@ function StoryTotalsSummary(): React.JSX.Element | null {
   return (
     <div className="mb-6">
       <h2 className="m-0 mb-3 text-[1.1rem] font-semibold text-[#1a202c]">Story Summary</h2>
+      <div className="overflow-x-auto">
       <table className="w-full border-separate border-spacing-0 bg-white rounded-lg shadow-[0_2px_4px_rgba(0,0,0,0.08)] border border-[#F0F0F7]" style={{ borderCollapse: 'separate' }}>
         <thead>
           <tr className="bg-[#494BCB] text-white">
@@ -132,6 +133,7 @@ function StoryTotalsSummary(): React.JSX.Element | null {
           </tr>
         </tbody>
       </table>
+      </div>
     </div>
   );
 }
