@@ -49,11 +49,10 @@ Two collapsible assignment tables appear above the epic cards, controlled by the
 
 Per epic, three visualizations are available. Each has a **▶/▼ toggle** in its heading. The **Collapse/Expand Charts** button controls the Workflow Status Pie Chart and Story Type Breakdown across all epics simultaneously.
 
-#### Ticket Status Breakdown (3D Column Chart)
+#### Ticket Status Breakdown (Column Chart)
 - Workflow status breakdown showing story distribution across workflow states
 - Visual bars for: Backlog, Ready for Development, In Development, In Review, Ready for Release, Complete
-- 3D-styled columns with depth and shading effects
-- Story counts displayed on each column
+- Story counts displayed above each column
 - Always visible (no collapse toggle)
 
 #### Workflow Status Pie Chart
@@ -109,10 +108,22 @@ Displayed in the header when epics are loaded:
 ### Settings Menu
 - **Setup Wizard** — Re-run the setup wizard
 - **README.md** — View this documentation in-app
-- **🌙 Dark Mode / ☀ Normal Mode** — Toggle between the default light theme and a dark green theme; preference is saved to localStorage
+- **Theme** — Open the Theme Selector to choose a display theme (see below); preference is saved to localStorage
 - **Export/Import** — Backup and restore configuration as JSON
 - **Wipe Settings** — Clear all localStorage data to start fresh
 - **About** — View application information
+
+### Theme Selector
+Four themes are available, each with a live mini-preview in the selector modal:
+
+| Theme | Description |
+|-------|-------------|
+| **Normal** | Default light theme — white background, blue/purple accents |
+| **Dark Mode** | Dark green theme — dark backgrounds, muted green accents |
+| **Star Trek** | LCARS-inspired — black background, orange (`#FF9900`) accents, Arial Narrow font, uppercase labels |
+| **Matrix** | Digital rain — black background, bright green (`#00FF41`) palette, Courier New font, animated falling-character canvas overlay |
+
+The selected theme is stored in `shortcut_display_mode` and restored on next load.
 
 ### Setup & Configuration
 
@@ -197,6 +208,8 @@ shortcut-search-app/
 │   │   ├── AssignmentTables.tsx      # Epic owner and team member assignment tables
 │   │   ├── StoryDetailModal.tsx      # Modal listing stories filtered by workflow state
 │   │   ├── SetupWizard.tsx           # 6-step guided setup wizard
+│   │   ├── ThemeSelector.tsx         # Theme picker modal with live mini-previews
+│   │   ├── MatrixRain.tsx            # Animated canvas digital-rain overlay (Matrix theme)
 │   │   └── ErrorBoundary.tsx         # Top-level render error fallback
 │   ├── hooks/
 │   │   ├── useEpicsData.ts           # Shortcut API calls, caching, member resolution
@@ -226,7 +239,7 @@ All configuration is stored in **browser localStorage** (API token uses **sessio
 | `shortcut_members_cache` | localStorage | Owner ID → display name cache |
 | `shortcut_team_members_cache` | localStorage | Team member IDs keyed by team ID; cached per team, populated on demand |
 | `shortcut_epic_workflow_cache` | localStorage | Epic workflow states cache |
-| `shortcut_display_mode` | localStorage | Display mode preference (`normal` or `dark`) |
+| `shortcut_display_mode` | localStorage | Display theme preference (`normal`, `dark`, `star-trek`, or `matrix`) |
 
 **Backup & Portability:**
 - Use Export/Import in the Settings menu to save your configuration as a JSON file
@@ -286,8 +299,7 @@ Phase 1 calls (team members and epic workflow) are cached to localStorage and sk
 2. Review the Summary Table for an at-a-glance progress view
 3. Scroll down to individual epic cards for charts, tables, and stories
 4. Use the **Refresh** icon (top-right) to reload latest data
-5. Use the sidebar to jump between epics
-6. Click legend items in pie charts to open filtered views in Shortcut
+5. Click legend items in pie charts to open filtered views in Shortcut
 
 ### Managing Configuration
 - **Edit Epic List** header icon — open the epic list editor (wizard step 6)
@@ -322,7 +334,7 @@ Phase 1 calls (team members and epic workflow) are cached to localStorage and sk
 
 ## Version Information
 
-**Version**: 4.1.0
+**Version**: 5.0.0
 **Project Name**: D.A.V.E. (Dashboards Are Very Effective)
 **Author**: Dave Woods
 

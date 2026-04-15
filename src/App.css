@@ -531,7 +531,7 @@ textarea.input-field {
 
 .status-name {
   color: #1a202c;
-  font-weight: 600;
+  font-weight: 400;
   word-wrap: break-word;
   line-height: 1.1;
   text-shadow: 0 1px 1px rgba(255, 255, 255, 0.5);
@@ -570,11 +570,10 @@ textarea.input-field {
   left: 50%;
   transform: translateX(-50%);
   color: #1a202c;
-  font-weight: 700;
+  font-weight: 400;
   font-size: 0.875rem;
   white-space: nowrap;
   z-index: 10;
-  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
 }
 
 .column-3d-top {
@@ -1836,8 +1835,9 @@ textarea.input-field {
 
 [data-theme="dark"] .markdown-content h1,
 [data-theme="dark"] .markdown-content h2,
-[data-theme="dark"] .markdown-content h3 {
-  color: #E8F5E9;
+[data-theme="dark"] .markdown-content h3,
+[data-theme="dark"] .markdown-content h4 {
+  color: #ffffff;
 }
 
 [data-theme="dark"] .markdown-content a {
@@ -1926,18 +1926,6 @@ textarea.input-field {
   color: #4a6048 !important;
 }
 
-[data-theme="dark"] #summary-table .bg-white,
-[data-theme="dark"] #summary-table .bg-\[#fafafa\] {
-  background-color: #0C1210 !important;
-}
-
-[data-theme="dark"] #summary-table tbody tr:nth-child(odd) {
-  background-color: #141C15 !important;
-}
-
-[data-theme="dark"] #summary-table tbody tr:nth-child(even) {
-  background-color: #1A2419 !important;
-}
 
 [data-theme="dark"] .status-name {
   color: #E8F5E9;
@@ -1973,3 +1961,674 @@ textarea.input-field {
 [data-theme="dark"] .email-ticket-counts-table tbody tr.zero-count-row:hover {
   background-color: #1A2419;
 }
+
+/* ============================================================
+   STAR TREK — LCARS THEME  (data-theme="star-trek")
+   Palette:
+     bg:       #000000  (space black)
+     orange:   #FF9900  (primary LCARS orange)
+     peach:    #FFCC99  (secondary LCARS tan)
+     blue:     #9999FF  (LCARS blue)
+     purple:   #CC99CC  (LCARS purple)
+     red:      #CC3300  (alert red)
+     panel-bg: #0A0800  (near-black warm)
+   ============================================================ */
+
+[data-theme="star-trek"],
+[data-theme="star-trek"] body {
+  background-color: #000;
+  color: #FF9900;
+  font-family: 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif;
+  letter-spacing: 0.04em;
+}
+
+[data-theme="star-trek"] .App-header {
+  background: #000;
+  border-bottom: 4px solid #FF9900;
+  box-shadow: 0 0 24px rgba(255, 153, 0, 0.25);
+}
+
+[data-theme="star-trek"] .App-header h1 {
+  color: #FF9900;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-weight: 400;
+  font-family: 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif;
+}
+
+[data-theme="star-trek"] .logo-image {
+  filter: sepia(1) saturate(4) hue-rotate(10deg) brightness(1.1);
+}
+
+[data-theme="star-trek"] .settings-icon {
+  background: rgba(255, 153, 0, 0.1);
+  color: #FF9900;
+}
+
+[data-theme="star-trek"] .settings-icon:hover {
+  background: #FF9900;
+  color: #000;
+}
+
+[data-theme="star-trek"] .header-action-btn {
+  background: #000;
+  border: 1px solid #FF9900;
+  color: #FF9900;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-family: 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif;
+}
+
+[data-theme="star-trek"] .header-action-btn:hover,
+[data-theme="star-trek"] .header-action-btn.active {
+  background: #FF9900;
+  color: #000;
+  border-color: #FF9900;
+}
+
+[data-theme="star-trek"] .settings-menu {
+  background: #0A0800;
+  border: 1px solid #FF9900;
+  box-shadow: 0 0 24px rgba(255, 153, 0, 0.4);
+}
+
+[data-theme="star-trek"] .settings-menu-item {
+  background: #0A0800;
+  color: #FFCC99;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-family: 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif;
+}
+
+[data-theme="star-trek"] .settings-menu-item:hover {
+  background: #FF9900;
+  color: #000;
+}
+
+[data-theme="star-trek"] .settings-menu-item:not(:last-child) {
+  border-bottom-color: #1A0F00;
+}
+
+[data-theme="star-trek"] .epic-card {
+  background: #0A0800;
+  border-color: #331A00;
+  border-left: 6px solid #FF9900;
+  box-shadow: 0 0 10px rgba(255, 153, 0, 0.08);
+}
+
+[data-theme="star-trek"] .epic-card:hover {
+  border-color: #FF9900;
+  box-shadow: 0 0 20px rgba(255, 153, 0, 0.25);
+}
+
+[data-theme="star-trek"] .epic-title h3 {
+  color: #FFCC99;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-family: 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif;
+}
+
+[data-theme="star-trek"] .epic-title h3 a {
+  color: #FF9900;
+}
+
+[data-theme="star-trek"] .epic-title h3 a:hover {
+  color: #FFCC99;
+}
+
+[data-theme="star-trek"] .epic-owner {
+  background: #1A0F00;
+  border-color: #FF9900;
+  color: #FFCC99;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-family: 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif;
+}
+
+[data-theme="star-trek"] .story-count {
+  background: rgba(153, 153, 255, 0.12);
+  border-color: #9999FF;
+  color: #9999FF;
+}
+
+[data-theme="star-trek"] .epic-state {
+  background-color: #1A0F00;
+  color: #FF9900;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-family: 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif;
+}
+
+[data-theme="star-trek"] .epic-state-default { background-color: #1A0F00; color: #FF9900; }
+[data-theme="star-trek"] .epic-state-in-progress { background-color: rgba(153, 153, 255, 0.15); color: #9999FF; }
+[data-theme="star-trek"] .epic-state-done { background-color: rgba(153, 204, 153, 0.15); color: #99CC99; }
+[data-theme="star-trek"] .epic-state-blocked { background-color: rgba(204, 51, 0, 0.2); color: #FF6633; }
+[data-theme="star-trek"] .epic-state-ready-for-release { background-color: rgba(204, 153, 204, 0.15); color: #CC99CC; }
+
+[data-theme="star-trek"] h2 {
+  color: #FF9900;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-family: 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif;
+}
+
+[data-theme="star-trek"] .workflow-status-chart-container h4,
+[data-theme="star-trek"] .story-owners-table h4,
+[data-theme="star-trek"] .email-ticket-counts-table h4,
+[data-theme="star-trek"] .stories-section h4 {
+  color: #FFCC99;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-family: 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif;
+}
+
+[data-theme="star-trek"] .workflow-status-chart {
+  background: linear-gradient(135deg, #0A0800 0%, #140F00 100%);
+  border-color: #FF9900;
+}
+
+[data-theme="star-trek"] .column-3d-fill .status-count-label { color: #FF9900; }
+[data-theme="star-trek"] .status-name { color: #FF9900; }
+
+[data-theme="star-trek"] .workflow-status-pie-chart,
+[data-theme="star-trek"] .story-type-pie-chart {
+  background: #0A0800;
+  border-color: #FF9900;
+}
+
+[data-theme="star-trek"] .legend-label {
+  color: #FF9900;
+  text-transform: uppercase;
+  font-family: 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif;
+}
+
+[data-theme="star-trek"] .legend-label-static { color: #FFCC99; }
+[data-theme="star-trek"] .legend-value { color: #FFCC99; }
+
+[data-theme="star-trek"] .legend-item:hover {
+  background-color: rgba(255, 153, 0, 0.1);
+  border-color: #FF9900;
+}
+
+[data-theme="star-trek"] .story-owners-table table,
+[data-theme="star-trek"] .email-ticket-counts-table table {
+  background: #0A0800;
+  border-color: #331A00;
+}
+
+[data-theme="star-trek"] .story-owners-table thead,
+[data-theme="star-trek"] .email-ticket-counts-table thead {
+  background: #FF9900;
+}
+
+[data-theme="star-trek"] .story-owners-table thead th,
+[data-theme="star-trek"] .email-ticket-counts-table thead th {
+  color: #000;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-family: 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif;
+}
+
+[data-theme="star-trek"] .story-owners-table td,
+[data-theme="star-trek"] .email-ticket-counts-table td {
+  border-bottom-color: #1A0F00;
+  color: #FF9900;
+}
+
+[data-theme="star-trek"] .story-owners-table tbody tr:hover,
+[data-theme="star-trek"] .email-ticket-counts-table tbody tr:hover { background-color: #140F00; }
+
+[data-theme="star-trek"] .email-ticket-counts-table tbody tr.zero-count-row { background-color: #0A0800; }
+[data-theme="star-trek"] .email-ticket-counts-table tbody tr.zero-count-row:hover { background-color: #140F00; }
+
+[data-theme="star-trek"] table.w-full { background: #0A0800; border-color: #331A00 !important; }
+[data-theme="star-trek"] table.w-full thead tr { background: #FF9900 !important; }
+[data-theme="star-trek"] table.w-full thead th {
+  color: #000 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-family: 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif;
+}
+[data-theme="star-trek"] table.w-full td { border-color: #1A0F00 !important; color: #FF9900; }
+[data-theme="star-trek"] table.w-full td a { color: #FF9900; }
+[data-theme="star-trek"] table.w-full td .text-\[#1a202c\] { color: #FF9900 !important; }
+
+[data-theme="star-trek"] .story-column { background: #0A0800; border-color: #331A00; }
+
+[data-theme="star-trek"] .story-column-header {
+  background: #FF9900;
+  color: #000;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-family: 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif;
+}
+
+[data-theme="star-trek"] .story-card { background: #0F0A00; border-color: #1A0F00; }
+[data-theme="star-trek"] .story-card:hover { border-color: #FF9900; box-shadow: 0 0 10px rgba(255, 153, 0, 0.2); }
+[data-theme="star-trek"] .story-card-name a { color: #FF9900; }
+[data-theme="star-trek"] .story-card-description { color: #805000; }
+[data-theme="star-trek"] .no-stories-in-column { color: #4D3000; }
+
+[data-theme="star-trek"] .modal-overlay { background: rgba(0, 0, 0, 0.88); }
+
+[data-theme="star-trek"] .modal-content,
+[data-theme="star-trek"] .modal-content-large,
+[data-theme="star-trek"] .modal-content-about,
+[data-theme="star-trek"] .modal-content-export-import {
+  background: #0A0800;
+  border: 2px solid #FF9900;
+  color: #FFCC99;
+  box-shadow: 0 0 40px rgba(255, 153, 0, 0.35);
+}
+
+[data-theme="star-trek"] .modal-content h2,
+[data-theme="star-trek"] .modal-content-large h2,
+[data-theme="star-trek"] .modal-content-about h2,
+[data-theme="star-trek"] .modal-content-export-import h2 {
+  color: #FF9900;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+[data-theme="star-trek"] .modal-content h3,
+[data-theme="star-trek"] .modal-content-export-import h3 {
+  color: #FFCC99;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+[data-theme="star-trek"] .btn-primary {
+  background: #FF9900;
+  color: #000;
+  border-color: #FF9900;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-family: 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif;
+}
+
+[data-theme="star-trek"] .btn-primary:hover { background: #FFCC00; border-color: #FFCC00; }
+
+[data-theme="star-trek"] .btn-secondary {
+  background: #000;
+  color: #FF9900;
+  border-color: #FF9900;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-family: 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif;
+}
+
+[data-theme="star-trek"] .btn-secondary:hover { background: rgba(255, 153, 0, 0.12); }
+
+[data-theme="star-trek"] .progress-bar-empty { background: #1A0F00 !important; }
+[data-theme="star-trek"] .summary-bar-wrapper > div { border-color: #1A0F00; }
+[data-theme="star-trek"] .error-message { background: rgba(204, 51, 0, 0.18); border-color: #CC3300; color: #FF6633; }
+
+/* ============================================================
+   MATRIX THEME  (data-theme="matrix")
+   Palette:
+     bg:        #000000  (space black)
+     green:     #00FF41  (primary Matrix green)
+     green-dim: #00AA2A  (mid green)
+     green-dark:#003300  (dark panel bg)
+     panel-bg:  rgba(0, 20, 0, 0.88)  (semi-transparent card bg)
+     text:      #00FF41  (primary)
+     text2:     #00CC33  (secondary)
+   Canvas rain renders behind all content at z-index: 0.
+   ============================================================ */
+
+[data-theme="matrix"],
+[data-theme="matrix"] body {
+  background-color: #000;
+  color: #00FF41;
+  font-family: 'Courier New', Courier, monospace;
+  letter-spacing: 0.03em;
+}
+
+/* Scanline overlay on the entire page */
+[data-theme="matrix"] .App::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent 0px,
+    transparent 3px,
+    rgba(0, 0, 0, 0.06) 3px,
+    rgba(0, 0, 0, 0.06) 4px
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Ensure all main content layers sit above the rain canvas (z-index: 0) */
+[data-theme="matrix"] .App-header { z-index: 102; }
+[data-theme="matrix"] main.container { position: relative; z-index: 2; }
+[data-theme="matrix"] .modal-overlay { z-index: 1001; }
+
+[data-theme="matrix"] .App-header {
+  background: rgba(0, 10, 0, 0.96);
+  border-bottom: 2px solid #00FF41;
+  box-shadow: 0 0 20px rgba(0, 255, 65, 0.3), 0 2px 0 #003300;
+}
+
+[data-theme="matrix"] .App-header h1 {
+  color: #00FF41;
+  font-family: 'Courier New', Courier, monospace;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  text-shadow: 0 0 10px #00FF41, 0 0 20px rgba(0, 255, 65, 0.5);
+}
+
+[data-theme="matrix"] .App-header .text-\[1\.4rem\] {
+  color: #00CC33;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+[data-theme="matrix"] .logo-image {
+  filter: saturate(0) brightness(0.8) sepia(1) hue-rotate(90deg) saturate(6);
+}
+
+[data-theme="matrix"] .settings-icon {
+  background: rgba(0, 255, 65, 0.08);
+  color: #00FF41;
+  border: 1px solid rgba(0, 255, 65, 0.3);
+}
+
+[data-theme="matrix"] .settings-icon:hover {
+  background: #00FF41;
+  color: #000;
+  box-shadow: 0 0 12px #00FF41;
+}
+
+[data-theme="matrix"] .header-action-btn {
+  background: rgba(0, 10, 0, 0.8);
+  border: 1px solid #00AA2A;
+  color: #00FF41;
+  font-family: 'Courier New', Courier, monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  text-shadow: 0 0 6px rgba(0, 255, 65, 0.6);
+}
+
+[data-theme="matrix"] .header-action-btn:hover,
+[data-theme="matrix"] .header-action-btn.active {
+  background: #00FF41;
+  color: #000;
+  border-color: #00FF41;
+  box-shadow: 0 0 12px #00FF41;
+  text-shadow: none;
+}
+
+[data-theme="matrix"] .settings-menu {
+  background: rgba(0, 8, 0, 0.97);
+  border: 1px solid #00FF41;
+  box-shadow: 0 0 24px rgba(0, 255, 65, 0.5);
+}
+
+[data-theme="matrix"] .settings-menu-item {
+  background: transparent;
+  color: #00CC33;
+  font-family: 'Courier New', Courier, monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+[data-theme="matrix"] .settings-menu-item::before {
+  content: '> ';
+  color: #00FF41;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+[data-theme="matrix"] .settings-menu-item:hover::before { opacity: 1; }
+
+[data-theme="matrix"] .settings-menu-item:hover {
+  background: rgba(0, 255, 65, 0.1);
+  color: #00FF41;
+  text-shadow: 0 0 8px #00FF41;
+}
+
+[data-theme="matrix"] .settings-menu-item:not(:last-child) { border-bottom-color: #003300; }
+
+/* Epic cards — semi-transparent so rain bleeds through */
+[data-theme="matrix"] .epic-card {
+  background: rgba(0, 18, 0, 0.88);
+  border: 1px solid #003300;
+  border-left: 4px solid #00FF41;
+  box-shadow: 0 0 8px rgba(0, 255, 65, 0.08), inset 0 0 30px rgba(0, 255, 65, 0.02);
+}
+
+[data-theme="matrix"] .epic-card:hover {
+  border-color: #00FF41;
+  box-shadow: 0 0 20px rgba(0, 255, 65, 0.25);
+}
+
+[data-theme="matrix"] .epic-title h3 {
+  color: #00FF41;
+  font-family: 'Courier New', Courier, monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  text-shadow: 0 0 8px rgba(0, 255, 65, 0.5);
+}
+
+[data-theme="matrix"] .epic-title h3 a { color: #00FF41; text-decoration: none; }
+[data-theme="matrix"] .epic-title h3 a:hover { color: #88FF88; text-shadow: 0 0 12px #00FF41; }
+
+[data-theme="matrix"] .epic-owner {
+  background: rgba(0, 30, 0, 0.9);
+  border: 1px solid #005500;
+  color: #00CC33;
+  font-family: 'Courier New', Courier, monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+[data-theme="matrix"] .story-count {
+  background: rgba(0, 255, 65, 0.08);
+  border: 1px solid #00AA2A;
+  color: #00FF41;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+[data-theme="matrix"] .epic-state {
+  background-color: rgba(0, 30, 0, 0.9);
+  color: #00AA2A;
+  font-family: 'Courier New', Courier, monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+[data-theme="matrix"] .epic-state-default { background-color: rgba(0, 20, 0, 0.9); color: #00AA2A; }
+[data-theme="matrix"] .epic-state-in-progress { background-color: rgba(0, 60, 0, 0.6); color: #00FF41; text-shadow: 0 0 6px #00FF41; }
+[data-theme="matrix"] .epic-state-done { background-color: rgba(0, 100, 0, 0.3); color: #88FF88; }
+[data-theme="matrix"] .epic-state-blocked { background-color: rgba(100, 0, 0, 0.3); color: #FF4444; }
+[data-theme="matrix"] .epic-state-ready-for-release { background-color: rgba(0, 80, 40, 0.4); color: #00FFAA; }
+
+[data-theme="matrix"] h2 {
+  color: #00FF41;
+  font-family: 'Courier New', Courier, monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  text-shadow: 0 0 8px rgba(0, 255, 65, 0.4);
+}
+
+[data-theme="matrix"] .workflow-status-chart-container h4,
+[data-theme="matrix"] .story-owners-table h4,
+[data-theme="matrix"] .email-ticket-counts-table h4,
+[data-theme="matrix"] .stories-section h4 {
+  color: #00CC33;
+  font-family: 'Courier New', Courier, monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+[data-theme="matrix"] .workflow-status-chart {
+  background: rgba(0, 15, 0, 0.9);
+  border: 1px solid #003300;
+}
+
+[data-theme="matrix"] .column-3d-fill {
+  background: #00FF41;
+  box-shadow: none;
+}
+
+[data-theme="matrix"] .column-3d-fill .status-count-label {
+  color: #00FF41;
+  text-shadow: 0 0 6px rgba(0, 255, 65, 0.7);
+}
+
+[data-theme="matrix"] .status-name {
+  color: #00FF41;
+  font-family: 'Courier New', Courier, monospace;
+  text-shadow: 0 0 4px rgba(0, 255, 65, 0.5);
+}
+
+[data-theme="matrix"] .workflow-status-pie-chart,
+[data-theme="matrix"] .story-type-pie-chart {
+  background: rgba(0, 12, 0, 0.9);
+  border: 1px solid #003300;
+}
+
+[data-theme="matrix"] .legend-label {
+  color: #00FF41;
+  font-family: 'Courier New', Courier, monospace;
+  text-transform: uppercase;
+}
+
+[data-theme="matrix"] .legend-label-static { color: #00CC33; }
+[data-theme="matrix"] .legend-value { color: #00AA2A; }
+
+[data-theme="matrix"] .legend-item:hover {
+  background-color: rgba(0, 255, 65, 0.08);
+  border-color: #00FF41;
+}
+
+[data-theme="matrix"] .story-owners-table table,
+[data-theme="matrix"] .email-ticket-counts-table table {
+  background: rgba(0, 12, 0, 0.9);
+  border: 1px solid #003300;
+}
+
+[data-theme="matrix"] .story-owners-table thead,
+[data-theme="matrix"] .email-ticket-counts-table thead { background: rgba(0, 60, 0, 0.9); }
+
+[data-theme="matrix"] .story-owners-table thead th,
+[data-theme="matrix"] .email-ticket-counts-table thead th {
+  color: #00FF41;
+  font-family: 'Courier New', Courier, monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  text-shadow: 0 0 6px rgba(0, 255, 65, 0.5);
+}
+
+[data-theme="matrix"] .story-owners-table td,
+[data-theme="matrix"] .email-ticket-counts-table td { border-bottom-color: #002200; color: #00CC33; }
+[data-theme="matrix"] .story-owners-table td:last-child,
+[data-theme="matrix"] .email-ticket-counts-table td:last-child { color: #00FF41; }
+[data-theme="matrix"] .story-owners-table tbody tr:hover,
+[data-theme="matrix"] .email-ticket-counts-table tbody tr:hover { background-color: rgba(0, 40, 0, 0.5); }
+[data-theme="matrix"] .email-ticket-counts-table tbody tr.zero-count-row { background-color: rgba(0, 8, 0, 0.5); }
+[data-theme="matrix"] .email-ticket-counts-table tbody tr.zero-count-row:hover { background-color: rgba(0, 30, 0, 0.5); }
+
+[data-theme="matrix"] table.w-full { background: rgba(0, 12, 0, 0.9); border-color: #003300 !important; }
+[data-theme="matrix"] table.w-full thead tr { background: rgba(0, 60, 0, 0.9) !important; }
+
+[data-theme="matrix"] table tr.bg-white,
+[data-theme="matrix"] table tr.bg-\[#fafafa\],
+[data-theme="matrix"] table tr.bg-\[#fff9c4\],
+[data-theme="matrix"] table tr.bg-\[#f7fafc\] {
+  background-color: rgba(0, 12, 0, 0.9) !important;
+}
+[data-theme="matrix"] table.w-full thead th {
+  color: #00FF41 !important;
+  font-family: 'Courier New', Courier, monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  text-shadow: 0 0 6px rgba(0, 255, 65, 0.4);
+}
+[data-theme="matrix"] table.w-full td { border-color: #002200 !important; color: #00CC33; }
+[data-theme="matrix"] table.w-full td a { color: #00FF41; }
+[data-theme="matrix"] table.w-full td .text-\[#1a202c\] { color: #00FF41 !important; }
+
+[data-theme="matrix"] .story-column { background: rgba(0, 12, 0, 0.88); border-color: #003300; }
+
+[data-theme="matrix"] .story-column-header {
+  background: rgba(0, 50, 0, 0.9);
+  color: #00FF41;
+  font-family: 'Courier New', Courier, monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  text-shadow: 0 0 6px rgba(0, 255, 65, 0.5);
+  border-bottom: 1px solid #00FF41;
+}
+
+[data-theme="matrix"] .story-card { background: rgba(0, 10, 0, 0.85); border-color: #002200; }
+[data-theme="matrix"] .story-card:hover { border-color: #00FF41; box-shadow: 0 0 10px rgba(0, 255, 65, 0.2); }
+[data-theme="matrix"] .story-card-name a { color: #00FF41; font-family: 'Courier New', Courier, monospace; }
+[data-theme="matrix"] .story-card-name a:hover { text-shadow: 0 0 8px #00FF41; }
+[data-theme="matrix"] .story-card-description { color: #006600; }
+[data-theme="matrix"] .no-stories-in-column { color: #003300; }
+
+[data-theme="matrix"] .modal-overlay { background: rgba(0, 0, 0, 0.92); }
+
+[data-theme="matrix"] .modal-content,
+[data-theme="matrix"] .modal-content-large,
+[data-theme="matrix"] .modal-content-about,
+[data-theme="matrix"] .modal-content-export-import {
+  background: rgba(0, 10, 0, 0.98);
+  border: 1px solid #00FF41;
+  color: #00CC33;
+  box-shadow: 0 0 40px rgba(0, 255, 65, 0.4), inset 0 0 60px rgba(0, 255, 65, 0.03);
+  font-family: 'Courier New', Courier, monospace;
+}
+
+[data-theme="matrix"] .modal-content h2,
+[data-theme="matrix"] .modal-content-large h2,
+[data-theme="matrix"] .modal-content-about h2,
+[data-theme="matrix"] .modal-content-export-import h2 {
+  color: #00FF41;
+  font-family: 'Courier New', Courier, monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  text-shadow: 0 0 10px rgba(0, 255, 65, 0.6);
+}
+
+[data-theme="matrix"] .modal-content h3,
+[data-theme="matrix"] .modal-content-export-import h3 {
+  color: #00CC33;
+  font-family: 'Courier New', Courier, monospace;
+  text-transform: uppercase;
+}
+
+[data-theme="matrix"] .btn-primary {
+  background: #00FF41;
+  color: #000;
+  border-color: #00FF41;
+  font-family: 'Courier New', Courier, monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  box-shadow: 0 0 10px rgba(0, 255, 65, 0.4);
+}
+
+[data-theme="matrix"] .btn-primary:hover { background: #88FF88; border-color: #88FF88; box-shadow: 0 0 16px rgba(0, 255, 65, 0.6); }
+
+[data-theme="matrix"] .btn-secondary {
+  background: transparent;
+  color: #00FF41;
+  border-color: #00AA2A;
+  font-family: 'Courier New', Courier, monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+[data-theme="matrix"] .btn-secondary:hover { background: rgba(0, 255, 65, 0.1); border-color: #00FF41; }
+
+[data-theme="matrix"] .progress-bar-empty { background: #001A00 !important; }
+[data-theme="matrix"] .summary-bar-wrapper > div { border-color: #002200; }
+[data-theme="matrix"] .error-message { background: rgba(100, 0, 0, 0.2); border-color: #AA0000; color: #FF4444; }
+
+[data-theme="matrix"] .test-mode-badge { background: #00FF41; color: #000; font-family: 'Courier New', Courier, monospace; }

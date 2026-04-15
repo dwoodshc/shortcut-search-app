@@ -83,34 +83,34 @@ export default function AssignmentTables(): React.JSX.Element | null {
     </tr>
   );
 
-  const renderEpicTeamRow = (row: EpicTeamEntry, idx: number) => (
-    <tr key={row.id as React.Key} className={row.team.length === 0 ? 'bg-[#fff9c4]' : idx % 2 === 0 ? 'bg-white' : 'bg-[#fafafa]'}>
-      <td className={`${tdClass} font-semibold`}>
-        <a href={`#epic-${row.id}`} className="text-[#494BCB] no-underline">{row.name}</a>
+  const renderEpicTeamRow = (row: EpicTeamEntry) => (
+    <tr key={row.id as React.Key} className={row.team.length === 0 ? 'bg-[#fff9c4]' : ''}>
+      <td className={tdClass}>
+        <a href={`#epic-${row.id}`} className="text-[#1a202c] no-underline">{row.name}</a>
         {row.isDone && donePill}
         {row.isReadyForRelease && readyForReleasePill}
         {row.isBlocked && blockedPill}
       </td>
       <td className={tdClass}>
         {row.team.length === 0
-          ? <span className="text-[#a0aec0] italic">None</span>
+          ? <span className="text-[#1a202c]">None</span>
           : <ul className="m-0 pl-5">{[...row.team].sort((a, b) => a.localeCompare(b)).map((m, i) => <li key={i}>{!filterIgnoredInTickets && ignoredUsers.includes(m) ? <span className="bg-[#e5e7eb] rounded-full px-2 py-[0.1rem] inline-block">{m}</span> : m}</li>)}</ul>}
       </td>
     </tr>
   );
 
-  const renderMemberEpicRow = (row: { member: string; epics: EpicRef[] }, idx: number) => (
-    <tr key={row.member} className={idx % 2 === 0 ? 'bg-white' : 'bg-[#fafafa]'}>
-      <td className={`${tdClass} font-semibold`}>
+  const renderMemberEpicRow = (row: { member: string; epics: EpicRef[] }) => (
+    <tr key={row.member}>
+      <td className={tdClass}>
         {!filterIgnoredInTickets && ignoredUsers.includes(row.member)
           ? <span className="bg-[#e5e7eb] rounded-full px-2 py-[0.1rem] inline-block">{row.member}</span>
           : row.member}{' '}
-        <span className="font-normal text-[#718096] text-[0.8rem]">({row.epics.length})</span>
+        <span className="text-[#1a202c] text-[0.8rem]">({row.epics.length})</span>
       </td>
       <td className={tdClass}>
         <ul className="m-0 pl-5">
           {[...row.epics].sort((a, b) => a.name.localeCompare(b.name)).map((e) => (
-            <li key={e.id as React.Key}><a href={`#epic-${e.id}`} className="text-[#494BCB] no-underline">{e.name}</a>{e.isDone && donePill}{e.isReadyForRelease && readyForReleasePill}{e.isBlocked && blockedPill}</li>
+            <li key={e.id as React.Key}><a href={`#epic-${e.id}`} className="text-[#1a202c] no-underline">{e.name}</a>{e.isDone && donePill}{e.isReadyForRelease && readyForReleasePill}{e.isBlocked && blockedPill}</li>
           ))}
         </ul>
       </td>
@@ -140,14 +140,14 @@ export default function AssignmentTables(): React.JSX.Element | null {
                 <table className={tableClass} style={{ tableLayout: 'fixed', borderCollapse: 'separate', borderSpacing: 0 }}>
                   {colgroup}
                   <thead>{epicTeamHead}</thead>
-                  <tbody>{sortedEpicTeam.slice(0, epicTeamHalf).map((row, idx) => renderEpicTeamRow(row, idx))}</tbody>
+                  <tbody>{sortedEpicTeam.slice(0, epicTeamHalf).map((row) => renderEpicTeamRow(row))}</tbody>
                 </table>
               </div>
               <div>
                 <table className={tableClass} style={{ tableLayout: 'fixed', borderCollapse: 'separate', borderSpacing: 0 }}>
                   {colgroup}
                   <thead>{epicTeamHead}</thead>
-                  <tbody>{sortedEpicTeam.slice(epicTeamHalf).map((row, idx) => renderEpicTeamRow(row, idx))}</tbody>
+                  <tbody>{sortedEpicTeam.slice(epicTeamHalf).map((row) => renderEpicTeamRow(row))}</tbody>
                 </table>
               </div>
             </div>
@@ -169,14 +169,14 @@ export default function AssignmentTables(): React.JSX.Element | null {
                 <table className={tableClass} style={{ tableLayout: 'fixed', borderCollapse: 'separate', borderSpacing: 0 }}>
                   {memberColgroup}
                   <thead>{memberEpicHead}</thead>
-                  <tbody>{sortedMemberEpic.slice(0, memberEpicHalf).map((row, idx) => renderMemberEpicRow(row, idx))}</tbody>
+                  <tbody>{sortedMemberEpic.slice(0, memberEpicHalf).map((row) => renderMemberEpicRow(row))}</tbody>
                 </table>
               </div>
               <div>
                 <table className={tableClass} style={{ tableLayout: 'fixed', borderCollapse: 'separate', borderSpacing: 0 }}>
                   {memberColgroup}
                   <thead>{memberEpicHead}</thead>
-                  <tbody>{sortedMemberEpic.slice(memberEpicHalf).map((row, idx) => renderMemberEpicRow(row, idx))}</tbody>
+                  <tbody>{sortedMemberEpic.slice(memberEpicHalf).map((row) => renderMemberEpicRow(row))}</tbody>
                 </table>
               </div>
             </div>

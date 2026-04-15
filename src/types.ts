@@ -95,6 +95,7 @@ export interface ModalState {
   setupWizard: boolean;
   rateLimit: boolean;
   storyDetailFilter: string | null;
+  themeSelector: boolean;
 }
 
 export type ModalKey = keyof ModalState;
@@ -191,4 +192,10 @@ export interface DashboardContextValue {
   handleOpenReadme: () => Promise<void>;
   darkMode: boolean;
   toggleDarkMode: () => void;
+  starTrekMode: boolean;
+  toggleStarTrekMode: () => void;
+  matrixMode: boolean;
+  toggleMatrixMode: () => void;
+  displayTheme: 'normal' | 'dark' | 'star-trek' | 'matrix';
+  selectTheme: (theme: 'normal' | 'dark' | 'star-trek' | 'matrix') => void;
 }

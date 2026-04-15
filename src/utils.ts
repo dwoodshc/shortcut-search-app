@@ -97,11 +97,12 @@ export const storage = {
   },
   setIgnoredUsers: (users: string[]): void => { localStorage.setItem(STORAGE_KEYS.IGNORED_USERS, JSON.stringify(users)); },
 
-  getDisplayMode: (): 'normal' | 'dark' => {
+  getDisplayMode: (): 'normal' | 'dark' | 'star-trek' | 'matrix' => {
     const val = localStorage.getItem(STORAGE_KEYS.DISPLAY_MODE);
-    return val === 'dark' ? 'dark' : 'normal';
+    if (val === 'dark' || val === 'star-trek' || val === 'matrix') return val;
+    return 'normal';
   },
-  setDisplayMode: (mode: 'normal' | 'dark'): void => { localStorage.setItem(STORAGE_KEYS.DISPLAY_MODE, mode); },
+  setDisplayMode: (mode: 'normal' | 'dark' | 'star-trek' | 'matrix'): void => { localStorage.setItem(STORAGE_KEYS.DISPLAY_MODE, mode); },
 };
 
 export const getApiBaseUrl = (): string => `http://${window.location.hostname}:3001`;

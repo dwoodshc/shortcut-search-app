@@ -182,7 +182,7 @@ function EpicStatusTable(): React.JSX.Element | null {
     return <span className="summary-sort-icon" data-tooltip={label}>{icon}</span>;
   };
 
-  const renderRow = (epic: Epic, idx: number) => {
+  const renderRow = (epic: Epic) => {
     const stateCounts: Record<number, number> = {};
     const epicDisplayStories = getDisplayStories(epic);
     epicDisplayStories.forEach(story => {
@@ -202,9 +202,9 @@ function EpicStatusTable(): React.JSX.Element | null {
     const completePct = total > 0 ? (completeCount / total) * 100 : 0;
     const si = getEpicStateInfo(epic);
     return (
-      <tr key={epic.id as React.Key} className={idx % 2 === 0 ? 'bg-white' : 'bg-[#fafafa]'}>
-        <td className="px-3 py-2 font-semibold text-sm sm:whitespace-nowrap border-b border-[#F0F0F7]">
-          <a href={`#epic-${epic.id}`} className="text-[#494BCB] no-underline">
+      <tr key={epic.id as React.Key}>
+        <td className="px-3 py-2 text-sm sm:whitespace-nowrap border-b border-[#F0F0F7]">
+          <a href={`#epic-${epic.id}`} className="text-[#1a202c] no-underline">
             {epic.name}
           </a>
         </td>
@@ -255,13 +255,13 @@ function EpicStatusTable(): React.JSX.Element | null {
         <div className="flex-1">
           <table className={tableClass} style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
             <thead>{theadRow}</thead>
-            <tbody>{leftEpics.map((epic, idx) => renderRow(epic, idx))}</tbody>
+            <tbody>{leftEpics.map((epic) => renderRow(epic))}</tbody>
           </table>
         </div>
         <div className="flex-1">
           <table className={tableClass} style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
             <thead>{theadRow}</thead>
-            <tbody>{rightEpics.map((epic, idx) => renderRow(epic, idx))}</tbody>
+            <tbody>{rightEpics.map((epic) => renderRow(epic))}</tbody>
           </table>
         </div>
       </div>

@@ -17,6 +17,8 @@ import EpicCard from './components/EpicCard';
 import SetupWizard from './components/SetupWizard';
 import AppHeader from './components/AppHeader';
 import AppFooter from './components/AppFooter';
+import MatrixRain from './components/MatrixRain';
+import ThemeSelector from './components/ThemeSelector';
 import { storage, getApiBaseUrl } from './utils';
 import pkg from '../package.json';
 import { useEpicsData } from './hooks/useEpicsData';
@@ -32,14 +34,26 @@ const toTitleCase = (str: string): string =>
 
 function App(): React.JSX.Element {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [darkMode, setDarkMode] = useState<boolean>(() => storage.getDisplayMode() === 'dark');
+  const [theme, setTheme] = useState<'normal' | 'dark' | 'star-trek' | 'matrix'>(() => storage.getDisplayMode());
+  const darkMode = theme === 'dark';
+  const starTrekMode = theme === 'star-trek';
+  const matrixMode = theme === 'matrix';
 
   const toggleDarkMode = useCallback(() => {
-    setDarkMode(prev => {
-      const next = !prev;
-      storage.setDisplayMode(next ? 'dark' : 'normal');
-      return next;
-    });
+    setTheme(prev => { const next = prev === 'dark' ? 'normal' : 'dark'; storage.setDisplayMode(next); return next; });
+  }, []);
+
+  const toggleStarTrekMode = useCallback(() => {
+    setTheme(prev => { const next = prev === 'star-trek' ? 'normal' : 'star-trek'; storage.setDisplayMode(next); return next; });
+  }, []);
+
+  const toggleMatrixMode = useCallback(() => {
+    setTheme(prev => { const next = prev === 'matrix' ? 'normal' : 'matrix'; storage.setDisplayMode(next); return next; });
+  }, []);
+
+  const selectTheme = useCallback((t: 'normal' | 'dark' | 'star-trek' | 'matrix') => {
+    setTheme(t);
+    storage.setDisplayMode(t);
   }, []);
 
   const {
@@ -278,11 +292,15 @@ function App(): React.JSX.Element {
     handleSaveShortcutUrl, handleSelectWorkflow,
     toggleAllCharts, handleOpenReadme,
     darkMode, toggleDarkMode,
-  }), [epics, members, epicStates, teamMemberIds, loadStats, workflowConfig, setWorkflowField, modals, setModal, sortState, toggleSortState, resetSortState, collapsedCharts, setCollapsedCharts, toggleChart, filterByTeam, setFilterByTeam, ignoredUsers, setIgnoredUsers, filterIgnoredInTickets, setFilterIgnoredInTickets, selectedTeams, setSelectedTeams, selectedTeamIds, selectedTeamLabel, shortcutWebUrl, setShortcutWebUrl, error, setError, loading, successMessage, filteredEpicNames, setFilteredEpicNames, setupWizardStep, setSetupWizardStep, getDisplayStories, generateShortcutUrl, getEpicStateInfo, getEpicStateClass, filteredStateIds, summaryStateIds, epicTeamData, memberEpicMap, allDisplayStories, searchEpics, handleSaveShortcutUrl, handleSelectWorkflow, toggleAllCharts, handleOpenReadme, darkMode, toggleDarkMode]);
+    starTrekMode, toggleStarTrekMode,
+    matrixMode, toggleMatrixMode,
+    displayTheme: theme, selectTheme,
+  }), [epics, members, epicStates, teamMemberIds, loadStats, workflowConfig, setWorkflowField, modals, setModal, sortState, toggleSortState, resetSortState, collapsedCharts, setCollapsedCharts, toggleChart, filterByTeam, setFilterByTeam, ignoredUsers, setIgnoredUsers, filterIgnoredInTickets, setFilterIgnoredInTickets, selectedTeams, setSelectedTeams, selectedTeamIds, selectedTeamLabel, shortcutWebUrl, setShortcutWebUrl, error, setError, loading, successMessage, filteredEpicNames, setFilteredEpicNames, setupWizardStep, setSetupWizardStep, getDisplayStories, generateShortcutUrl, getEpicStateInfo, getEpicStateClass, filteredStateIds, summaryStateIds, epicTeamData, memberEpicMap, allDisplayStories, searchEpics, handleSaveShortcutUrl, handleSelectWorkflow, toggleAllCharts, handleOpenReadme, darkMode, toggleDarkMode, starTrekMode, toggleStarTrekMode, matrixMode, toggleMatrixMode, theme, selectTheme]);
 
   return (
     <DashboardContext.Provider value={dashboardContext}>
-    <div className="App" id="top" data-theme={darkMode ? 'dark' : 'normal'}>
+    <div className="App" id="top" data-theme={theme}>
+        {matrixMode && <MatrixRain />}
       {loading && (
         <div className="modal-overlay" style={{ zIndex: 9999 }}>
           <div className="modal-content text-center !px-12 !py-10" style={{ maxWidth: '360px' }}>
@@ -358,7 +376,7 @@ function App(): React.JSX.Element {
               <li><strong>Ignored Users:</strong> Configurable list of users excluded from assignment and ticket tables</li>
               <li><strong>Setup Wizard:</strong> 6-step guided setup — token, URL, workflow, team, ignored users, epic list</li>
               <li><strong>Configuration Management:</strong> Export / Import of all settings as JSON</li>
-              <li><strong>Dark Mode:</strong> Toggle between Normal and Dark display modes via Settings</li>
+              <li><strong>Themes:</strong> Four display themes selectable via Settings → Theme</li>
             </ul>
             <p className="mt-4 text-sm text-[#718096]">
               Version {pkg.version} | Project D.A.V.E. (Dashboards Are Very Effective)
@@ -446,6 +464,8 @@ function App(): React.JSX.Element {
           </div>
         </div>
       )}
+
+      <ThemeSelector />
 
       <AppHeader />
 
