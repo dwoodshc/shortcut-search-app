@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Antonio:wght@400;700&display=swap');
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -1978,7 +1980,7 @@ textarea.input-field {
 [data-theme="star-trek"] body {
   background-color: #000;
   color: #FF9900;
-  font-family: 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif;
+  font-family: 'Antonio', 'Arial Narrow', 'Avenir Next Condensed', sans-serif;
   letter-spacing: 0.04em;
 }
 
@@ -1993,7 +1995,7 @@ textarea.input-field {
   text-transform: uppercase;
   letter-spacing: 0.18em;
   font-weight: 400;
-  font-family: 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif;
+  font-family: 'Antonio', 'Arial Narrow', 'Avenir Next Condensed', sans-serif;
 }
 
 [data-theme="star-trek"] .logo-image {
@@ -2017,7 +2019,7 @@ textarea.input-field {
   border-radius: 999px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  font-family: 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif;
+  font-family: 'Antonio', 'Arial Narrow', 'Avenir Next Condensed', sans-serif;
 }
 
 [data-theme="star-trek"] .header-action-btn:hover,
@@ -2038,7 +2040,7 @@ textarea.input-field {
   color: #FFCC99;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  font-family: 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif;
+  font-family: 'Antonio', 'Arial Narrow', 'Avenir Next Condensed', sans-serif;
 }
 
 [data-theme="star-trek"] .settings-menu-item:hover {
@@ -2066,7 +2068,7 @@ textarea.input-field {
   color: #FFCC99;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  font-family: 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif;
+  font-family: 'Antonio', 'Arial Narrow', 'Avenir Next Condensed', sans-serif;
 }
 
 [data-theme="star-trek"] .epic-title h3 a {
@@ -2083,7 +2085,7 @@ textarea.input-field {
   color: #FFCC99;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  font-family: 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif;
+  font-family: 'Antonio', 'Arial Narrow', 'Avenir Next Condensed', sans-serif;
 }
 
 [data-theme="star-trek"] .story-count {
@@ -2097,7 +2099,7 @@ textarea.input-field {
   color: #FF9900;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  font-family: 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif;
+  font-family: 'Antonio', 'Arial Narrow', 'Avenir Next Condensed', sans-serif;
 }
 
 [data-theme="star-trek"] .epic-state-default { background-color: #1A0F00; color: #FF9900; }
@@ -2110,7 +2112,7 @@ textarea.input-field {
   color: #FF9900;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  font-family: 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif;
+  font-family: 'Antonio', 'Arial Narrow', 'Avenir Next Condensed', sans-serif;
 }
 
 [data-theme="star-trek"] .workflow-status-chart-container h4,
@@ -2120,7 +2122,7 @@ textarea.input-field {
   color: #FFCC99;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  font-family: 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif;
+  font-family: 'Antonio', 'Arial Narrow', 'Avenir Next Condensed', sans-serif;
 }
 
 [data-theme="star-trek"] .workflow-status-chart {
@@ -2140,7 +2142,7 @@ textarea.input-field {
 [data-theme="star-trek"] .legend-label {
   color: #FF9900;
   text-transform: uppercase;
-  font-family: 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif;
+  font-family: 'Antonio', 'Arial Narrow', 'Avenir Next Condensed', sans-serif;
 }
 
 [data-theme="star-trek"] .legend-label-static { color: #FFCC99; }
@@ -2167,7 +2169,7 @@ textarea.input-field {
   color: #000;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  font-family: 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif;
+  font-family: 'Antonio', 'Arial Narrow', 'Avenir Next Condensed', sans-serif;
 }
 
 [data-theme="star-trek"] .story-owners-table td,
@@ -2188,7 +2190,7 @@ textarea.input-field {
   color: #000 !important;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  font-family: 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif;
+  font-family: 'Antonio', 'Arial Narrow', 'Avenir Next Condensed', sans-serif;
 }
 [data-theme="star-trek"] table.w-full td { border-color: #1A0F00 !important; color: #FF9900; }
 [data-theme="star-trek"] table.w-full td a { color: #FF9900; }
@@ -2201,7 +2203,7 @@ textarea.input-field {
   color: #000;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  font-family: 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif;
+  font-family: 'Antonio', 'Arial Narrow', 'Avenir Next Condensed', sans-serif;
 }
 
 [data-theme="star-trek"] .story-card { background: #0F0A00; border-color: #1A0F00; }
@@ -2245,7 +2247,7 @@ textarea.input-field {
   border-radius: 999px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  font-family: 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif;
+  font-family: 'Antonio', 'Arial Narrow', 'Avenir Next Condensed', sans-serif;
 }
 
 [data-theme="star-trek"] .btn-primary:hover { background: #FFCC00; border-color: #FFCC00; }
@@ -2257,7 +2259,7 @@ textarea.input-field {
   border-radius: 999px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  font-family: 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif;
+  font-family: 'Antonio', 'Arial Narrow', 'Avenir Next Condensed', sans-serif;
 }
 
 [data-theme="star-trek"] .btn-secondary:hover { background: rgba(255, 153, 0, 0.12); }
