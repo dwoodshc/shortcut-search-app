@@ -2139,6 +2139,10 @@ textarea.input-field {
   border-color: #FF9900;
 }
 
+[data-theme="star-trek"] .progress-bar-backlog {
+  background: #1A3320 !important;
+}
+
 [data-theme="star-trek"] .legend-label {
   color: #FF9900;
   text-transform: uppercase;
@@ -2338,6 +2342,10 @@ textarea.input-field {
   background: rgba(0, 255, 65, 0.08);
   color: #00FF41;
   border: 1px solid rgba(0, 255, 65, 0.3);
+}
+
+[data-theme="matrix"] .progress-bar-backlog {
+  background: #1A3320 !important;
 }
 
 [data-theme="matrix"] .settings-icon:hover {
