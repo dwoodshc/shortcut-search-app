@@ -351,7 +351,7 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
                           <td>{count}</td>
                         </tr>
                       ))}
-                      <tr className="bg-[#f7fafc]">
+                      <tr>
                         <td>Unassigned</td>
                         <td>{unassignedCount}</td>
                       </tr>
