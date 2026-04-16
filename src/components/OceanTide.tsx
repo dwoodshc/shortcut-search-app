@@ -8,7 +8,7 @@
  */
 import { useEffect, useRef } from 'react';
 
-const PARTICLE_COUNT = 250;
+const PARTICLE_COUNT = 900;
 const FRAME_INTERVAL = 25; // ms between frames (~40fps) — increase to slow further
 
 interface Particle {
