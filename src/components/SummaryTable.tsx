@@ -30,9 +30,10 @@ interface ProgressBarProps {
   completeCount: number;
   inProgressCount: number;
   backlogCount: number;
+  noTooltip?: boolean;
 }
 
-function ProgressBar({ completePct, inProgressPct, backlogPct, total, completeCount, inProgressCount, backlogCount }: ProgressBarProps): React.JSX.Element {
+function ProgressBar({ completePct, inProgressPct, backlogPct, total, completeCount, inProgressCount, backlogCount, noTooltip }: ProgressBarProps): React.JSX.Element {
   return (
     <div className="summary-bar-wrapper">
       <div className="flex h-[22px] rounded-full overflow-hidden border border-slate-200">
@@ -46,7 +47,7 @@ function ProgressBar({ completePct, inProgressPct, backlogPct, total, completeCo
           </>
         )}
       </div>
-      <div className="summary-bar-tooltip">
+      {!noTooltip && <div className="summary-bar-tooltip">
         {[
           { label: 'Complete', count: completeCount, pct: completePct, color: '#059669' },
           { label: 'In Progress', count: inProgressCount, pct: inProgressPct, color: '#fde68a' },
@@ -63,7 +64,7 @@ function ProgressBar({ completePct, inProgressPct, backlogPct, total, completeCo
           <div><strong className="text-white/85">In Progress:</strong> Ready for Dev + In Dev + In Review</div>
           <div><strong className="text-white/85">Backlog:</strong> Backlog</div>
         </div>
-      </div>
+      </div>}
     </div>
   );
 }
@@ -128,6 +129,7 @@ function StoryTotalsSummary(): React.JSX.Element | null {
                 completeCount={completeCount}
                 inProgressCount={inProgressCount}
                 backlogCount={backlogCount}
+                noTooltip
               />
             </td>
           </tr>
