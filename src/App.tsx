@@ -13,6 +13,7 @@ import './App.css';
 import StoryDetailModal from './components/StoryDetailModal';
 import SummaryTable from './components/SummaryTable';
 import AssignmentTables from './components/AssignmentTables';
+import UnwatchedTickets from './components/UnwatchedTickets';
 import EpicCard from './components/EpicCard';
 import SetupWizard from './components/SetupWizard';
 import AppHeader from './components/AppHeader';
@@ -370,6 +371,7 @@ function App(): React.JSX.Element {
             <ul>
               <li><strong>Story Summary:</strong> Overall story counts across all epics by workflow state</li>
               <li><strong>Epic Status Table:</strong> At-a-glance chevron progress bars and epic state for all tracked epics</li>
+              <li><strong>Unwatched Tickets:</strong> Open stories and epics in your selected teams that you are not watching</li>
               <li><strong>Epic Owner Assignment:</strong> Maps each epic to its assigned team members</li>
               <li><strong>Team Member Assignment:</strong> Inverted view — each team member and their assigned epics</li>
               <li><strong>Ticket Status Breakdown:</strong> 3D column chart of story workflow states per epic</li>
@@ -379,9 +381,9 @@ function App(): React.JSX.Element {
               <li><strong>Team Open Tickets:</strong> Open ticket counts per team member, excluding completed stories</li>
               <li><strong>User Story Board:</strong> Kanban view (Backlog → Complete) with collapsible story cards</li>
               <li><strong>Ignored Users:</strong> Configurable list of users excluded from assignment and ticket tables</li>
-              <li><strong>Setup Wizard:</strong> 6-step guided setup — token, URL, workflow, team, ignored users, epic list</li>
+              <li><strong>Setup Wizard:</strong> 7-step guided setup — token, URL, workflow, team, ignored users, your name, epic list</li>
               <li><strong>Configuration Management:</strong> Export / Import of all settings as JSON</li>
-              <li><strong>Themes:</strong> Four display themes selectable via Settings → Theme</li>
+              <li><strong>Themes:</strong> Normal, Dark Mode, Star Trek (LCARS), and Matrix — selectable via Settings → Theme</li>
             </ul>
             <p className="mt-4 text-sm text-[#718096]">
               Version {pkg.version} | Project D.A.V.E. (Dashboards Are Very Effective)
@@ -516,6 +518,7 @@ function App(): React.JSX.Element {
               )}
             </div>
 
+            <UnwatchedTickets />
             <AssignmentTables />
 
             {epics.map((epic) => (

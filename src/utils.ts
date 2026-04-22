@@ -17,6 +17,7 @@ export const STORAGE_KEYS = {
   EPIC_WORKFLOW_CACHE: 'shortcut_epic_workflow_cache',
   IGNORED_USERS: 'shortcut_ignored_users',
   DISPLAY_MODE: 'shortcut_display_mode',
+  MY_NAME: 'shortcut_my_name',
 } as const;
 
 const migrateApiToken = (): void => {
@@ -103,6 +104,9 @@ export const storage = {
     return 'normal';
   },
   setDisplayMode: (mode: 'normal' | 'dark' | 'star-trek' | 'matrix'): void => { localStorage.setItem(STORAGE_KEYS.DISPLAY_MODE, mode); },
+
+  getMyName: (): string => localStorage.getItem(STORAGE_KEYS.MY_NAME) || '',
+  setMyName: (name: string): void => { localStorage.setItem(STORAGE_KEYS.MY_NAME, name); },
 };
 
 export const getApiBaseUrl = (): string => `http://${window.location.hostname}:3001`;

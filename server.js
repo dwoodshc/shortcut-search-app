@@ -118,6 +118,23 @@ app.get('/api/teams', async (req, res) => {
   }
 });
 
+// Get all workspace members
+app.get('/api/members', async (req, res) => {
+  try {
+    const token = getTokenFromHeader(req);
+    if (!token) {
+      return res.status(401).json({ error: 'Authorization token required' });
+    }
+    const response = await axios.get(`${SHORTCUT_API_BASE}/members`, {
+      headers: { 'Shortcut-Token': token, 'Content-Type': 'application/json' }
+    });
+    res.json(response.data);
+  } catch (error) {
+    console.error('Error fetching members:', error.response?.data || error.message);
+    res.status(error.response?.status || 500).json({ error: error.response?.data || 'Failed to fetch members' });
+  }
+});
+
 // Get user/member by ID
 app.get('/api/users/:id', async (req, res) => {
   try {

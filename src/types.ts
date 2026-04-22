@@ -12,6 +12,7 @@ export interface Story {
   story_type: 'feature' | 'bug' | 'chore';
   workflow_state_id: number;
   owner_ids: string[];
+  follower_ids?: string[];
   group_id: string | null;
   app_url?: string;
   description?: string;
@@ -24,6 +25,7 @@ export interface Epic {
   state: string;
   epic_state_id?: number;
   owner_ids?: string[];
+  follower_ids?: string[];
   stories?: Story[];
   notFound?: boolean;
   app_url?: string;

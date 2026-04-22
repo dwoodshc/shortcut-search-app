@@ -1,8 +1,9 @@
 /**
  * Copyright (c) 2026 Dave Woods <dave.woods@slice.com>. All rights reserved.
  *
- * SetupWizard.tsx — 6-step guided setup modal. Steps: API token (verified against the
- * API), workspace URL, workflow selection, team selection, ignored users, and epic list.
+ * SetupWizard.tsx — 7-step guided setup modal. Steps: API token (verified against the
+ * API), workspace URL, workflow selection, team selection, ignored users, my Shortcut
+ * name (for unwatched ticket detection), and epic list.
  * Local form state is initialised from storage on mount; each step persists to
  * localStorage before advancing.
  */
@@ -37,6 +38,7 @@ export default function SetupWizard({ step, onStepChange, onClose }: Props): Rea
   const [epicListError, setEpicListError] = useState('');
   const [epicsText, setEpicsText] = useState(() => (storage.getEpicsConfig()?.epics || []).map(e => e.name).join('\n'));
   const [allTeams, setAllTeams] = useState<Team[]>([]);
+  const [myName, setMyName] = useState(() => storage.getMyName());
 
   const handleSaveEpicList = () => {
     setEpicListError('');
@@ -61,14 +63,14 @@ export default function SetupWizard({ step, onStepChange, onClose }: Props): Rea
 
         {/* Step Indicator */}
         <div className="flex justify-between mb-8 relative">
-          {[1, 2, 3, 4, 5, 6].map((stepNum) => (
+          {[1, 2, 3, 4, 5, 6, 7].map((stepNum) => (
             <div
               key={stepNum}
               className="flex-1 flex flex-col items-center relative cursor-pointer"
               onClick={() => onStepChange(stepNum)}
             >
               <div
-                className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-base transition-all duration-300 z-10 border-2"
+                className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 z-10 border-2"
                 style={{
                   backgroundColor: step === stepNum ? '#494BCB' : step > stepNum ? '#22c55e' : '#e2e8f0',
                   color: step >= stepNum ? 'white' : '#94a3b8',
@@ -78,20 +80,21 @@ export default function SetupWizard({ step, onStepChange, onClose }: Props): Rea
                 {step > stepNum ? '✓' : stepNum}
               </div>
               <div
-                className={`mt-2 text-xs text-center select-none ${step === stepNum ? 'text-[#494BCB] font-semibold' : 'text-[#64748b] font-normal'}`}
+                className={`mt-2 text-[0.65rem] text-center select-none ${step === stepNum ? 'text-[#494BCB] font-semibold' : 'text-[#64748b] font-normal'}`}
               >
                 {stepNum === 1 && 'API Token'}
                 {stepNum === 2 && 'Shortcut URL'}
                 {stepNum === 3 && 'Workflow'}
                 {stepNum === 4 && 'Select Team'}
                 {stepNum === 5 && 'Ignore Users'}
-                {stepNum === 6 && 'Epic List'}
+                {stepNum === 6 && 'My Name'}
+                {stepNum === 7 && 'Epic List'}
               </div>
-              {stepNum < 6 && (
+              {stepNum < 7 && (
                 <div
-                  className="absolute top-5 left-[60%] h-[2px] transition-all duration-300 z-0"
+                  className="absolute top-4 left-[60%] h-[2px] transition-all duration-300 z-0"
                   style={{
-                    width: 'calc(100% - 20px)',
+                    width: 'calc(100% - 16px)',
                     backgroundColor: step > stepNum ? '#22c55e' : '#e2e8f0',
                   }}
                 />
@@ -330,10 +333,32 @@ export default function SetupWizard({ step, onStepChange, onClose }: Props): Rea
             </div>
           )}
 
-          {/* Step 6: Epic List */}
+          {/* Step 6: My Name */}
           {step === 6 && (
+            <div>
+              <h3 className="text-[#1e293b] mb-4">Step 6: Your Shortcut Name</h3>
+              <p className="mb-6">Enter your name exactly as it appears in Shortcut. This will be used to find open tickets in your selected teams that you are not watching.</p>
+              <div className="form-group">
+                <label htmlFor="myName">Your name in Shortcut:</label>
+                <input
+                  type="text"
+                  id="myName"
+                  value={myName}
+                  onChange={(e) => setMyName(e.target.value)}
+                  className="input-field"
+                  placeholder="e.g. Jane Smith"
+                />
+                <p className="text-xs text-[#64748b] mt-2">
+                  This is optional. Leave blank to skip unwatched ticket tracking.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Step 7: Epic List */}
+          {step === 7 && (
             <div className="flex flex-col h-full">
-              <h3 className="text-[#1e293b] mb-[0.4rem]">Step 6: Epic List</h3>
+              <h3 className="text-[#1e293b] mb-[0.4rem]">Step 7: Epic List</h3>
               <p className="mb-[0.15rem]">Add the epics you want to track.</p>
 
               <div className="flex-1 flex flex-col min-h-0">
@@ -463,6 +488,9 @@ export default function SetupWizard({ step, onStepChange, onClose }: Props): Rea
                   storage.setIgnoredUsers(ignoredUsers);
                   onStepChange(6);
                 } else if (step === 6) {
+                  storage.setMyName(myName.trim());
+                  onStepChange(7);
+                } else if (step === 7) {
                   const saved = handleSaveEpicList();
                   if (saved) {
                     onClose();
@@ -472,7 +500,7 @@ export default function SetupWizard({ step, onStepChange, onClose }: Props): Rea
               }}
               className="btn-primary"
             >
-              {step < 6 ? 'Next' : 'Finish'}
+              {step < 7 ? 'Next' : 'Finish'}
             </button>
           </div>
         </div>
