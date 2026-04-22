@@ -260,10 +260,11 @@ function EpicStatusTable(): React.JSX.Element | null {
     const completePct = total > 0 ? (completeCount / total) * 100 : 0;
     const si = getEpicStateInfo(epic);
     const lastChanged = getEpicLastChanged(epic);
-    const recentItems = [
-      ...(epic.updated_at ? [{ id: epic.id, name: epic.name, type: 'epic', updated_at: epic.updated_at, app_url: epic.app_url, stateName: si.name || '' }] : []),
-      ...(epic.stories || []).filter(s => s.updated_at).map(s => ({ id: s.id, name: s.name, type: s.story_type, updated_at: s.updated_at!, app_url: s.app_url, stateName: workflowConfig.states[s.workflow_state_id] || '' })),
-    ].sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()).slice(0, 5);
+    const recentItems = (epic.stories || [])
+      .filter(s => s.updated_at)
+      .map(s => ({ id: s.id, name: s.name, type: s.story_type, updated_at: s.updated_at!, app_url: s.app_url, stateName: workflowConfig.states[s.workflow_state_id] || '' }))
+      .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
+      .slice(0, 5);
     return (
       <tr key={epic.id as React.Key}>
         <td className="px-3 py-2 text-sm sm:whitespace-nowrap border-b border-[#F0F0F7]">
