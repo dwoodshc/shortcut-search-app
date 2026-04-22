@@ -1,6 +1,6 @@
 {
   "name": "shortcut-search-app",
-  "version": "5.1.0",
+  "version": "5.2.0",
   "private": true,
   "dependencies": {
     "@testing-library/dom": "^10.4.1",

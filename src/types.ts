@@ -17,6 +17,7 @@ export interface Story {
   app_url?: string;
   description?: string;
   archived?: boolean;
+  updated_at?: string;
 }
 
 export interface Epic {
@@ -30,6 +31,7 @@ export interface Epic {
   notFound?: boolean;
   app_url?: string;
   stats?: { num_stories_total?: number };
+  updated_at?: string;
 }
 
 export interface WorkflowState {

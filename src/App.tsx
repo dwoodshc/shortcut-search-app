@@ -378,7 +378,7 @@ function App(): React.JSX.Element {
               <li><strong>Workflow Status Pie Chart:</strong> Stories by workflow state with clickable Shortcut links</li>
               <li><strong>Story Type Breakdown:</strong> Feature / Bug / Chore pie chart per epic</li>
               <li><strong>Story Owners Table:</strong> Per-epic story owner counts including unassigned</li>
-              <li><strong>Team Open Tickets:</strong> Open ticket counts per team member, excluding completed stories</li>
+              <li><strong>Team Open Tickets:</strong> Open ticket counts per team member, excluding completed</li>
               <li><strong>User Story Board:</strong> Kanban view (Backlog → Complete) with collapsible story cards</li>
               <li><strong>Ignored Users:</strong> Users excluded from assignment and ticket tables</li>
               <li><strong>Setup Wizard:</strong> 7-step setup: token, URL, workflow, teams, name, epic list</li>

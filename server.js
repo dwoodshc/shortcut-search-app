@@ -209,6 +209,22 @@ app.get('/api/epics/:id/stories', async (req, res) => {
   }
 });
 
+// Get change history for a story
+app.get('/api/stories/:id/history', async (req, res) => {
+  try {
+    const token = getTokenFromHeader(req);
+    if (!token) return res.status(401).json({ error: 'Authorization token required' });
+    const { id } = req.params;
+    const response = await axios.get(`${SHORTCUT_API_BASE}/stories/${id}/history`, {
+      headers: { 'Shortcut-Token': token, 'Content-Type': 'application/json' }
+    });
+    res.json(response.data);
+  } catch (error) {
+    console.error('Error fetching story history:', error.response?.data || error.message);
+    res.status(error.response?.status || 500).json({ error: error.response?.data || 'Failed to fetch story history' });
+  }
+});
+
 // Get filtered epic names from epics.yml
 app.get('/api/filtered-epics', async (req, res) => {
   try {

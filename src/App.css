@@ -230,7 +230,7 @@ body {
 }
 
 .container {
-  max-width: 1650px;
+  max-width: 2063px;
   width: 100%;
   margin: 0 auto;
   padding: 0.4rem 2rem 1.25rem;
@@ -952,11 +952,7 @@ textarea.input-field {
    ============================================================================= */
 
 /* xl ≤ 1280px — story kanban drops to 3 columns; summary tables stack */
-@media (max-width: 1280px) {
-  .stories-columns {
-    grid-template-columns: repeat(3, 1fr);
-  }
-
+@media (max-width: 1500px) {
   .summary-table-grid {
     flex-direction: column;
   }
@@ -964,6 +960,12 @@ textarea.input-field {
   .summary-table-grid > div {
     width: 100%;
     flex: none;
+  }
+}
+
+@media (max-width: 1280px) {
+  .stories-columns {
+    grid-template-columns: repeat(3, 1fr);
   }
 
   .epic-stats-container {

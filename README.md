@@ -23,7 +23,8 @@ Two tables appear at the top of the dashboard, above the epic cards.
 - Percentage label shown inside the Complete segment
 - Hover tooltip showing counts and percentages for each group, plus a legend explaining the groupings
 - Two-column responsive layout (stacks to single column on narrow screens)
-- Sortable columns: **Epic Name** (A→Z / Z→A), **Epic Status**, and **Epic Progress** (% complete)
+- Sortable columns: **Epic Name** (A→Z / Z→A), **Epic Status**, **Last Changed**, and **Epic Progress** (% complete)
+- **Last Changed** column — days since any story or the epic itself was last updated; clicking the value opens a popover listing the 5 most recently changed tickets with type, name, and age
 - Restore icon to return epics to their configured list order
 - Epic name links scroll to the epic's detail section on the page
 
@@ -291,6 +292,7 @@ Phase 1 calls (team members and epic workflow) are cached to localStorage and sk
 - `GET /api/teams` — All Shortcut teams (groups)
 - `GET /api/members` — All workspace members
 - `GET /api/users/:id` — Member display name
+- `GET /api/stories/:id/history` — Story change history (on-demand, used by the Last Changed popover)
 - `GET /api/migrate-data` — One-time migration of legacy server-side config to localStorage
 - `GET /api/filtered-epics` — Read epic names from epics.yml (legacy)
 - `GET /api/epic-emails` — Read epic-to-team mappings from epics.yml (legacy)

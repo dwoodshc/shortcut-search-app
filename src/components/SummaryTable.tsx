@@ -5,7 +5,7 @@
  * Story Summary shows total story counts per workflow state; Epic Status shows a
  * chevron progress bar and state badge per epic. Both tables have sortable columns.
  */
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDashboard } from '../context/DashboardContext';
 import { Epic } from '../types';
 
@@ -144,8 +144,50 @@ const resetIcon = (
   </svg>
 );
 
+function daysAgo(dateStr: string | undefined): number | null {
+  if (!dateStr) return null;
+  const ms = Date.now() - new Date(dateStr).getTime();
+  return Math.floor(ms / 86_400_000);
+}
+
+function formatDaysAgo(days: number | null): string {
+  if (days === null) return '—';
+  if (days === 0) return 'Today';
+  if (days === 1) return '1d ago';
+  return `${days}d ago`;
+}
+
+function getEpicLastChanged(epic: Epic): number | null {
+  const candidates: (string | undefined)[] = [
+    epic.updated_at,
+    ...(epic.stories || []).map(s => s.updated_at),
+  ];
+  let earliest: number | null = null;
+  for (const d of candidates) {
+    if (!d) continue;
+    const days = daysAgo(d);
+    if (days !== null && (earliest === null || days < earliest)) earliest = days;
+  }
+  return earliest;
+}
+
+
+function typeColor(type: string): string {
+  if (type === 'epic') return '#7c3aed';
+  if (type === 'bug') return '#dc2626';
+  if (type === 'chore') return '#64748b';
+  return '#1d4ed8';
+}
+
 function EpicStatusTable(): React.JSX.Element | null {
   const { epics, workflowConfig, summaryStateIds, getDisplayStories, getEpicStateInfo, getEpicStateClass, sortState, toggleSortState, resetSortState } = useDashboard();
+  const [openPopover, setOpenPopover] = useState<number | string | null>(null);
+  useEffect(() => {
+    if (!openPopover) return;
+    const close = () => setOpenPopover(null);
+    document.addEventListener('click', close);
+    return () => document.removeEventListener('click', close);
+  }, [openPopover]);
 
   const foundEpics = epics.filter(e => !e.notFound);
   if (foundEpics.length === 0 || summaryStateIds.length === 0) return null;
@@ -170,6 +212,11 @@ function EpicStatusTable(): React.JSX.Element | null {
     if (sortState.summary.col === 'name') return dir * a.name.localeCompare(b.name);
     if (sortState.summary.col === 'status') return dir * getEpicStateInfo(a).name.localeCompare(getEpicStateInfo(b).name);
     if (sortState.summary.col === 'progress') return dir * (getCompletePct(a) - getCompletePct(b));
+    if (sortState.summary.col === 'lastchanged') {
+      const da = getEpicLastChanged(a) ?? Infinity;
+      const db = getEpicLastChanged(b) ?? Infinity;
+      return dir * (da - db);
+    }
     return 0;
   });
 
@@ -201,6 +248,11 @@ function EpicStatusTable(): React.JSX.Element | null {
     const inProgressPct = total > 0 ? (inProgressCount / total) * 100 : 0;
     const completePct = total > 0 ? (completeCount / total) * 100 : 0;
     const si = getEpicStateInfo(epic);
+    const lastChanged = getEpicLastChanged(epic);
+    const recentItems = [
+      ...(epic.updated_at ? [{ id: epic.id, name: epic.name, type: 'epic', updated_at: epic.updated_at, app_url: epic.app_url }] : []),
+      ...(epic.stories || []).filter(s => s.updated_at).map(s => ({ id: s.id, name: s.name, type: s.story_type, updated_at: s.updated_at!, app_url: s.app_url })),
+    ].sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()).slice(0, 5);
     return (
       <tr key={epic.id as React.Key}>
         <td className="px-3 py-2 text-sm sm:whitespace-nowrap border-b border-[#F0F0F7]">
@@ -214,6 +266,38 @@ function EpicStatusTable(): React.JSX.Element | null {
               {si.type.toLowerCase() === 'done' ? 'Done ✓' : si.name}
             </span>
           ) : null}
+        </td>
+        <td className="px-3 py-2 text-center text-sm border-b border-[#F0F0F7] whitespace-nowrap relative">
+          <button
+            onClick={(e) => { e.stopPropagation(); setOpenPopover(openPopover === epic.id ? null : epic.id); }}
+            className={`underline decoration-dotted cursor-pointer bg-transparent border-0 p-0 font-inherit text-sm ${lastChanged === 0 ? 'text-[#16a34a] font-semibold' : lastChanged !== null && lastChanged <= 3 ? 'text-[#0369a1]' : 'text-[#64748b]'}`}
+          >
+            {formatDaysAgo(lastChanged)}
+          </button>
+          {openPopover === epic.id && recentItems.length > 0 && (
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="absolute z-50 bg-white rounded-lg shadow-[0_4px_16px_rgba(0,0,0,0.15)] border border-[#E2E8F0] p-3 text-left"
+              style={{ top: 'calc(100% + 4px)', left: '50%', transform: 'translateX(-50%)', minWidth: '300px' }}
+            >
+              <div className="text-xs font-semibold text-[#64748b] mb-2 uppercase tracking-wide">Recent Changes</div>
+              {recentItems.map((item) => {
+                return (
+                  <div key={`${item.type}-${item.id}`} className="flex items-center gap-2 py-[0.3rem] border-b border-[#F0F0F7] last:border-0">
+                    <span className="text-[0.65rem] font-semibold px-1.5 py-[0.1rem] rounded-full text-white shrink-0" style={{ backgroundColor: typeColor(item.type) }}>
+                      {item.type.charAt(0).toUpperCase() + item.type.slice(1)}
+                    </span>
+                    {item.app_url ? (
+                      <a href={item.app_url} target="_blank" rel="noopener noreferrer" className="text-[#494BCB] text-xs hover:underline flex-1 truncate">{item.name}</a>
+                    ) : (
+                      <span className="text-xs text-[#1a202c] flex-1 truncate">{item.name}</span>
+                    )}
+                    <span className="text-xs text-[#94a3b8] whitespace-nowrap shrink-0">{formatDaysAgo(daysAgo(item.updated_at))}</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </td>
         <td className="px-3 py-[0.4rem] w-full border-b border-[#F0F0F7]">
           <ProgressBar
@@ -243,8 +327,9 @@ function EpicStatusTable(): React.JSX.Element | null {
           {resetIcon}
         </span>
       </th>
-      <th onClick={() => toggleSortState('summary', 'status')} className="cursor-pointer select-none px-3 py-2 text-center font-semibold text-sm w-[25%] whitespace-nowrap">Epic Status{sortIcon('status')}</th>
-      <th onClick={() => toggleSortState('summary', 'progress')} className="cursor-pointer select-none px-3 py-2 text-center font-semibold text-sm rounded-tr-lg w-[40%]">Epic Progress{sortIcon('progress', true)}</th>
+      <th onClick={() => toggleSortState('summary', 'status')} className="cursor-pointer select-none px-3 py-2 text-center font-semibold text-sm w-[20%] whitespace-nowrap">Epic Status{sortIcon('status')}</th>
+      <th onClick={() => toggleSortState('summary', 'lastchanged')} className="cursor-pointer select-none px-3 py-2 text-center font-semibold text-sm whitespace-nowrap w-[15%]">Last Changed{sortIcon('lastchanged')}</th>
+      <th onClick={() => toggleSortState('summary', 'progress')} className="cursor-pointer select-none px-3 py-2 text-center font-semibold text-sm rounded-tr-lg w-[33%]">Epic Progress{sortIcon('progress', true)}</th>
     </tr>
   );
 
