@@ -370,8 +370,8 @@ function App(): React.JSX.Element {
             <p>A React-based dashboard for tracking Shortcut.com epics, visualising progress, and monitoring team workload.</p>
             <ul>
               <li><strong>Story Summary:</strong> Overall story counts across all epics by workflow state</li>
-              <li><strong>Epic Status Table:</strong> At-a-glance chevron progress bars and epic state for all tracked epics</li>
-              <li><strong>Unwatched Tickets:</strong> Open stories and epics in your selected teams that you are not watching</li>
+              <li><strong>Epic Status Table:</strong> Chevron progress bars and epic state badges per tracked epic</li>
+              <li><strong>Unwatched Tickets:</strong> Open tickets in your selected teams you are not watching</li>
               <li><strong>Epic Owner Assignment:</strong> Maps each epic to its assigned team members</li>
               <li><strong>Team Member Assignment:</strong> Inverted view — each team member and their assigned epics</li>
               <li><strong>Ticket Status Breakdown:</strong> 3D column chart of story workflow states per epic</li>
@@ -380,10 +380,10 @@ function App(): React.JSX.Element {
               <li><strong>Story Owners Table:</strong> Per-epic story owner counts including unassigned</li>
               <li><strong>Team Open Tickets:</strong> Open ticket counts per team member, excluding completed stories</li>
               <li><strong>User Story Board:</strong> Kanban view (Backlog → Complete) with collapsible story cards</li>
-              <li><strong>Ignored Users:</strong> Configurable list of users excluded from assignment and ticket tables</li>
-              <li><strong>Setup Wizard:</strong> 7-step guided setup — token, URL, workflow, team, ignored users, your name, epic list</li>
-              <li><strong>Configuration Management:</strong> Export / Import of all settings as JSON</li>
-              <li><strong>Themes:</strong> Normal, Dark Mode, Star Trek (LCARS), and Matrix — selectable via Settings → Theme</li>
+              <li><strong>Ignored Users:</strong> Users excluded from assignment and ticket tables</li>
+              <li><strong>Setup Wizard:</strong> 7-step setup: token, URL, workflow, teams, name, epic list</li>
+              <li><strong>Configuration Management:</strong> Export / Import all settings as JSON</li>
+              <li><strong>Themes:</strong> Normal, Dark Mode, Star Trek (LCARS), and Matrix</li>
             </ul>
             <p className="mt-4 text-sm text-[#718096]">
               Version {pkg.version} | Project D.A.V.E. (Dashboards Are Very Effective)

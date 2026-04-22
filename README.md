@@ -292,6 +292,10 @@ Phase 1 calls (team members and epic workflow) are cached to localStorage and sk
 - `GET /api/members` — All workspace members
 - `GET /api/users/:id` — Member display name
 - `GET /api/migrate-data` — One-time migration of legacy server-side config to localStorage
+- `GET /api/filtered-epics` — Read epic names from epics.yml (legacy)
+- `GET /api/epic-emails` — Read epic-to-team mappings from epics.yml (legacy)
+- `GET /api/epics-file` / `POST /api/epics-file` — Read/write epics.yml raw content
+- `GET /api/state-ids-file` / `POST /api/state-ids-file` — Read/write shortcut.yml raw content
 
 ## Technologies Used
 
@@ -360,7 +364,7 @@ Phase 1 calls (team members and epic workflow) are cached to localStorage and sk
 
 ## Version Information
 
-**Version**: 5.0.0
+**Version**: 5.1.0
 **Project Name**: D.A.V.E. (Dashboards Are Very Effective)
 **Author**: Dave Woods
 
