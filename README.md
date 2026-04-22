@@ -24,7 +24,7 @@ Two tables appear at the top of the dashboard, above the epic cards.
 - Hover tooltip showing counts and percentages for each group, plus a legend explaining the groupings
 - Two-column responsive layout (stacks to single column on narrow screens)
 - Sortable columns: **Epic Name** (A→Z / Z→A), **Epic Status**, **Last Changed**, and **Epic Progress** (% complete)
-- **Last Changed** column — days since any story or the epic itself was last updated; clicking the value opens a popover listing the 5 most recently changed tickets with type, name, and age
+- **Last Changed** column — days since any story was last updated (respects the active team filter); clicking the value opens a popover listing the 5 most recently changed stories with type pill, name link, team pill, status pill, and age
 - Restore icon to return epics to their configured list order
 - Epic name links scroll to the epic's detail section on the page
 
@@ -271,7 +271,7 @@ The app makes the following calls to the Express proxy on page load:
 
 | Call | Frequency | Notes |
 |------|-----------|-------|
-| `GET /api/teams` | Once (cached per team) | Fetch member IDs for each selected team; results cached individually by team ID |
+| `GET /api/teams` | Every load | Build complete team name map; member IDs cached per team ID |
 | `GET /api/epic-workflow` | Once (cached) | Fetch epic workflow states |
 | `GET /api/search/epics?query=` | 1 per tracked epic | Run in parallel via `Promise.all` |
 | `GET /api/epics/:id` | 1 per epic found | Full epic details |
@@ -279,7 +279,7 @@ The app makes the following calls to the Express proxy on page load:
 | `GET /api/users/:id` | 1 per unique owner **not in cache** | Cached to localStorage after first fetch |
 | `GET /api/members` | Once (on demand) | Fetched only if your name is configured and not already in the members cache; used to resolve your member UUID for unwatched ticket detection |
 
-Phase 1 calls (team members and epic workflow) are cached to localStorage and skipped on subsequent loads. Team member IDs are cached per team ID, so adding a new team only fetches members for that team.
+Epic workflow states are cached to localStorage and skipped on subsequent loads. The `/api/teams` call runs on every load to keep team names current; team member IDs are still cached per team ID, so no extra work is done for previously fetched teams.
 
 ## API Endpoints (Express Proxy)
 
@@ -292,7 +292,7 @@ Phase 1 calls (team members and epic workflow) are cached to localStorage and sk
 - `GET /api/teams` — All Shortcut teams (groups)
 - `GET /api/members` — All workspace members
 - `GET /api/users/:id` — Member display name
-- `GET /api/stories/:id/history` — Story change history (on-demand, used by the Last Changed popover)
+- `GET /api/stories/:id/history` — Story change history (available; not currently called by the frontend)
 - `GET /api/migrate-data` — One-time migration of legacy server-side config to localStorage
 - `GET /api/filtered-epics` — Read epic names from epics.yml (legacy)
 - `GET /api/epic-emails` — Read epic-to-team mappings from epics.yml (legacy)

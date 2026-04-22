@@ -166,6 +166,7 @@ export interface DashboardContextValue {
   filterIgnoredInTickets: boolean;
   setFilterIgnoredInTickets: React.Dispatch<React.SetStateAction<boolean>>;
   selectedTeams: TeamConfig[];
+  teamNameMap: Record<string, string>;
   setSelectedTeams: React.Dispatch<React.SetStateAction<TeamConfig[]>>;
   selectedTeamIds: string[];
   selectedTeamLabel: string;

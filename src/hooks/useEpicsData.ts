@@ -28,6 +28,7 @@ export function useEpicsData({ epicNames, loadSelectedWorkflow, setCollapsedChar
   const [apiTokenIssue, setApiTokenIssue] = useState(false);
   const [epicStates, setEpicStates] = useState<Record<number, EpicState>>({});
   const [teamMemberIds, setTeamMemberIds] = useState<Set<string>>(new Set());
+  const [teamNameMap, setTeamNameMap] = useState<Record<string, string>>({});
   const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
@@ -127,34 +128,34 @@ export function useEpicsData({ epicNames, loadSelectedWorkflow, setCollapsedChar
 
       const teamConfigs = storage.getTeamConfig();
       let teamApiCall = false;
+      // Always fetch all teams to build a complete name map (covers stories from any team)
+      let allTeams: { id: string; name: string; member_ids?: string[] }[] = [];
+      try {
+        const teamsRes = await fetch(`${getApiBaseUrl()}/api/teams`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (teamsRes.ok) {
+          teamApiCall = true;
+          allTeams = await teamsRes.json();
+          const nameMap: Record<string, string> = {};
+          allTeams.forEach(t => { nameMap[t.id] = t.name; });
+          setTeamNameMap(nameMap);
+        }
+      } catch (err) {}
+
       if (teamConfigs.length > 0) {
         const allMemberIds = new Set<string>();
-        const uncachedTeamIds: string[] = [];
         for (const teamConfig of teamConfigs) {
           const cachedMemberIds = storage.getTeamMembersCache(teamConfig.id);
           if (cachedMemberIds) {
             cachedMemberIds.forEach(id => allMemberIds.add(id));
           } else {
-            uncachedTeamIds.push(teamConfig.id);
-          }
-        }
-        if (uncachedTeamIds.length > 0) {
-          teamApiCall = true;
-          try {
-            const teamsRes = await fetch(`${getApiBaseUrl()}/api/teams`, {
-              headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (teamsRes.ok) {
-              const teams = await teamsRes.json();
-              for (const teamId of uncachedTeamIds) {
-                const team = teams.find((t: { id: string; member_ids?: string[] }) => t.id === teamId);
-                if (team?.member_ids) {
-                  team.member_ids.forEach((id: string) => allMemberIds.add(id));
-                  storage.setTeamMembersCache(teamId, team.member_ids);
-                }
-              }
+            const team = allTeams.find(t => t.id === teamConfig.id);
+            if (team?.member_ids) {
+              team.member_ids.forEach(id => allMemberIds.add(id));
+              storage.setTeamMembersCache(teamConfig.id, team.member_ids);
             }
-          } catch (err) {}
+          }
         }
         setTeamMemberIds(allMemberIds);
       }
@@ -271,6 +272,7 @@ export function useEpicsData({ epicNames, loadSelectedWorkflow, setCollapsedChar
     apiTokenIssue,
     epicStates,
     teamMemberIds, setTeamMemberIds,
+    teamNameMap,
     loadEpics, cancelSearch,
   };
 }

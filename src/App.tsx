@@ -93,6 +93,7 @@ function App(): React.JSX.Element {
     apiTokenIssue,
     epicStates,
     teamMemberIds, setTeamMemberIds,
+    teamNameMap,
     loadEpics: searchEpics, cancelSearch,
   } = useEpicsData({
     epicNames: filteredEpicNames,
@@ -283,7 +284,7 @@ function App(): React.JSX.Element {
     filterByTeam, setFilterByTeam,
     ignoredUsers, setIgnoredUsers,
     filterIgnoredInTickets, setFilterIgnoredInTickets,
-    selectedTeams, setSelectedTeams, selectedTeamIds, selectedTeamLabel,
+    selectedTeams, setSelectedTeams, selectedTeamIds, selectedTeamLabel, teamNameMap,
     shortcutWebUrl, setShortcutWebUrl,
     error, setError, loading, successMessage,
     filteredEpicNames, setFilteredEpicNames,
@@ -300,7 +301,7 @@ function App(): React.JSX.Element {
     starTrekMode, toggleStarTrekMode,
     matrixMode, toggleMatrixMode,
     displayTheme: theme, selectTheme,
-  }), [epics, members, epicStates, teamMemberIds, loadStats, workflowConfig, setWorkflowField, modals, setModal, sortState, toggleSortState, resetSortState, collapsedCharts, setCollapsedCharts, toggleChart, filterByTeam, setFilterByTeam, ignoredUsers, setIgnoredUsers, filterIgnoredInTickets, setFilterIgnoredInTickets, selectedTeams, setSelectedTeams, selectedTeamIds, selectedTeamLabel, shortcutWebUrl, setShortcutWebUrl, error, setError, loading, successMessage, filteredEpicNames, setFilteredEpicNames, setupWizardStep, setSetupWizardStep, getDisplayStories, generateShortcutUrl, getEpicStateInfo, getEpicStateClass, filteredStateIds, summaryStateIds, epicTeamData, memberEpicMap, allDisplayStories, searchEpics, handleSaveShortcutUrl, handleSelectWorkflow, toggleAllCharts, handleOpenReadme, darkMode, toggleDarkMode, starTrekMode, toggleStarTrekMode, matrixMode, toggleMatrixMode, theme, selectTheme]);
+  }), [epics, members, epicStates, teamMemberIds, loadStats, workflowConfig, setWorkflowField, modals, setModal, sortState, toggleSortState, resetSortState, collapsedCharts, setCollapsedCharts, toggleChart, filterByTeam, setFilterByTeam, ignoredUsers, setIgnoredUsers, filterIgnoredInTickets, setFilterIgnoredInTickets, selectedTeams, setSelectedTeams, selectedTeamIds, selectedTeamLabel, teamNameMap, shortcutWebUrl, setShortcutWebUrl, error, setError, loading, successMessage, filteredEpicNames, setFilteredEpicNames, setupWizardStep, setSetupWizardStep, getDisplayStories, generateShortcutUrl, getEpicStateInfo, getEpicStateClass, filteredStateIds, summaryStateIds, epicTeamData, memberEpicMap, allDisplayStories, searchEpics, handleSaveShortcutUrl, handleSelectWorkflow, toggleAllCharts, handleOpenReadme, darkMode, toggleDarkMode, starTrekMode, toggleStarTrekMode, matrixMode, toggleMatrixMode, theme, selectTheme]);
 
   return (
     <DashboardContext.Provider value={dashboardContext}>
@@ -370,7 +371,7 @@ function App(): React.JSX.Element {
             <p>A React-based dashboard for tracking Shortcut.com epics, visualising progress, and monitoring team workload.</p>
             <ul>
               <li><strong>Story Summary:</strong> Overall story counts across all epics by workflow state</li>
-              <li><strong>Epic Status Table:</strong> Chevron progress bars and epic state badges per tracked epic</li>
+              <li><strong>Epic Status Table:</strong> Progress bars, state badges, and Last Changed per epic</li>
               <li><strong>Unwatched Tickets:</strong> Open tickets in your selected teams you are not watching</li>
               <li><strong>Epic Owner Assignment:</strong> Maps each epic to its assigned team members</li>
               <li><strong>Team Member Assignment:</strong> Inverted view — each team member and their assigned epics</li>

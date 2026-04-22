@@ -7,12 +7,29 @@
  */
 import React, { useState, useEffect } from 'react';
 import { useDashboard } from '../context/DashboardContext';
-import { Epic } from '../types';
+import { Epic, Story } from '../types';
 
 const STATE_ORDER = ['Backlog', 'Ready for Development', 'In Development', 'In Review', 'Ready for Release', 'Complete'];
 const BACKLOG_STATES = ['backlog'];
 const COMPLETE_STATES = ['complete', 'ready for release'];
 const IN_PROGRESS_STATES = ['ready for development', 'in development', 'in review'];
+
+const STATE_PILL_COLORS: Record<string, { bg: string; text: string }> = {
+  'backlog':               { bg: '#d1d5db', text: '#374151' },
+  'ready for development': { bg: '#a7f3d0', text: '#374151' },
+  'in development':        { bg: '#6ee7b7', text: '#374151' },
+  'in review':             { bg: '#4ade80', text: '#374151' },
+  'ready for release':     { bg: '#22c55e', text: '#374151' },
+  'complete':              { bg: '#16a34a', text: '#ffffff' },
+};
+const DEFAULT_PILL = { bg: '#F1F5F9', text: '#475569' };
+
+const TYPE_COLORS: Record<string, string> = {
+  epic:    '#7c3aed',
+  bug:     '#dc2626',
+  chore:   '#64748b',
+  feature: '#1d4ed8',
+};
 
 function getGroup(name: string): 'backlog' | 'complete' | 'inprogress' | null {
   const n = (name || '').toLowerCase().trim();
@@ -20,6 +37,29 @@ function getGroup(name: string): 'backlog' | 'complete' | 'inprogress' | null {
   if (COMPLETE_STATES.includes(n)) return 'complete';
   if (IN_PROGRESS_STATES.includes(n)) return 'inprogress';
   return null;
+}
+
+function getGroupCounts(
+  stories: Story[],
+  summaryStateIds: number[],
+  stateNames: Record<number, string>,
+): { backlogCount: number; inProgressCount: number; completeCount: number } {
+  const stateCounts: Record<number, number> = {};
+  stories.forEach(s => { stateCounts[s.workflow_state_id] = (stateCounts[s.workflow_state_id] || 0) + 1; });
+  let backlogCount = 0, inProgressCount = 0, completeCount = 0;
+  summaryStateIds.forEach(id => {
+    const group = getGroup(stateNames[id]);
+    const count = stateCounts[id] || 0;
+    if (group === 'backlog') backlogCount += count;
+    else if (group === 'inprogress') inProgressCount += count;
+    else if (group === 'complete') completeCount += count;
+  });
+  return { backlogCount, inProgressCount, completeCount };
+}
+
+function applyTeamFilter(stories: Story[], filterByTeam: boolean, selectedTeamIds: string[]): Story[] {
+  if (!filterByTeam) return stories;
+  return stories.filter(s => !s.group_id || selectedTeamIds.includes(s.group_id));
 }
 
 interface ProgressBarProps {
@@ -159,11 +199,8 @@ function formatDaysAgo(days: number | null): string {
   return `${days}d ago`;
 }
 
-function getEpicLastChanged(epic: Epic): number | null {
-  const candidates: (string | undefined)[] = [
-    epic.updated_at,
-    ...(epic.stories || []).map(s => s.updated_at),
-  ];
+function getEpicLastChanged(stories: Story[]): number | null {
+  const candidates: (string | undefined)[] = stories.map(s => s.updated_at);
   let earliest: number | null = null;
   for (const d of candidates) {
     if (!d) continue;
@@ -173,25 +210,8 @@ function getEpicLastChanged(epic: Epic): number | null {
   return earliest;
 }
 
-
-const STATE_PILL_COLORS: Record<string, { bg: string; text: string }> = {
-  'backlog':              { bg: '#d1d5db', text: '#374151' },
-  'ready for development':{ bg: '#a7f3d0', text: '#374151' },
-  'in development':       { bg: '#6ee7b7', text: '#374151' },
-  'in review':            { bg: '#4ade80', text: '#374151' },
-  'ready for release':    { bg: '#22c55e', text: '#374151' },
-  'complete':             { bg: '#16a34a', text: '#ffffff' },
-};
-
-function typeColor(type: string): string {
-  if (type === 'epic') return '#7c3aed';
-  if (type === 'bug') return '#dc2626';
-  if (type === 'chore') return '#64748b';
-  return '#1d4ed8';
-}
-
 function EpicStatusTable(): React.JSX.Element | null {
-  const { epics, workflowConfig, summaryStateIds, getDisplayStories, getEpicStateInfo, getEpicStateClass, sortState, toggleSortState, resetSortState } = useDashboard();
+  const { epics, workflowConfig, summaryStateIds, getDisplayStories, getEpicStateInfo, getEpicStateClass, sortState, toggleSortState, resetSortState, teamNameMap, filterByTeam, selectedTeamIds } = useDashboard();
   const [openPopover, setOpenPopover] = useState<number | string | null>(null);
   useEffect(() => {
     if (!openPopover) return;
@@ -204,17 +224,9 @@ function EpicStatusTable(): React.JSX.Element | null {
   if (foundEpics.length === 0 || summaryStateIds.length === 0) return null;
 
   const getCompletePct = (epic: Epic): number => {
-    const stateCounts: Record<number, number> = {};
-    summaryStateIds.forEach(id => { stateCounts[id] = 0; });
-    getDisplayStories(epic).forEach(story => {
-      if (stateCounts[story.workflow_state_id] !== undefined) stateCounts[story.workflow_state_id]++;
-    });
-    const total = Object.values(stateCounts).reduce((a, b) => a + b, 0);
-    let completeCount = 0;
-    summaryStateIds.forEach(id => {
-      if (getGroup(workflowConfig.states[id]) === 'complete') completeCount += stateCounts[id];
-    });
-    return total > 0 ? (completeCount / total) * 100 : 0;
+    const stories = getDisplayStories(epic);
+    const { completeCount } = getGroupCounts(stories, summaryStateIds, workflowConfig.states);
+    return stories.length > 0 ? (completeCount / stories.length) * 100 : 0;
   };
 
   const sortedEpics = [...foundEpics].sort((a, b) => {
@@ -224,8 +236,8 @@ function EpicStatusTable(): React.JSX.Element | null {
     if (sortState.summary.col === 'status') return dir * getEpicStateInfo(a).name.localeCompare(getEpicStateInfo(b).name);
     if (sortState.summary.col === 'progress') return dir * (getCompletePct(a) - getCompletePct(b));
     if (sortState.summary.col === 'lastchanged') {
-      const da = getEpicLastChanged(a) ?? Infinity;
-      const db = getEpicLastChanged(b) ?? Infinity;
+      const da = getEpicLastChanged(applyTeamFilter(a.stories || [], filterByTeam, selectedTeamIds)) ?? Infinity;
+      const db = getEpicLastChanged(applyTeamFilter(b.stories || [], filterByTeam, selectedTeamIds)) ?? Infinity;
       return dir * (da - db);
     }
     return 0;
@@ -241,28 +253,26 @@ function EpicStatusTable(): React.JSX.Element | null {
   };
 
   const renderRow = (epic: Epic) => {
-    const stateCounts: Record<number, number> = {};
     const epicDisplayStories = getDisplayStories(epic);
-    epicDisplayStories.forEach(story => {
-      stateCounts[story.workflow_state_id] = (stateCounts[story.workflow_state_id] || 0) + 1;
-    });
+    const { backlogCount, inProgressCount, completeCount } = getGroupCounts(epicDisplayStories, summaryStateIds, workflowConfig.states);
     const total = epicDisplayStories.length;
-    let backlogCount = 0, inProgressCount = 0, completeCount = 0;
-    summaryStateIds.forEach(stateId => {
-      const group = getGroup(workflowConfig.states[stateId]);
-      const count = stateCounts[stateId] || 0;
-      if (group === 'backlog') backlogCount += count;
-      else if (group === 'inprogress') inProgressCount += count;
-      else if (group === 'complete') completeCount += count;
-    });
     const backlogPct = total > 0 ? (backlogCount / total) * 100 : 0;
     const inProgressPct = total > 0 ? (inProgressCount / total) * 100 : 0;
     const completePct = total > 0 ? (completeCount / total) * 100 : 0;
     const si = getEpicStateInfo(epic);
-    const lastChanged = getEpicLastChanged(epic);
-    const recentItems = (epic.stories || [])
+    const teamFilteredStories = applyTeamFilter(epic.stories || [], filterByTeam, selectedTeamIds);
+    const lastChanged = getEpicLastChanged(teamFilteredStories);
+    const recentItems = teamFilteredStories
       .filter(s => s.updated_at)
-      .map(s => ({ id: s.id, name: s.name, type: s.story_type, updated_at: s.updated_at!, app_url: s.app_url, stateName: workflowConfig.states[s.workflow_state_id] || '' }))
+      .map(s => ({
+        id: s.id,
+        name: s.name,
+        type: s.story_type,
+        updated_at: s.updated_at!,
+        app_url: s.app_url,
+        stateName: workflowConfig.states[s.workflow_state_id] || '',
+        teamName: (s.group_id ? teamNameMap[s.group_id] : '') || '',
+      }))
       .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
       .slice(0, 5);
     return (
@@ -290,28 +300,45 @@ function EpicStatusTable(): React.JSX.Element | null {
             <div
               onClick={(e) => e.stopPropagation()}
               className="absolute z-50 bg-white rounded-lg shadow-[0_4px_16px_rgba(0,0,0,0.15)] border border-[#E2E8F0] p-3 text-left"
-              style={{ top: 'calc(100% + 4px)', left: '50%', transform: 'translateX(-50%)', minWidth: '360px' }}
+              style={{ top: 'calc(100% + 4px)', left: '50%', transform: 'translateX(-50%)', minWidth: '560px' }}
             >
               <div className="text-xs font-semibold text-[#64748b] mb-2 uppercase tracking-wide">Recent Changes</div>
-              {recentItems.map((item) => {
-                return (
-                  <div key={`${item.type}-${item.id}`} className="flex items-center gap-2 py-[0.3rem] border-b border-[#F0F0F7] last:border-0">
-                    <span className="text-[0.65rem] font-semibold px-1.5 py-[0.1rem] rounded-full text-white shrink-0" style={{ backgroundColor: typeColor(item.type) }}>
-                      {item.type.charAt(0).toUpperCase() + item.type.slice(1)}
-                    </span>
-                    {item.app_url ? (
-                      <a href={item.app_url} target="_blank" rel="noopener noreferrer" className="text-[#494BCB] text-xs hover:underline flex-1 truncate">{item.name}</a>
-                    ) : (
-                      <span className="text-xs text-[#1a202c] flex-1 truncate">{item.name}</span>
-                    )}
-                    {item.stateName && (() => {
-                      const sc = STATE_PILL_COLORS[item.stateName.toLowerCase()] ?? { bg: '#F1F5F9', text: '#475569' };
-                      return <span className="text-[0.65rem] font-medium whitespace-nowrap shrink-0 px-1.5 py-[0.1rem] rounded" style={{ backgroundColor: sc.bg, color: sc.text }}>{item.stateName}</span>;
-                    })()}
-                    <span className="text-xs text-[#94a3b8] whitespace-nowrap shrink-0">{formatDaysAgo(daysAgo(item.updated_at))}</span>
-                  </div>
-                );
-              })}
+              <table className="w-full" style={{ borderCollapse: 'collapse', tableLayout: 'auto' }}>
+                <tbody>
+                  {recentItems.map((item) => {
+                    const sc = STATE_PILL_COLORS[item.stateName.toLowerCase()] ?? DEFAULT_PILL;
+                    return (
+                      <tr key={`${item.type}-${item.id}`} className="border-b border-[#F0F0F7] last:border-0">
+                        <td className="py-[0.3rem] pr-2 align-middle" style={{ width: '1%', whiteSpace: 'nowrap', textAlign: 'center' }}>
+                          <span className="text-[0.65rem] font-semibold px-1.5 py-[0.1rem] rounded-full text-white" style={{ backgroundColor: TYPE_COLORS[item.type] ?? TYPE_COLORS.feature }}>
+                            {item.type.charAt(0).toUpperCase() + item.type.slice(1)}
+                          </span>
+                        </td>
+                        <td className="py-[0.3rem] pr-2 align-middle" style={{ width: '99%' }}>
+                          {item.app_url ? (
+                            <a href={item.app_url} target="_blank" rel="noopener noreferrer" className="text-[#494BCB] text-xs hover:underline">{item.name}</a>
+                          ) : (
+                            <span className="text-xs text-[#1a202c]">{item.name}</span>
+                          )}
+                        </td>
+                        <td className="py-[0.3rem] pr-2 align-middle" style={{ width: '1%', whiteSpace: 'nowrap', textAlign: 'center' }}>
+                          {item.teamName && (
+                            <span className="text-[0.65rem] font-medium px-1.5 py-[0.1rem] rounded bg-[#EEF2FF] text-[#4338CA]">{item.teamName}</span>
+                          )}
+                        </td>
+                        <td className="py-[0.3rem] pr-2 align-middle" style={{ width: '1%', whiteSpace: 'nowrap', textAlign: 'center' }}>
+                          {item.stateName && (
+                            <span className="text-[0.65rem] font-medium px-1.5 py-[0.1rem] rounded" style={{ backgroundColor: sc.bg, color: sc.text }}>{item.stateName}</span>
+                          )}
+                        </td>
+                        <td className="py-[0.3rem] align-middle" style={{ width: '1%', whiteSpace: 'nowrap', textAlign: 'right' }}>
+                          <span className="text-[0.65rem] text-[#94a3b8]">{formatDaysAgo(daysAgo(item.updated_at))}</span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           )}
         </td>
