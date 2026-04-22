@@ -174,6 +174,15 @@ function getEpicLastChanged(epic: Epic): number | null {
 }
 
 
+const STATE_PILL_COLORS: Record<string, { bg: string; text: string }> = {
+  'backlog':              { bg: '#d1d5db', text: '#374151' },
+  'ready for development':{ bg: '#a7f3d0', text: '#374151' },
+  'in development':       { bg: '#6ee7b7', text: '#374151' },
+  'in review':            { bg: '#4ade80', text: '#374151' },
+  'ready for release':    { bg: '#22c55e', text: '#374151' },
+  'complete':             { bg: '#16a34a', text: '#ffffff' },
+};
+
 function typeColor(type: string): string {
   if (type === 'epic') return '#7c3aed';
   if (type === 'bug') return '#dc2626';
@@ -252,8 +261,8 @@ function EpicStatusTable(): React.JSX.Element | null {
     const si = getEpicStateInfo(epic);
     const lastChanged = getEpicLastChanged(epic);
     const recentItems = [
-      ...(epic.updated_at ? [{ id: epic.id, name: epic.name, type: 'epic', updated_at: epic.updated_at, app_url: epic.app_url }] : []),
-      ...(epic.stories || []).filter(s => s.updated_at).map(s => ({ id: s.id, name: s.name, type: s.story_type, updated_at: s.updated_at!, app_url: s.app_url })),
+      ...(epic.updated_at ? [{ id: epic.id, name: epic.name, type: 'epic', updated_at: epic.updated_at, app_url: epic.app_url, stateName: si.name || '' }] : []),
+      ...(epic.stories || []).filter(s => s.updated_at).map(s => ({ id: s.id, name: s.name, type: s.story_type, updated_at: s.updated_at!, app_url: s.app_url, stateName: workflowConfig.states[s.workflow_state_id] || '' })),
     ].sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()).slice(0, 5);
     return (
       <tr key={epic.id as React.Key}>
@@ -280,7 +289,7 @@ function EpicStatusTable(): React.JSX.Element | null {
             <div
               onClick={(e) => e.stopPropagation()}
               className="absolute z-50 bg-white rounded-lg shadow-[0_4px_16px_rgba(0,0,0,0.15)] border border-[#E2E8F0] p-3 text-left"
-              style={{ top: 'calc(100% + 4px)', left: '50%', transform: 'translateX(-50%)', minWidth: '300px' }}
+              style={{ top: 'calc(100% + 4px)', left: '50%', transform: 'translateX(-50%)', minWidth: '360px' }}
             >
               <div className="text-xs font-semibold text-[#64748b] mb-2 uppercase tracking-wide">Recent Changes</div>
               {recentItems.map((item) => {
@@ -294,6 +303,10 @@ function EpicStatusTable(): React.JSX.Element | null {
                     ) : (
                       <span className="text-xs text-[#1a202c] flex-1 truncate">{item.name}</span>
                     )}
+                    {item.stateName && (() => {
+                      const sc = STATE_PILL_COLORS[item.stateName.toLowerCase()] ?? { bg: '#F1F5F9', text: '#475569' };
+                      return <span className="text-[0.65rem] font-medium whitespace-nowrap shrink-0 px-1.5 py-[0.1rem] rounded" style={{ backgroundColor: sc.bg, color: sc.text }}>{item.stateName}</span>;
+                    })()}
                     <span className="text-xs text-[#94a3b8] whitespace-nowrap shrink-0">{formatDaysAgo(daysAgo(item.updated_at))}</span>
                   </div>
                 );
