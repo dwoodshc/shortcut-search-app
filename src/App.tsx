@@ -373,8 +373,9 @@ function App(): React.JSX.Element {
               <li><strong>Story Summary:</strong> Overall story counts across all epics by workflow state</li>
               <li><strong>Epic Status Table:</strong> Progress bars, state badges, and Last Changed per epic</li>
               <li><strong>Unwatched Tickets:</strong> Open tickets in your selected teams you are not watching</li>
-              <li><strong>Epic Owner Assignment:</strong> Maps each epic to its assigned team members</li>
-              <li><strong>Team Member Assignment:</strong> Inverted view — each team member and their assigned epics</li>
+              <li><strong>Epic Owner Assignments:</strong> Maps each epic to its assigned team members</li>
+              <li><strong>Team Member Epic Assignments:</strong> Inverted view — each member and their epics</li>
+              <li><strong>Team Member Ticket Assignments:</strong> Open tickets grouped by epic per member</li>
               <li><strong>Ticket Status Breakdown:</strong> 3D column chart of story workflow states per epic</li>
               <li><strong>Workflow Status Pie Chart:</strong> Stories by workflow state with clickable Shortcut links</li>
               <li><strong>Story Type Breakdown:</strong> Feature / Bug / Chore pie chart per epic</li>

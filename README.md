@@ -43,21 +43,27 @@ When your Shortcut name is configured (Setup Wizard step 6), a table appears aft
 - Returns nothing if you are watching all open tickets
 
 ### Assignment Tables
-Two collapsible assignment tables appear above the epic cards, controlled by the **Expand/Collapse Assignments** button. Both start collapsed by default and are split into two side-by-side sub-tables for wide-screen readability.
+Three collapsible assignment tables appear above the epic cards, controlled by the **Expand/Collapse Assignments** button. All start collapsed by default and are split into two side-by-side sub-tables for wide-screen readability.
 
-#### Epic Owner Assignment
+#### Epic Owner Assignments
 - Lists each tracked epic alongside its assigned team members (filtered to the selected team)
 - Rows with no team members are highlighted in yellow
 - Team members shown as a bulleted list per epic
 - Sortable by epic name or team member count; restore icon returns original order
 
-#### Team Member Assignment
+#### Team Member Epic Assignments
 - Inverted view: lists each team member alongside the epics they are assigned to
 - Shows epic count per member, e.g. `Alice (3)`
-- Epics shown as a bulleted list per member
+- Epics shown as a list per member
+
+#### Team Member Ticket Assignments
+- Lists all open (non-complete) tickets assigned to each team member
+- Tickets grouped under their epic heading (linked to Shortcut), with a ticket count per epic
+- Each ticket name is a direct link to Shortcut (opens in a new tab)
+- Respects the active team filter and ignored-users toggle
 
 #### Ignored Users Display
-- The **Show/Hide Ignored Users** button (beside "Expand Assignments") toggles visibility of users in the ignore list across both assignment tables and the Team Open Tickets table
+- The **Show/Hide Ignored Users** button (beside "Expand Assignments") toggles visibility of users in the ignore list across all assignment tables and the Team Open Tickets table
 - When shown, ignored users are rendered as a **gray pill** to distinguish them from active users
 - Hidden by default (ignored users are filtered out)
 
@@ -114,7 +120,7 @@ Three icon buttons in the top-right of the header (all with hover tooltips):
 
 ### Toolbar Controls
 Displayed in the header when epics are loaded:
-- **Expand Assignments / Collapse Assignments** — Toggle both assignment tables
+- **Expand Assignments / Collapse Assignments** — Toggle all three assignment tables
 - **Show Ignored Users / Hide Ignored Users** — Toggle visibility of ignored users across assignment tables and Team Open Tickets
 - **Expand Charts / Collapse Charts** — Toggle the Workflow Status Pie Chart and Story Type Breakdown across all epics
 - **Show [Team Names] Only / Show All Teams** — Toggle filtering tickets to only the selected teams (shown when one or more teams are configured). The button label and header subtitle both reflect the currently selected team names (e.g. **Show Engineering & Design Only**)

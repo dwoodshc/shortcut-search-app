@@ -142,13 +142,13 @@ export default function AppHeader(): React.JSX.Element {
         <div className="header-actions-row">
           <button
             onClick={() => {
-              const bothCollapsed = collapsedCharts['assignment-epic'] && collapsedCharts['assignment-member'];
-              setCollapsedCharts(prev => ({ ...prev, 'assignment-epic': !bothCollapsed, 'assignment-member': !bothCollapsed }));
+              const allCollapsed = collapsedCharts['assignment-epic'] && collapsedCharts['assignment-member'] && collapsedCharts['assignment-ticket'];
+              setCollapsedCharts(prev => ({ ...prev, 'assignment-epic': !allCollapsed, 'assignment-member': !allCollapsed, 'assignment-ticket': !allCollapsed }));
             }}
-            className={`header-action-btn${!(collapsedCharts['assignment-epic'] && collapsedCharts['assignment-member']) ? ' active' : ''}`}
-            title="Show or hide the Epic Owner Assignment and Team Member Assignment tables"
+            className={`header-action-btn${!(collapsedCharts['assignment-epic'] && collapsedCharts['assignment-member'] && collapsedCharts['assignment-ticket']) ? ' active' : ''}`}
+            title="Show or hide the Epic Owner Assignments, Team Member Epic Assignments, and Team Member Ticket Assignments tables"
           >
-            {collapsedCharts['assignment-epic'] && collapsedCharts['assignment-member'] ? 'Expand Assignments' : 'Collapse Assignments'}
+            {collapsedCharts['assignment-epic'] && collapsedCharts['assignment-member'] && collapsedCharts['assignment-ticket'] ? 'Expand Assignments' : 'Collapse Assignments'}
           </button>
           <button
             onClick={() => setFilterIgnoredInTickets(prev => !prev)}

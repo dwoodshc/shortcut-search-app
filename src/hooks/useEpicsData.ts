@@ -246,7 +246,7 @@ export function useEpicsData({ epicNames, loadSelectedWorkflow, setCollapsedChar
       const totalApiCalls = (teamApiCall ? 1 : 0) + (workflowApiCall ? 1 : 0) + epicNamesToSearch.length + (foundCount * 2) + uncachedMemberCalls;
       setLoadStats({ loadTime: Date.now() - searchStartTime, apiCallCount: totalApiCalls, loadedAt: new Date() });
 
-      const newCollapsedState: Record<string, boolean> = { 'assignment-epic': true, 'assignment-member': true };
+      const newCollapsedState: Record<string, boolean> = { 'assignment-epic': true, 'assignment-member': true, 'assignment-ticket': true };
       allEpics.forEach(epic => {
         if (!epic.notFound) {
           newCollapsedState[`${epic.id}-stories`] = true;

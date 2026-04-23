@@ -16,10 +16,11 @@ export function useFilters() {
   const [ignoredUsers, setIgnoredUsers] = useState<string[]>(() => storage.getIgnoredUsers());
   const [selectedTeams, setSelectedTeams] = useState<TeamConfig[]>(() => storage.getTeamConfig());
   const [sortState, setSortState] = useState<SortState>({
-    summary:    { col: null, dir: 'asc' },
-    epicTeam:   { col: null, dir: 'asc' },
-    memberEpic: { col: 'member', dir: 'asc' },
-    storyDetail:{ col: null, dir: 'asc' },
+    summary:     { col: null, dir: 'asc' },
+    epicTeam:    { col: null, dir: 'asc' },
+    memberEpic:  { col: 'member', dir: 'asc' },
+    memberTicket:{ col: 'member', dir: 'asc' },
+    storyDetail: { col: null, dir: 'asc' },
   });
   const [collapsedCharts, setCollapsedCharts] = useState<Record<string, boolean>>({});
 

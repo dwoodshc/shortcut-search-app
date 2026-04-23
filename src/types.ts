@@ -113,6 +113,7 @@ export interface SortState {
   summary: SortEntry;
   epicTeam: SortEntry;
   memberEpic: SortEntry;
+  memberTicket: SortEntry;
   storyDetail: SortEntry;
 }
 
