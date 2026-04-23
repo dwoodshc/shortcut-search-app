@@ -188,8 +188,11 @@ const resetIcon = (
 
 function daysAgo(dateStr: string | undefined): number | null {
   if (!dateStr) return null;
-  const ms = Date.now() - new Date(dateStr).getTime();
-  return Math.floor(ms / 86_400_000);
+  const now = new Date();
+  const then = new Date(dateStr);
+  const nowDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const thenDay = new Date(then.getFullYear(), then.getMonth(), then.getDate());
+  return Math.round((nowDay.getTime() - thenDay.getTime()) / 86_400_000);
 }
 
 function formatDaysAgo(days: number | null): string {
