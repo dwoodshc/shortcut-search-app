@@ -8,10 +8,11 @@
 import React, { useState, useEffect } from 'react';
 import { useDashboard } from '../context/DashboardContext';
 import { Epic, Story } from '../types';
+import { ResetIcon } from './icons';
+import { COMPLETE_STATE_NAMES } from '../utils';
 
 const STATE_ORDER = ['Backlog', 'Ready for Development', 'In Development', 'In Review', 'Ready for Release', 'Complete'];
 const BACKLOG_STATES = ['backlog'];
-const COMPLETE_STATES = ['complete', 'ready for release'];
 const IN_PROGRESS_STATES = ['ready for development', 'in development', 'in review'];
 
 const STATE_PILL_COLORS: Record<string, { bg: string; text: string }> = {
@@ -34,20 +35,20 @@ const TYPE_COLORS: Record<string, string> = {
 function getGroup(name: string): 'backlog' | 'complete' | 'inprogress' | null {
   const n = (name || '').toLowerCase().trim();
   if (BACKLOG_STATES.includes(n)) return 'backlog';
-  if (COMPLETE_STATES.includes(n)) return 'complete';
+  if (COMPLETE_STATE_NAMES.has(n)) return 'complete';
   if (IN_PROGRESS_STATES.includes(n)) return 'inprogress';
   return null;
 }
 
 function getGroupCounts(
   stories: Story[],
-  summaryStateIds: number[],
+  filteredStateIds: number[],
   stateNames: Record<number, string>,
 ): { backlogCount: number; inProgressCount: number; completeCount: number } {
   const stateCounts: Record<number, number> = {};
   stories.forEach(s => { stateCounts[s.workflow_state_id] = (stateCounts[s.workflow_state_id] || 0) + 1; });
   let backlogCount = 0, inProgressCount = 0, completeCount = 0;
-  summaryStateIds.forEach(id => {
+  filteredStateIds.forEach(id => {
     const group = getGroup(stateNames[id]);
     const count = stateCounts[id] || 0;
     if (group === 'backlog') backlogCount += count;
@@ -180,11 +181,6 @@ function StoryTotalsSummary(): React.JSX.Element | null {
   );
 }
 
-const resetIcon = (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-[14px] h-[14px] align-middle inline-block">
-    <path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.95-2.05L6.64 18.36A8.955 8.955 0 0 0 13 21a9 9 0 0 0 0-18z"/>
-  </svg>
-);
 
 function daysAgo(dateStr: string | undefined): number | null {
   if (!dateStr) return null;
@@ -204,17 +200,17 @@ function formatDaysAgo(days: number | null): string {
 
 function getEpicLastChanged(stories: Story[]): number | null {
   const candidates: (string | undefined)[] = stories.map(s => s.updated_at);
-  let earliest: number | null = null;
+  let mostRecentDaysAgo: number | null = null;
   for (const d of candidates) {
     if (!d) continue;
     const days = daysAgo(d);
-    if (days !== null && (earliest === null || days < earliest)) earliest = days;
+    if (days !== null && (mostRecentDaysAgo === null || days < mostRecentDaysAgo)) mostRecentDaysAgo = days;
   }
-  return earliest;
+  return mostRecentDaysAgo;
 }
 
 function EpicStatusTable(): React.JSX.Element | null {
-  const { epics, workflowConfig, summaryStateIds, getDisplayStories, getEpicStateInfo, getEpicStateClass, sortState, toggleSortState, resetSortState, teamNameMap, filterByTeam, selectedTeamIds } = useDashboard();
+  const { epics, workflowConfig, filteredStateIds, getDisplayStories, getEpicStateInfo, getEpicStateClass, sortState, toggleSortState, resetSortState, teamNameMap, filterByTeam, selectedTeamIds } = useDashboard();
   const [openPopover, setOpenPopover] = useState<number | string | null>(null);
   useEffect(() => {
     if (!openPopover) return;
@@ -224,11 +220,11 @@ function EpicStatusTable(): React.JSX.Element | null {
   }, [openPopover]);
 
   const foundEpics = epics.filter(e => !e.notFound);
-  if (foundEpics.length === 0 || summaryStateIds.length === 0) return null;
+  if (foundEpics.length === 0 || filteredStateIds.length === 0) return null;
 
   const getCompletePct = (epic: Epic): number => {
     const stories = getDisplayStories(epic);
-    const { completeCount } = getGroupCounts(stories, summaryStateIds, workflowConfig.states);
+    const { completeCount } = getGroupCounts(stories, filteredStateIds, workflowConfig.states);
     return stories.length > 0 ? (completeCount / stories.length) * 100 : 0;
   };
 
@@ -257,7 +253,7 @@ function EpicStatusTable(): React.JSX.Element | null {
 
   const renderRow = (epic: Epic) => {
     const epicDisplayStories = getDisplayStories(epic);
-    const { backlogCount, inProgressCount, completeCount } = getGroupCounts(epicDisplayStories, summaryStateIds, workflowConfig.states);
+    const { backlogCount, inProgressCount, completeCount } = getGroupCounts(epicDisplayStories, filteredStateIds, workflowConfig.states);
     const total = epicDisplayStories.length;
     const backlogPct = total > 0 ? (backlogCount / total) * 100 : 0;
     const inProgressPct = total > 0 ? (inProgressCount / total) * 100 : 0;
@@ -370,7 +366,7 @@ function EpicStatusTable(): React.JSX.Element | null {
       <th className="cursor-pointer select-none px-3 py-2 text-left font-semibold text-sm rounded-tl-lg w-[35%]">
         <span onClick={() => toggleSortState('summary', 'name')} className="cursor-pointer select-none">Epic Name{sortIcon('name')}</span>
         <span className="summary-sort-icon ml-[6px] cursor-pointer" data-tooltip="Restore original order" onClick={(e) => { e.stopPropagation(); resetSortState('summary'); }} style={{ opacity: sortState.summary.col ? 1 : 0.4 }}>
-          {resetIcon}
+          {ResetIcon}
         </span>
       </th>
       <th onClick={() => toggleSortState('summary', 'status')} className="cursor-pointer select-none px-3 py-2 text-center font-semibold text-sm w-[20%] whitespace-nowrap">Epic Status{sortIcon('status')}</th>

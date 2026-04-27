@@ -7,10 +7,8 @@
  */
 import React, { useState, useEffect } from 'react';
 import { useDashboard } from '../context/DashboardContext';
-import { storage, getApiBaseUrl } from '../utils';
+import { storage, getApiBaseUrl, COMPLETE_STATE_NAMES } from '../utils';
 import { Epic, Story } from '../types';
-
-const COMPLETE_STATE_NAMES = new Set(['complete', 'ready for release']);
 
 interface UnwatchedTicket {
   id: number | string;

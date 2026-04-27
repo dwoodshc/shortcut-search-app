@@ -5,6 +5,7 @@
  * Epic, Story, Workflow, WorkflowConfig, ModalState, SortState, DashboardContextValue,
  * and the supporting types referenced by hooks and components.
  */
+import type { Dispatch, SetStateAction } from 'react';
 
 export interface Story {
   id: number;
@@ -158,36 +159,35 @@ export interface DashboardContextValue {
   toggleSortState: (key: SortStateKey, col: string) => void;
   resetSortState: (key: SortStateKey) => void;
   collapsedCharts: Record<string, boolean>;
-  setCollapsedCharts: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
+  setCollapsedCharts: Dispatch<SetStateAction<Record<string, boolean>>>;
   toggleChart: (epicId: number | string, chartType: string) => void;
   filterByTeam: boolean;
-  setFilterByTeam: React.Dispatch<React.SetStateAction<boolean>>;
+  setFilterByTeam: Dispatch<SetStateAction<boolean>>;
   ignoredUsers: string[];
-  setIgnoredUsers: React.Dispatch<React.SetStateAction<string[]>>;
+  setIgnoredUsers: Dispatch<SetStateAction<string[]>>;
   filterIgnoredInTickets: boolean;
-  setFilterIgnoredInTickets: React.Dispatch<React.SetStateAction<boolean>>;
+  setFilterIgnoredInTickets: Dispatch<SetStateAction<boolean>>;
   selectedTeams: TeamConfig[];
   teamNameMap: Record<string, string>;
-  setSelectedTeams: React.Dispatch<React.SetStateAction<TeamConfig[]>>;
+  setSelectedTeams: Dispatch<SetStateAction<TeamConfig[]>>;
   selectedTeamIds: string[];
   selectedTeamLabel: string;
   shortcutWebUrl: string;
-  setShortcutWebUrl: React.Dispatch<React.SetStateAction<string>>;
+  setShortcutWebUrl: Dispatch<SetStateAction<string>>;
   error: string | null;
-  setError: React.Dispatch<React.SetStateAction<string | null>>;
+  setError: Dispatch<SetStateAction<string | null>>;
   loading: boolean;
   successMessage: string | null;
   filteredEpicNames: string[];
-  setFilteredEpicNames: React.Dispatch<React.SetStateAction<string[]>>;
+  setFilteredEpicNames: Dispatch<SetStateAction<string[]>>;
   setupWizardStep: number;
-  setSetupWizardStep: React.Dispatch<React.SetStateAction<number>>;
+  setSetupWizardStep: Dispatch<SetStateAction<number>>;
   // Derived / callbacks
   getDisplayStories: (epic: Epic) => Story[];
   generateShortcutUrl: (epicId: number | string, stateName?: string) => string;
   getEpicStateInfo: (epic: Epic) => EpicState;
   getEpicStateClass: (stateType: string, stateName: string) => string;
   filteredStateIds: number[];
-  summaryStateIds: number[];
   epicTeamData: EpicTeamEntry[];
   memberEpicMap: Record<string, EpicRef[]>;
   allDisplayStories: Story[];
@@ -196,12 +196,6 @@ export interface DashboardContextValue {
   handleSelectWorkflow: (workflow: Workflow) => void;
   toggleAllCharts: () => void;
   handleOpenReadme: () => Promise<void>;
-  darkMode: boolean;
-  toggleDarkMode: () => void;
-  starTrekMode: boolean;
-  toggleStarTrekMode: () => void;
-  matrixMode: boolean;
-  toggleMatrixMode: () => void;
   displayTheme: 'normal' | 'dark' | 'star-trek' | 'matrix';
   selectTheme: (theme: 'normal' | 'dark' | 'star-trek' | 'matrix') => void;
 }

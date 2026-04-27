@@ -39,6 +39,7 @@ export default function SetupWizard({ step, onStepChange, onClose }: Props): Rea
   const [epicsText, setEpicsText] = useState(() => (storage.getEpicsConfig()?.epics || []).map(e => e.name).join('\n'));
   const [allTeams, setAllTeams] = useState<Team[]>([]);
   const [myName, setMyName] = useState(() => storage.getMyName());
+  const [ignoredUsersText, setIgnoredUsersText] = useState(() => ignoredUsers.join('\n'));
 
   const handleSaveEpicList = () => {
     setEpicListError('');
@@ -51,6 +52,84 @@ export default function SetupWizard({ step, onStepChange, onClose }: Props): Rea
       setEpicListError('Failed to save epics configuration. Please try again.');
       return false;
     }
+  };
+
+  const handleStep1Next = async () => {
+    const existingToken = storage.getApiToken();
+    if (!apiToken.trim() && !existingToken) {
+      setTokenError('Please enter an API token');
+      return;
+    }
+    const tokenToVerify = apiToken.trim() || existingToken;
+    if (apiToken.trim()) storage.setApiToken(apiToken.trim());
+    try {
+      setTokenError('Verifying token...');
+      const response = await fetch(`${getApiBaseUrl()}/api/workflows`, {
+        headers: { 'Authorization': `Bearer ${tokenToVerify}` }
+      });
+      if (!response.ok) {
+        setTokenError(response.status === 401 || response.status === 403
+          ? 'Invalid API token. Please check your token and try again.'
+          : 'Failed to verify token. Please check your connection and try again.');
+        return;
+      }
+      setTokenError('');
+      onStepChange(2);
+    } catch (err) {
+      setTokenError('Exception - Failed to verify token. Please check your connection and try again.');
+    }
+  };
+
+  const handleStep2Next = async () => {
+    const savedUrl = handleSaveShortcutUrl();
+    if (savedUrl === false) return;
+    try {
+      const token = storage.getApiToken();
+      const workflowsResponse = await fetch(`${getApiBaseUrl()}/api/workflows`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (workflowsResponse.ok) {
+        setWorkflowField('workflows', await workflowsResponse.json());
+      } else {
+        setError('Failed to load workflows. You may need to go back and retry.');
+      }
+    } catch (err) {
+      setError('Failed to load workflows. Check your connection and try again.');
+    }
+    onStepChange(3);
+  };
+
+  const handleStep3Next = async () => {
+    if (!workflowConfig.selectedId) { setError('Please select a workflow'); return; }
+    const selectedWorkflow = workflowConfig.workflows.find(w => w.id === workflowConfig.selectedId);
+    if (!selectedWorkflow) return;
+    handleSelectWorkflow(selectedWorkflow);
+    try {
+      const token = storage.getApiToken();
+      const teamsRes = await fetch(`${getApiBaseUrl()}/api/teams`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (teamsRes.ok) setAllTeams(await teamsRes.json());
+      else setError('Failed to load teams. You can still proceed and skip team selection.');
+    } catch (err) {
+      setError('Failed to load teams. Check your connection and try again.');
+    }
+    onStepChange(4);
+  };
+
+  const handleNext = async () => {
+    if (step === 1) { await handleStep1Next(); }
+    else if (step === 2) { await handleStep2Next(); }
+    else if (step === 3) { await handleStep3Next(); }
+    else if (step === 4) { storage.setTeamConfig(selectedTeams); onStepChange(5); }
+    else if (step === 5) {
+      const parsed = ignoredUsersText.split('\n').map(u => u.trim()).filter(Boolean);
+      setIgnoredUsers(parsed);
+      storage.setIgnoredUsers(parsed);
+      onStepChange(6);
+    }
+    else if (step === 6) { storage.setMyName(myName.trim()); onStepChange(7); }
+    else if (step === 7) { const saved = handleSaveEpicList(); if (saved) { onClose(); searchEpics(); } }
   };
 
   return (
@@ -325,8 +404,8 @@ export default function SetupWizard({ step, onStepChange, onClose }: Props): Rea
               <div className="flex-1 flex flex-col min-h-0">
                 <textarea
                   className="input-field flex-1 w-full resize-none font-inherit text-base px-3 py-2 box-border"
-                  value={ignoredUsers.join('\n')}
-                  onChange={(e) => setIgnoredUsers(e.target.value.split('\n').filter(u => u.trim() !== ''))}
+                  value={ignoredUsersText}
+                  onChange={(e) => setIgnoredUsersText(e.target.value)}
                   placeholder={"John Smith\nJane Doe"}
                 />
               </div>
@@ -407,97 +486,7 @@ export default function SetupWizard({ step, onStepChange, onClose }: Props): Rea
             )}
             <button
               type="button"
-              onClick={async () => {
-                if (step === 1) {
-                  const existingToken = storage.getApiToken();
-                  if (!apiToken.trim() && !existingToken) {
-                    setTokenError('Please enter an API token');
-                    return;
-                  }
-
-                  const tokenToVerify = apiToken.trim() || existingToken;
-
-                  if (apiToken.trim()) {
-                    storage.setApiToken(apiToken);
-                  }
-
-                  try {
-                    setTokenError('Verifying token...');
-                    const response = await fetch(`${getApiBaseUrl()}/api/workflows`, {
-                      headers: { 'Authorization': `Bearer ${tokenToVerify}` }
-                    });
-
-                    if (!response.ok) {
-                      if (response.status === 401 || response.status === 403) {
-                        setTokenError('Invalid API token. Please check your token and try again.');
-                      } else {
-                        setTokenError('Failed to verify token. Please check your connection and try again.');
-                      }
-                      return;
-                    }
-
-                    setTokenError('');
-                    onStepChange(2);
-                  } catch (err) {
-                    setTokenError('Exception - Failed to verify token. Please check your connection and try again.');
-                    return;
-                  }
-                } else if (step === 2) {
-                  const savedUrl = handleSaveShortcutUrl();
-                  if (savedUrl !== false) {
-                    try {
-                      const token = storage.getApiToken();
-                      const workflowsResponse = await fetch(`${getApiBaseUrl()}/api/workflows`, {
-                        headers: { 'Authorization': `Bearer ${token}` }
-                      });
-                      if (workflowsResponse.ok) {
-                        const workflows = await workflowsResponse.json();
-                        setWorkflowField('workflows', workflows);
-                      } else {
-                        setError('Failed to load workflows. You may need to go back and retry.');
-                      }
-                    } catch (err) {
-                      setError('Failed to load workflows. Check your connection and try again.');
-                    }
-                    onStepChange(3);
-                  }
-                } else if (step === 3) {
-                  if (!workflowConfig.selectedId) {
-                    setError('Please select a workflow');
-                    return;
-                  }
-                  const selectedWorkflow = workflowConfig.workflows.find(w => w.id === workflowConfig.selectedId);
-                  if (selectedWorkflow) {
-                    handleSelectWorkflow(selectedWorkflow);
-                    try {
-                      const token = storage.getApiToken();
-                      const teamsRes = await fetch(`${getApiBaseUrl()}/api/teams`, {
-                        headers: { 'Authorization': `Bearer ${token}` }
-                      });
-                      if (teamsRes.ok) setAllTeams(await teamsRes.json());
-                      else setError('Failed to load teams. You can still proceed and skip team selection.');
-                    } catch (err) {
-                      setError('Failed to load teams. Check your connection and try again.');
-                    }
-                    onStepChange(4);
-                  }
-                } else if (step === 4) {
-                  storage.setTeamConfig(selectedTeams);
-                  onStepChange(5);
-                } else if (step === 5) {
-                  storage.setIgnoredUsers(ignoredUsers);
-                  onStepChange(6);
-                } else if (step === 6) {
-                  storage.setMyName(myName.trim());
-                  onStepChange(7);
-                } else if (step === 7) {
-                  const saved = handleSaveEpicList();
-                  if (saved) {
-                    onClose();
-                    searchEpics();
-                  }
-                }
-              }}
+              onClick={handleNext}
               className="btn-primary"
             >
               {step < 7 ? 'Next' : 'Finish'}

@@ -8,7 +8,7 @@
  */
 import React, { useState } from 'react';
 import { useDashboard } from '../context/DashboardContext';
-import { createPieSlice } from '../utils';
+import { createPieSlice, COMPLETE_STATE_NAMES } from '../utils';
 import { Epic } from '../types';
 
 interface Props {
@@ -141,11 +141,10 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
   const nameCounts: Record<string, number> = {};
   nameList.forEach(name => { nameCounts[name] = 0; });
   displayStories.forEach(story => {
-    const stateName = workflowConfig.states[story.workflow_state_id] || '';
-    const isComplete = stateName.toLowerCase().trim() === 'complete';
-    if (!isComplete && story.owner_ids && story.owner_ids.length > 0) {
+    const stateName = (workflowConfig.states[story.workflow_state_id] || '').toLowerCase().trim();
+    if (!COMPLETE_STATE_NAMES.has(stateName) && story.owner_ids && story.owner_ids.length > 0) {
       story.owner_ids.forEach(ownerId => {
-        const ownerName = members[ownerId] || '';
+        const ownerName = members[ownerId] || ownerId;
         if (Object.prototype.hasOwnProperty.call(nameCounts, ownerName)) {
           nameCounts[ownerName]++;
         }

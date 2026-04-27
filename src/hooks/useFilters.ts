@@ -6,7 +6,7 @@
  * Exposes getDisplayStories, which applies the active team filter to a given epic's
  * story list.
  */
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { storage } from '../utils';
 import { Epic, Story, SortState, SortStateKey, TeamConfig } from '../types';
 
@@ -24,8 +24,8 @@ export function useFilters() {
   });
   const [collapsedCharts, setCollapsedCharts] = useState<Record<string, boolean>>({});
 
-  const selectedTeamIds = selectedTeams.map(t => t.id);
-  const selectedTeamLabel = selectedTeams.map(t => t.name).join(' & ');
+  const selectedTeamIds = useMemo(() => selectedTeams.map(t => t.id), [selectedTeams]);
+  const selectedTeamLabel = useMemo(() => selectedTeams.map(t => t.name).join(' & '), [selectedTeams]);
 
   const toggleSortState = useCallback((key: SortStateKey, col: string) => setSortState(prev => {
     const curr = prev[key];

@@ -21,6 +21,8 @@ interface UseEpicsDataParams {
 export function useEpicsData({ epicNames, loadSelectedWorkflow, setCollapsedCharts, onRateLimit, setFilteredEpicNames }: UseEpicsDataParams) {
   const [epics, setEpics] = useState<Epic[]>([]);
   const [members, setMembers] = useState<Record<string, string>>(() => storage.getMembersCache());
+  const membersRef = useRef<Record<string, string>>(members);
+  useEffect(() => { membersRef.current = members; }, [members]);
   const [loading, setLoading] = useState(false);
   const [loadProgress, setLoadProgress] = useState<LoadProgress>({ loaded: 0, total: 0 });
   const [loadStats, setLoadStats] = useState<LoadStats | null>(null);
@@ -52,7 +54,7 @@ export function useEpicsData({ epicNames, loadSelectedWorkflow, setCollapsedChar
     }
     try {
       const data = await response.json();
-      if (data.error && ['token', 'unauthorized', 'authentication'].some((k: string) => data.error.toLowerCase().includes(k))) {
+      if (data.error && ['token', 'unauthorized', 'authentication'].some(k => data.error.toLowerCase().includes(k))) {
         setApiTokenIssue(true);
         setError(`API Token Error: ${data.error}`);
         setLoading(false);
@@ -63,7 +65,7 @@ export function useEpicsData({ epicNames, loadSelectedWorkflow, setCollapsedChar
   }, [onRateLimit]);
 
   const fetchUserName = useCallback(async (userId: string): Promise<string> => {
-    if (members[userId]) return members[userId];
+    if (membersRef.current[userId]) return membersRef.current[userId];
     try {
       const token = storage.getApiToken();
       if (!token) return userId;
@@ -80,7 +82,7 @@ export function useEpicsData({ epicNames, loadSelectedWorkflow, setCollapsedChar
       }
     } catch (err) {}
     return userId;
-  }, [members, handleApiError]);
+  }, [handleApiError]);
 
   useEffect(() => {
     const fetchOwnerNames = async () => {
@@ -91,12 +93,11 @@ export function useEpicsData({ epicNames, loadSelectedWorkflow, setCollapsedChar
           if (story.owner_ids) story.owner_ids.forEach(id => ownerIds.add(id));
         });
       });
-      for (const ownerId of Array.from(ownerIds)) {
-        if (!members[ownerId]) await fetchUserName(ownerId);
-      }
+      const uncachedIds = Array.from(ownerIds).filter(id => !membersRef.current[id]);
+      await Promise.all(uncachedIds.map(id => fetchUserName(id)));
     };
     if (epics.length > 0) fetchOwnerNames();
-  }, [epics, members, fetchUserName]);
+  }, [epics, fetchUserName]);
 
   const cancelSearch = (): void => {
     abortControllerRef.current?.abort();
@@ -125,6 +126,11 @@ export function useEpicsData({ epicNames, loadSelectedWorkflow, setCollapsedChar
       }
 
       const token = storage.getApiToken();
+      if (!token) {
+        setError('No API token found. Please complete setup.');
+        setLoading(false);
+        return;
+      }
 
       const teamConfigs = storage.getTeamConfig();
       let teamApiCall = false;
@@ -132,7 +138,8 @@ export function useEpicsData({ epicNames, loadSelectedWorkflow, setCollapsedChar
       let allTeams: { id: string; name: string; member_ids?: string[] }[] = [];
       try {
         const teamsRes = await fetch(`${getApiBaseUrl()}/api/teams`, {
-          headers: { 'Authorization': `Bearer ${token}` }
+          headers: { 'Authorization': `Bearer ${token}` },
+          signal: controller.signal
         });
         if (teamsRes.ok) {
           teamApiCall = true;
@@ -233,6 +240,8 @@ export function useEpicsData({ epicNames, loadSelectedWorkflow, setCollapsedChar
           }
         })
       );
+
+      if (controller.signal.aborted) return;
 
       const allEpics: Epic[] = epicNamesToSearch.map((name, i) =>
         epicsWithStories[i] || { id: `not-found-${name}`, name, notFound: true, state: '' }

@@ -9,12 +9,8 @@
 import React, { useMemo } from 'react';
 import { useDashboard } from '../context/DashboardContext';
 import { EpicTeamEntry, EpicRef } from '../types';
-
-const resetIcon = (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-[14px] h-[14px] align-middle inline-block">
-    <path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.95-2.05L6.64 18.36A8.955 8.955 0 0 0 13 21a9 9 0 0 0 0-18z"/>
-  </svg>
-);
+import { ResetIcon } from './icons';
+import { COMPLETE_STATE_NAMES } from '../utils';
 
 export default function AssignmentTables(): React.JSX.Element | null {
   const {
@@ -37,7 +33,7 @@ export default function AssignmentTables(): React.JSX.Element | null {
         : stories;
       for (const story of filtered) {
         const stateName = (workflowConfig.states[story.workflow_state_id] || '').toLowerCase().trim();
-        if (stateName === 'complete') continue;
+        if (COMPLETE_STATE_NAMES.has(stateName)) continue;
         for (const ownerId of story.owner_ids || []) {
           const ownerName = members[ownerId] || ownerId;
           if (filterIgnoredInTickets && ignoredUsers.includes(ownerName)) continue;
@@ -100,7 +96,7 @@ export default function AssignmentTables(): React.JSX.Element | null {
       <th className={`${thBaseClass} rounded-tl-lg`} onClick={() => toggleSortState('epicTeam', 'epic')}>
         Epic{makeSortIcon(sortState.epicTeam, 'epic')}
         <span className="summary-sort-icon ml-[6px] cursor-pointer" data-tooltip="Restore original order" onClick={(e) => { e.stopPropagation(); resetSortState('epicTeam'); }} style={{ opacity: sortState.epicTeam.col ? 1 : 0.4 }}>
-          {resetIcon}
+          {ResetIcon}
         </span>
       </th>
       <th className={`${thBaseClass} rounded-tr-lg cursor-default`}>Team Members</th>

@@ -6,11 +6,11 @@
  * back to storage, and reloads the page. Tracks success and error feedback for both.
  */
 import { useState, useRef, useEffect } from 'react';
-import { storage } from '../utils';
+import { storage, STORAGE_KEYS } from '../utils';
 
 export function useConfigIO() {
-  const [importError, setImportError] = useState('');
-  const [importSuccess, setImportSuccess] = useState('');
+  const [configError, setConfigError] = useState('');
+  const [configSuccess, setConfigSuccess] = useState('');
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   useEffect(() => {
@@ -36,7 +36,7 @@ export function useConfigIO() {
         epicsConfig,
         teamConfig: storage.getTeamConfig(),
         ignoredUsers: storage.getIgnoredUsers(),
-        migrationCompleted: localStorage.getItem('migration_completed'),
+        migrationCompleted: localStorage.getItem(STORAGE_KEYS.MIGRATION_COMPLETED),
         exportDate: new Date().toISOString(),
         version: '1.0'
       };
@@ -52,11 +52,11 @@ export function useConfigIO() {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
 
-      setImportSuccess('Configuration exported successfully!');
-      addTimer(() => setImportSuccess(''), 3000);
+      setConfigSuccess('Configuration exported successfully!');
+      addTimer(() => setConfigSuccess(''), 3000);
     } catch (err) {
-      setImportError('Failed to export configuration. Please try again.');
-      addTimer(() => setImportError(''), 3000);
+      setConfigError('Failed to export configuration. Please try again.');
+      addTimer(() => setConfigError(''), 3000);
     }
   };
 
@@ -67,11 +67,13 @@ export function useConfigIO() {
     const reader = new FileReader();
     reader.onload = (e: ProgressEvent<FileReader>) => {
       try {
-        const importData = JSON.parse(e.target?.result as string);
+        const raw = e.target?.result;
+        if (typeof raw !== 'string') throw new Error('Unexpected file content type');
+        const importData = JSON.parse(raw);
 
         if (!importData.version) {
-          setImportError('Invalid configuration file format.');
-          addTimer(() => setImportError(''), 3000);
+          setConfigError('Invalid configuration file format.');
+          addTimer(() => setConfigError(''), 3000);
           return;
         }
 
@@ -85,24 +87,24 @@ export function useConfigIO() {
         }
         if (importData.teamConfig) storage.setTeamConfig(importData.teamConfig);
         if (importData.ignoredUsers) storage.setIgnoredUsers(importData.ignoredUsers);
-        if (importData.migrationCompleted) localStorage.setItem('migration_completed', importData.migrationCompleted);
+        if (importData.migrationCompleted) localStorage.setItem(STORAGE_KEYS.MIGRATION_COMPLETED, importData.migrationCompleted);
 
-        setImportSuccess('Configuration imported successfully! Reloading page...');
+        setConfigSuccess('Configuration imported successfully! Reloading page...');
         addTimer(() => window.location.reload(), 2000);
       } catch (err) {
-        setImportError('Failed to import configuration. Please ensure the file is valid.');
-        addTimer(() => setImportError(''), 3000);
+        setConfigError('Failed to import configuration. Please ensure the file is valid.');
+        addTimer(() => setConfigError(''), 3000);
       }
     };
 
     reader.onerror = () => {
-      setImportError('Failed to read file. Please try again.');
-      addTimer(() => setImportError(''), 3000);
+      setConfigError('Failed to read file. Please try again.');
+      addTimer(() => setConfigError(''), 3000);
     };
 
     reader.readAsText(file);
     event.target.value = '';
   };
 
-  return { importError, importSuccess, handleExportData, handleImportData };
+  return { configError, configSuccess, handleExportData, handleImportData };
 }

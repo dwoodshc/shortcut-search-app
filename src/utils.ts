@@ -7,6 +7,8 @@
  */
 import { WorkflowStorageConfig, EpicConfig, TeamConfig } from './types';
 
+export const COMPLETE_STATE_NAMES = new Set(['complete', 'ready for release']);
+
 export const STORAGE_KEYS = {
   API_TOKEN: 'shortcut_api_token',
   WORKFLOW_CONFIG: 'shortcut_workflow_config',
@@ -18,6 +20,7 @@ export const STORAGE_KEYS = {
   IGNORED_USERS: 'shortcut_ignored_users',
   DISPLAY_MODE: 'shortcut_display_mode',
   MY_NAME: 'shortcut_my_name',
+  MIGRATION_COMPLETED: 'migration_completed',
 } as const;
 
 const migrateApiToken = (): void => {
@@ -35,29 +38,34 @@ export const storage = {
 
   getWorkflowConfig: (): WorkflowStorageConfig | null => {
     const data = localStorage.getItem(STORAGE_KEYS.WORKFLOW_CONFIG);
-    return data ? JSON.parse(data) : null;
+    if (!data) return null;
+    try { return JSON.parse(data); } catch { return null; }
   },
   setWorkflowConfig: (config: WorkflowStorageConfig): void => { localStorage.setItem(STORAGE_KEYS.WORKFLOW_CONFIG, JSON.stringify(config)); },
 
   getEpicsConfig: (): EpicConfig | null => {
     const data = localStorage.getItem(STORAGE_KEYS.EPICS_CONFIG);
-    return data ? JSON.parse(data) : null;
+    if (!data) return null;
+    try { return JSON.parse(data); } catch { return null; }
   },
   setEpicsConfig: (config: EpicConfig): void => { localStorage.setItem(STORAGE_KEYS.EPICS_CONFIG, JSON.stringify(config)); },
 
   getMembersCache: (): Record<string, string> => {
     const data = localStorage.getItem(STORAGE_KEYS.MEMBERS_CACHE);
-    return data ? JSON.parse(data) : {};
+    if (!data) return {};
+    try { return JSON.parse(data); } catch { return {}; }
   },
   setMembersCache: (cache: Record<string, string>): void => { localStorage.setItem(STORAGE_KEYS.MEMBERS_CACHE, JSON.stringify(cache)); },
 
   getTeamConfig: (): TeamConfig[] => {
     const data = localStorage.getItem(STORAGE_KEYS.TEAM_CONFIG);
     if (!data) return [];
-    const parsed = JSON.parse(data);
-    // Migrate from old single-team format { id, name } to array
-    if (Array.isArray(parsed)) return parsed;
-    return [parsed];
+    try {
+      const parsed = JSON.parse(data);
+      // Migrate from old single-team format { id, name } to array
+      if (Array.isArray(parsed)) return parsed;
+      return [parsed];
+    } catch { return []; }
   },
   setTeamConfig: (configs: TeamConfig[]): void => { localStorage.setItem(STORAGE_KEYS.TEAM_CONFIG, JSON.stringify(configs)); },
 
@@ -86,7 +94,8 @@ export const storage = {
 
   getEpicWorkflowCache: (): Record<number, { name: string; type: string }> | null => {
     const data = localStorage.getItem(STORAGE_KEYS.EPIC_WORKFLOW_CACHE);
-    return data ? JSON.parse(data) : null;
+    if (!data) return null;
+    try { return JSON.parse(data); } catch { return null; }
   },
   setEpicWorkflowCache: (stateMap: Record<number, { name: string; type: string }>): void => {
     localStorage.setItem(STORAGE_KEYS.EPIC_WORKFLOW_CACHE, JSON.stringify(stateMap));
@@ -94,7 +103,8 @@ export const storage = {
 
   getIgnoredUsers: (): string[] => {
     const data = localStorage.getItem(STORAGE_KEYS.IGNORED_USERS);
-    return data ? JSON.parse(data) : [];
+    if (!data) return [];
+    try { return JSON.parse(data); } catch { return []; }
   },
   setIgnoredUsers: (users: string[]): void => { localStorage.setItem(STORAGE_KEYS.IGNORED_USERS, JSON.stringify(users)); },
 
