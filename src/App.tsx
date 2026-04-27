@@ -403,12 +403,12 @@ function App(): React.JSX.Element {
               <li><strong>Epic Owner Assignments:</strong> Maps each epic to its assigned team members</li>
               <li><strong>Team Member Epic Assignments:</strong> Inverted view — each member and their epics</li>
               <li><strong>Team Member Ticket Assignments:</strong> Open tickets grouped by epic per member</li>
-              <li><strong>Ticket Status Breakdown:</strong> 3D column chart of story workflow states per epic</li>
+              <li><strong>Ticket Status Breakdown:</strong> 3D column chart; click a bar to view tickets in that state</li>
               <li><strong>Workflow Status Pie Chart:</strong> Stories by workflow state with clickable Shortcut links</li>
               <li><strong>Story Type Breakdown:</strong> Feature / Bug / Chore pie chart per epic</li>
               <li><strong>Story Owners Table:</strong> Per-epic story owner counts including unassigned</li>
               <li><strong>Team Open Tickets:</strong> Open ticket counts per team member, excluding completed</li>
-              <li><strong>User Story Board:</strong> Kanban view (Backlog → Complete) with collapsible story cards</li>
+              <li><strong>User Story Board:</strong> Kanban board (Backlog → Complete), collapsible per epic</li>
               <li><strong>Ignored Users:</strong> Users excluded from assignment and ticket tables</li>
               <li><strong>Setup Wizard:</strong> 7-step setup: token, URL, workflow, teams, name, epic list</li>
               <li><strong>Configuration Management:</strong> Export / Import all settings as JSON</li>

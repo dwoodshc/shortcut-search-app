@@ -75,6 +75,7 @@ Per epic, three visualizations are available. Each has a **▶/▼ toggle** in i
 - Workflow status breakdown showing story distribution across workflow states
 - Visual bars for: Backlog, Ready for Development, In Development, In Review, Ready for Release, Complete
 - Story counts displayed above each column
+- Clicking any bar except **Complete** opens a popover listing all tickets in that state (type pill, name link, team, age); click the same bar or outside to dismiss
 - Always visible (no collapse toggle)
 
 #### Workflow Status Pie Chart
@@ -265,6 +266,7 @@ All configuration is stored in **browser localStorage**:
 | `shortcut_team_members_cache` | Team member IDs keyed by team ID; cached per team, populated on demand |
 | `shortcut_epic_workflow_cache` | Epic workflow states cache |
 | `shortcut_display_mode` | Display theme preference (`normal`, `dark`, `star-trek`, or `matrix`) |
+| `migration_completed` | One-time migration flag (legacy server-side config → localStorage) |
 
 **Backup & Portability:**
 - Use Export/Import in the Settings menu to save your configuration as a JSON file
@@ -298,12 +300,7 @@ Epic workflow states are cached to localStorage and skipped on subsequent loads.
 - `GET /api/teams` — All Shortcut teams (groups)
 - `GET /api/members` — All workspace members
 - `GET /api/users/:id` — Member display name
-- `GET /api/stories/:id/history` — Story change history (available; not currently called by the frontend)
 - `GET /api/migrate-data` — One-time migration of legacy server-side config to localStorage
-- `GET /api/filtered-epics` — Read epic names from epics.yml (legacy)
-- `GET /api/epic-emails` — Read epic-to-team mappings from epics.yml (legacy)
-- `GET /api/epics-file` / `POST /api/epics-file` — Read/write epics.yml raw content
-- `GET /api/state-ids-file` / `POST /api/state-ids-file` — Read/write shortcut.yml raw content
 
 ## Technologies Used
 

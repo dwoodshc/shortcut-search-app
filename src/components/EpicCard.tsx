@@ -6,7 +6,7 @@
  * a team open-tickets table, and a collapsible six-column kanban story board
  * (Backlog → Complete).
  */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDashboard } from '../context/DashboardContext';
 import { createPieSlice, COMPLETE_STATE_NAMES } from '../utils';
 import { Epic } from '../types';
@@ -16,6 +16,7 @@ interface Props {
 }
 
 const STORY_COLUMNS = ['Backlog', 'Ready for Development', 'In Development', 'In Review', 'Ready for Release', 'Complete'];
+const NON_CLICKABLE_STATES = ['complete'];
 
 const STATE_COLORS: Record<string, string> = {
   'backlog': '#d1d5db',
@@ -50,17 +51,41 @@ interface TypeSegment {
   angle: number;
 }
 
+function daysAgo(dateStr: string | undefined): number | null {
+  if (!dateStr) return null;
+  const now = new Date();
+  const then = new Date(dateStr);
+  const nowDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const thenDay = new Date(then.getFullYear(), then.getMonth(), then.getDate());
+  return Math.round((nowDay.getTime() - thenDay.getTime()) / 86_400_000);
+}
+
+function formatDaysAgo(days: number | null): string {
+  if (days === null) return '—';
+  if (days === 0) return 'Today';
+  if (days === 1) return '1d ago';
+  return `${days}d ago`;
+}
+
 export default function EpicCard({ epic }: Props): React.JSX.Element {
   const {
     members, workflowConfig, filteredStateIds,
     collapsedCharts, toggleChart,
     generateShortcutUrl, shortcutWebUrl,
     getDisplayStories, getEpicStateInfo, getEpicStateClass,
-    selectedTeamIds, selectedTeamLabel, teamMemberIds, filterByTeam, filterIgnoredInTickets, ignoredUsers,
+    selectedTeamIds, selectedTeamLabel, teamMemberIds, teamNameMap, filterByTeam, filterIgnoredInTickets, ignoredUsers,
   } = useDashboard();
 
   const [hoveredPieSegment, setHoveredPieSegment] = useState<WorkflowSegment | null>(null);
   const [hoveredTypeSegment, setHoveredTypeSegment] = useState<TypeSegment | null>(null);
+  const [clickedBarStateId, setClickedBarStateId] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (clickedBarStateId === null) return;
+    const close = () => setClickedBarStateId(null);
+    document.addEventListener('click', close);
+    return () => document.removeEventListener('click', close);
+  }, [clickedBarStateId]);
 
   if (epic.notFound) {
     return (
@@ -80,6 +105,12 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
     workflowStateCounts[story.workflow_state_id] = (workflowStateCounts[story.workflow_state_id] || 0) + 1;
   });
   const workflowTotal = displayStories.length;
+  const clickedStateName = clickedBarStateId !== null ? (workflowConfig.states[clickedBarStateId] || '') : '';
+  const clickedStories = clickedBarStateId !== null
+    ? displayStories
+        .filter(s => s.workflow_state_id === clickedBarStateId)
+        .sort((a, b) => new Date(b.updated_at || 0).getTime() - new Date(a.updated_at || 0).getTime())
+    : [];
 
   // --- Workflow pie chart ---
   const workflowSegments = filteredStateIds.map(stateId => {
@@ -184,13 +215,21 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
         <div className="epic-stats-container">
           <div className="workflow-status-chart-container">
             <h4>Ticket Status Breakdown</h4>
-            <div className="workflow-status-chart mt-2">
+            <div className="workflow-status-chart mt-2" style={{ position: 'relative' }}>
               {filteredStateIds.map(stateId => {
                 const count = workflowStateCounts[stateId] || 0;
                 const percentage = workflowTotal > 0 ? (count / workflowTotal) * 100 : 0;
                 const stateName = workflowConfig.states[stateId] || String(stateId);
+                const isNonClickable = NON_CLICKABLE_STATES.includes(stateName.toLowerCase().trim());
+                const isActive = clickedBarStateId === stateId;
                 return (
-                  <div key={stateId} className="status-bar-item">
+                  <div
+                    key={stateId}
+                    className={`status-bar-item${!isNonClickable ? ' cursor-pointer' : ''}`}
+                    onClick={!isNonClickable ? (e) => { e.stopPropagation(); setClickedBarStateId(prev => prev === stateId ? null : stateId); } : undefined}
+                    title={!isNonClickable ? `View ${count} ticket${count !== 1 ? 's' : ''} in ${stateName}` : undefined}
+                    style={isActive ? { outline: '2px solid #494BCB', borderRadius: '4px' } : undefined}
+                  >
                     <div className="column-3d-wrapper">
                       <div className="column-3d-container">
                         <div className="column-3d-fill" style={{ height: `${percentage}%` }}>
@@ -207,6 +246,51 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
                   </div>
                 );
               })}
+              {clickedBarStateId !== null && (
+                <div
+                  onClick={(e) => e.stopPropagation()}
+                  className="absolute z-50 bg-white rounded-lg shadow-[0_4px_16px_rgba(0,0,0,0.15)] border border-[#E2E8F0] p-3 text-left"
+                  style={{ top: 'calc(100% + 8px)', left: 0, minWidth: '560px' }}
+                >
+                  <div className="text-xs font-semibold text-[#64748b] mb-2 uppercase tracking-wide">
+                    {clickedStateName} — {clickedStories.length} ticket{clickedStories.length !== 1 ? 's' : ''}
+                  </div>
+                  {clickedStories.length === 0 ? (
+                    <p className="text-xs text-[#94a3b8] italic">No tickets in this state</p>
+                  ) : (
+                    <div style={clickedStories.length > 5 ? { maxHeight: '220px', overflowY: 'auto' } : undefined}>
+                    <table className="w-full" style={{ borderCollapse: 'collapse', tableLayout: 'auto' }}>
+                      <tbody>
+                        {clickedStories.map(story => (
+                          <tr key={story.id} className="border-b border-[#F0F0F7] last:border-0">
+                            <td className="py-[0.3rem] pr-2 align-middle" style={{ width: '1%', whiteSpace: 'nowrap', textAlign: 'center' }}>
+                              <span className="text-[0.65rem] font-semibold px-1.5 py-[0.1rem] rounded-full text-white" style={{ backgroundColor: TYPE_COLORS[story.story_type] ?? TYPE_COLORS.feature }}>
+                                {story.story_type.charAt(0).toUpperCase() + story.story_type.slice(1)}
+                              </span>
+                            </td>
+                            <td className="py-[0.3rem] pr-2 align-middle" style={{ width: '99%' }}>
+                              {story.app_url ? (
+                                <a href={story.app_url} target="_blank" rel="noopener noreferrer" className="text-[#494BCB] text-xs hover:underline">{story.name}</a>
+                              ) : (
+                                <span className="text-xs text-[#1a202c]">{story.name}</span>
+                              )}
+                            </td>
+                            <td className="py-[0.3rem] pr-2 align-middle" style={{ width: '1%', whiteSpace: 'nowrap', textAlign: 'center' }}>
+                              {story.group_id && teamNameMap[story.group_id] && (
+                                <span className="text-[0.65rem] font-medium px-1.5 py-[0.1rem] rounded bg-[#EEF2FF] text-[#4338CA]">{teamNameMap[story.group_id]}</span>
+                              )}
+                            </td>
+                            <td className="py-[0.3rem] pr-3 align-middle" style={{ width: '1%', whiteSpace: 'nowrap', textAlign: 'right' }}>
+                              <span className="text-[0.65rem] text-[#94a3b8]">{formatDaysAgo(daysAgo(story.updated_at))}</span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Workflow Pie Chart */}
