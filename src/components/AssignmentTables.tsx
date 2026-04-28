@@ -107,6 +107,12 @@ export default function AssignmentTables(): React.JSX.Element | null {
     <tr className="bg-[#494BCB]">
       <th className={`${thBaseClass} rounded-tl-lg`} onClick={() => toggleSortState('memberEpic', 'member')}>
         Team Member{makeSortIcon(sortState.memberEpic, 'member')}
+        <span className="summary-sort-icon ml-[6px] cursor-pointer" data-tooltip="Restore original order" onClick={(e) => { e.stopPropagation(); resetSortState('memberEpic'); }} style={{ opacity: sortState.memberEpic.col ? 1 : 0.4 }}>
+          {ResetIcon}
+        </span>
+      </th>
+      <th className={`${thBaseClass} text-center`} onClick={() => toggleSortState('memberEpic', 'count')}>
+        Count{makeSortIcon(sortState.memberEpic, 'count', true)}
       </th>
       <th className={`${thBaseClass} rounded-tr-lg cursor-default`}>Epics</th>
     </tr>
@@ -116,6 +122,12 @@ export default function AssignmentTables(): React.JSX.Element | null {
     <tr className="bg-[#494BCB]">
       <th className={`${thBaseClass} rounded-tl-lg`} onClick={() => toggleSortState('memberTicket', 'member')}>
         Team Member{makeSortIcon(sortState.memberTicket, 'member')}
+        <span className="summary-sort-icon ml-[6px] cursor-pointer" data-tooltip="Restore original order" onClick={(e) => { e.stopPropagation(); resetSortState('memberTicket'); }} style={{ opacity: sortState.memberTicket.col ? 1 : 0.4 }}>
+          {ResetIcon}
+        </span>
+      </th>
+      <th className={`${thBaseClass} text-center`} onClick={() => toggleSortState('memberTicket', 'count')}>
+        Count{makeSortIcon(sortState.memberTicket, 'count', true)}
       </th>
       <th className={`${thBaseClass} rounded-tr-lg cursor-default`}>Open Tickets</th>
     </tr>
@@ -142,9 +154,9 @@ export default function AssignmentTables(): React.JSX.Element | null {
       <td className={tdClass}>
         {!filterIgnoredInTickets && ignoredUsers.includes(row.member)
           ? <span className="bg-[#e5e7eb] rounded-full px-2 py-[0.1rem] inline-block text-[#1a202c]">{row.member}</span>
-          : row.member}{' '}
-        <span className="text-[#1a202c] text-[0.8rem]">({row.epics.length})</span>
+          : row.member}
       </td>
+      <td className={`${tdClass} text-center font-semibold`}>{row.epics.length}</td>
       <td className={tdClass}>
         <ul className="m-0 pl-0 list-none">
           {[...row.epics].sort((a, b) => a.name.localeCompare(b.name)).map((e) => (
@@ -160,9 +172,9 @@ export default function AssignmentTables(): React.JSX.Element | null {
       <td className={tdClass}>
         {!filterIgnoredInTickets && ignoredUsers.includes(row.member)
           ? <span className="bg-[#e5e7eb] rounded-full px-2 py-[0.1rem] inline-block text-[#1a202c]">{row.member}</span>
-          : row.member}{' '}
-        <span className="text-[#1a202c] text-[0.8rem]">({row.tickets.length})</span>
+          : row.member}
       </td>
+      <td className={`${tdClass} text-center font-semibold`}>{row.tickets.length}</td>
       <td className={tdClass}>
         {(() => {
           const byEpic: Record<string, typeof row.tickets> = {};
@@ -194,7 +206,8 @@ export default function AssignmentTables(): React.JSX.Element | null {
   const memberEpicHalf = Math.ceil(sortedMemberEpic.length / 2);
   const memberTicketHalf = Math.ceil(sortedMemberTicket.length / 2);
   const colgroup = <colgroup><col style={{ width: '50%' }} /><col style={{ width: '50%' }} /></colgroup>;
-  const memberColgroup = <colgroup><col style={{ width: '30%' }} /><col style={{ width: '70%' }} /></colgroup>;
+  const memberEpicColgroup = <colgroup><col style={{ width: '25%' }} /><col style={{ width: '8%' }} /><col style={{ width: '67%' }} /></colgroup>;
+  const memberTicketColgroup = <colgroup><col style={{ width: '25%' }} /><col style={{ width: '8%' }} /><col style={{ width: '67%' }} /></colgroup>;
 
   return (
     <>
@@ -241,14 +254,14 @@ export default function AssignmentTables(): React.JSX.Element | null {
             <div className="summary-table-grid">
               <div>
                 <table className={tableClass} style={{ tableLayout: 'fixed', borderCollapse: 'separate', borderSpacing: 0 }}>
-                  {memberColgroup}
+                  {memberEpicColgroup}
                   <thead>{memberEpicHead}</thead>
                   <tbody>{sortedMemberEpic.slice(0, memberEpicHalf).map((row) => renderMemberEpicRow(row))}</tbody>
                 </table>
               </div>
               <div>
                 <table className={tableClass} style={{ tableLayout: 'fixed', borderCollapse: 'separate', borderSpacing: 0 }}>
-                  {memberColgroup}
+                  {memberEpicColgroup}
                   <thead>{memberEpicHead}</thead>
                   <tbody>{sortedMemberEpic.slice(memberEpicHalf).map((row) => renderMemberEpicRow(row))}</tbody>
                 </table>
@@ -270,14 +283,14 @@ export default function AssignmentTables(): React.JSX.Element | null {
             <div className="summary-table-grid">
               <div>
                 <table className={tableClass} style={{ tableLayout: 'fixed', borderCollapse: 'separate', borderSpacing: 0 }}>
-                  {memberColgroup}
+                  {memberTicketColgroup}
                   <thead>{memberTicketHead}</thead>
                   <tbody>{sortedMemberTicket.slice(0, memberTicketHalf).map((row) => renderMemberTicketRow(row))}</tbody>
                 </table>
               </div>
               <div>
                 <table className={tableClass} style={{ tableLayout: 'fixed', borderCollapse: 'separate', borderSpacing: 0 }}>
-                  {memberColgroup}
+                  {memberTicketColgroup}
                   <thead>{memberTicketHead}</thead>
                   <tbody>{sortedMemberTicket.slice(memberTicketHalf).map((row) => renderMemberTicketRow(row))}</tbody>
                 </table>
