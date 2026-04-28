@@ -275,6 +275,13 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
                                 <span className="text-xs text-[#1a202c]">{story.name}</span>
                               )}
                             </td>
+                            <td className="py-[0.3rem] pr-2 align-middle" style={{ width: '1%', whiteSpace: 'nowrap' }}>
+                              <span className="text-[0.65rem] text-[#475569]">
+                                {story.owner_ids && story.owner_ids.length > 0
+                                  ? story.owner_ids.map(id => members[id] || id).join(', ')
+                                  : <span className="text-[#cbd5e0] italic">Unassigned</span>}
+                              </span>
+                            </td>
                             <td className="py-[0.3rem] pr-2 align-middle" style={{ width: '1%', whiteSpace: 'nowrap', textAlign: 'center' }}>
                               {story.group_id && teamNameMap[story.group_id] && (
                                 <span className="text-[0.65rem] font-medium px-1.5 py-[0.1rem] rounded bg-[#EEF2FF] text-[#4338CA]">{teamNameMap[story.group_id]}</span>
