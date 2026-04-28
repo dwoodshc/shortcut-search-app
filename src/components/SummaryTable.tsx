@@ -44,18 +44,19 @@ function getGroupCounts(
   stories: Story[],
   filteredStateIds: number[],
   stateNames: Record<number, string>,
-): { backlogCount: number; inProgressCount: number; completeCount: number } {
+): { backlogCount: number; inProgressCount: number; completeCount: number; readyForReleaseCount: number } {
   const stateCounts: Record<number, number> = {};
   stories.forEach(s => { stateCounts[s.workflow_state_id] = (stateCounts[s.workflow_state_id] || 0) + 1; });
-  let backlogCount = 0, inProgressCount = 0, completeCount = 0;
+  let backlogCount = 0, inProgressCount = 0, completeCount = 0, readyForReleaseCount = 0;
   filteredStateIds.forEach(id => {
-    const group = getGroup(stateNames[id]);
     const count = stateCounts[id] || 0;
+    if ((stateNames[id] || '').toLowerCase().trim() === 'ready for release') { readyForReleaseCount += count; return; }
+    const group = getGroup(stateNames[id]);
     if (group === 'backlog') backlogCount += count;
     else if (group === 'inprogress') inProgressCount += count;
     else if (group === 'complete') completeCount += count;
   });
-  return { backlogCount, inProgressCount, completeCount };
+  return { backlogCount, inProgressCount, completeCount, readyForReleaseCount };
 }
 
 function applyTeamFilter(stories: Story[], filterByTeam: boolean, selectedTeamIds: string[]): Story[] {
@@ -70,11 +71,15 @@ interface ProgressBarProps {
   total: number;
   completeCount: number;
   inProgressCount: number;
+  readyForReleaseCount: number;
   backlogCount: number;
   noTooltip?: boolean;
+  stateBreakdown?: Array<{ stateName: string; count: number }>;
 }
 
-function ProgressBar({ completePct, inProgressPct, backlogPct, total, completeCount, inProgressCount, backlogCount, noTooltip }: ProgressBarProps): React.JSX.Element {
+function ProgressBar({ completePct, inProgressPct, backlogPct, total, completeCount, inProgressCount, readyForReleaseCount, backlogCount, noTooltip, stateBreakdown }: ProgressBarProps): React.JSX.Element {
+  const readyForReleasePct = total > 0 ? (readyForReleaseCount / total) * 100 : 0;
+  const combinedInProgressPct = inProgressPct + readyForReleasePct;
   return (
     <div className="summary-bar-wrapper">
       <div className="flex h-[22px] rounded-full overflow-hidden border border-slate-200">
@@ -82,29 +87,41 @@ function ProgressBar({ completePct, inProgressPct, backlogPct, total, completeCo
           <div className="w-full bg-slate-100 progress-bar-empty" />
         ) : (
           <>
-            {completePct > 0 && <div style={{ ...(inProgressPct > 0 || backlogPct > 0 ? { width: `${completePct}%`, clipPath: 'polygon(0 0, calc(100% - 7px) 0, 100% 50%, calc(100% - 7px) 100%, 0 100%)', marginRight: '-7px' } : { flex: 1 }), background: '#059669', height: '100%', minWidth: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', zIndex: 3 }}>{completePct >= 8 && <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#ffffff', whiteSpace: 'nowrap', paddingRight: inProgressPct > 0 || backlogPct > 0 ? '7px' : '0' }}>{Math.round(completePct)}%</span>}</div>}
-            {inProgressPct > 0 && <div style={{ ...(backlogPct > 0 ? { width: `${inProgressPct}%`, clipPath: 'polygon(0 0, calc(100% - 7px) 0, 100% 50%, calc(100% - 7px) 100%, 0 100%)', marginRight: '-7px' } : { flex: 1 }), background: '#fde68a', height: '100%', minWidth: '2px', position: 'relative', zIndex: 2 }} />}
+            {completePct > 0 && <div style={{ ...(combinedInProgressPct > 0 || backlogPct > 0 ? { width: `${completePct}%`, clipPath: 'polygon(0 0, calc(100% - 7px) 0, 100% 50%, calc(100% - 7px) 100%, 0 100%)', marginRight: '-7px' } : { flex: 1 }), background: '#059669', height: '100%', minWidth: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', zIndex: 3 }}>{completePct >= 8 && <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#ffffff', whiteSpace: 'nowrap', paddingRight: combinedInProgressPct > 0 || backlogPct > 0 ? '7px' : '0' }}>{Math.round(completePct)}%</span>}</div>}
+            {combinedInProgressPct > 0 && <div style={{ ...(backlogPct > 0 ? { width: `${combinedInProgressPct}%`, clipPath: 'polygon(0 0, calc(100% - 7px) 0, 100% 50%, calc(100% - 7px) 100%, 0 100%)', marginRight: '-7px' } : { flex: 1 }), background: '#fde68a', height: '100%', minWidth: '2px', position: 'relative', zIndex: 2 }} />}
             {backlogPct > 0 && <div className="progress-bar-backlog" style={{ flex: 1, background: '#f1f5f9', height: '100%', minWidth: '2px', position: 'relative', zIndex: 1 }} />}
           </>
         )}
       </div>
       {!noTooltip && <div className="summary-bar-tooltip">
-        {[
-          { label: 'Complete', count: completeCount, pct: completePct, color: '#059669' },
-          { label: 'In Progress', count: inProgressCount, pct: inProgressPct, color: '#fde68a' },
-          { label: 'Backlog', count: backlogCount, pct: backlogPct, color: '#f1f5f9' },
-        ].filter(({ count }) => count > 0).map(({ label, count, pct, color }) => (
-          <div key={label} className="flex items-center gap-2 py-[0.15rem]">
-            <span style={{ width: '10px', height: '10px', borderRadius: '2px', background: color, flexShrink: 0, border: '1px solid rgba(255,255,255,0.3)', display: 'inline-block' }} />
-            <span className="flex-1">{label}</span>
-            <span className="font-bold ml-3">{count} ({Math.round(pct)}%)</span>
-          </div>
-        ))}
-        <div className="border-t border-white/15 mt-[0.4rem] pt-[0.4rem] text-[0.68rem] text-white/60 leading-[1.4]">
-          <div><strong className="text-white/85">Complete:</strong> Complete + Ready for Release</div>
-          <div><strong className="text-white/85">In Progress:</strong> Ready for Dev + In Dev + In Review</div>
-          <div><strong className="text-white/85">Backlog:</strong> Backlog</div>
-        </div>
+        {stateBreakdown ? (
+          stateBreakdown.map(({ stateName, count }) => {
+            const color = STATE_PILL_COLORS[stateName.toLowerCase()]?.bg ?? '#cbd5e0';
+            const pct = total > 0 ? (count / total) * 100 : 0;
+            return (
+              <div key={stateName} className="flex items-center gap-2 py-[0.15rem]">
+                <span style={{ width: '10px', height: '10px', borderRadius: '2px', background: color, flexShrink: 0, border: '1px solid rgba(255,255,255,0.3)', display: 'inline-block' }} />
+                <span className="flex-1">{stateName}</span>
+                <span className="font-bold ml-3">{count} ({Math.round(pct)}%)</span>
+              </div>
+            );
+          })
+        ) : (
+          <>
+            {[
+              { label: 'Complete', count: completeCount, pct: completePct, color: '#059669' },
+              { label: 'Ready for Release', count: readyForReleaseCount, pct: readyForReleasePct, color: '#22c55e' },
+              { label: 'In Progress', count: inProgressCount, pct: inProgressPct, color: '#fde68a' },
+              { label: 'Backlog', count: backlogCount, pct: backlogPct, color: '#f1f5f9' },
+            ].filter(({ count }) => count > 0).map(({ label, count, pct, color }) => (
+              <div key={label} className="flex items-center gap-2 py-[0.15rem]">
+                <span style={{ width: '10px', height: '10px', borderRadius: '2px', background: color, flexShrink: 0, border: '1px solid rgba(255,255,255,0.3)', display: 'inline-block' }} />
+                <span className="flex-1">{label}</span>
+                <span className="font-bold ml-3">{count} ({Math.round(pct)}%)</span>
+              </div>
+            ))}
+          </>
+        )}
       </div>}
     </div>
   );
@@ -123,7 +140,8 @@ function StoryTotalsSummary(): React.JSX.Element | null {
   });
 
   const total = allDisplayStories.length;
-  const completeCount = (stateCounts['Complete'] || 0) + (stateCounts['Ready for Release'] || 0);
+  const completeCount = stateCounts['Complete'] || 0;
+  const readyForReleaseCount = stateCounts['Ready for Release'] || 0;
   const inProgressCount = (stateCounts['Ready for Development'] || 0) + (stateCounts['In Development'] || 0) + (stateCounts['In Review'] || 0);
   const backlogCount = stateCounts['Backlog'] || 0;
   const completePct = total > 0 ? (completeCount / total) * 100 : 0;
@@ -168,6 +186,7 @@ function StoryTotalsSummary(): React.JSX.Element | null {
                 backlogPct={backlogPct}
                 total={total}
                 completeCount={completeCount}
+                readyForReleaseCount={readyForReleaseCount}
                 inProgressCount={inProgressCount}
                 backlogCount={backlogCount}
                 noTooltip
@@ -253,11 +272,16 @@ function EpicStatusTable(): React.JSX.Element | null {
 
   const renderRow = (epic: Epic) => {
     const epicDisplayStories = getDisplayStories(epic);
-    const { backlogCount, inProgressCount, completeCount } = getGroupCounts(epicDisplayStories, filteredStateIds, workflowConfig.states);
+    const { backlogCount, inProgressCount, completeCount, readyForReleaseCount } = getGroupCounts(epicDisplayStories, filteredStateIds, workflowConfig.states);
     const total = epicDisplayStories.length;
     const backlogPct = total > 0 ? (backlogCount / total) * 100 : 0;
     const inProgressPct = total > 0 ? (inProgressCount / total) * 100 : 0;
     const completePct = total > 0 ? (completeCount / total) * 100 : 0;
+    const epicStateCounts: Record<number, number> = {};
+    epicDisplayStories.forEach(s => { epicStateCounts[s.workflow_state_id] = (epicStateCounts[s.workflow_state_id] || 0) + 1; });
+    const stateBreakdown = filteredStateIds
+      .map(id => ({ stateName: workflowConfig.states[id] || String(id), count: epicStateCounts[id] || 0 }))
+      .filter(s => s.count > 0);
     const si = getEpicStateInfo(epic);
     const teamFilteredStories = applyTeamFilter(epic.stories || [], filterByTeam, selectedTeamIds);
     const lastChanged = getEpicLastChanged(teamFilteredStories);
@@ -348,8 +372,10 @@ function EpicStatusTable(): React.JSX.Element | null {
             backlogPct={backlogPct}
             total={total}
             completeCount={completeCount}
+            readyForReleaseCount={readyForReleaseCount}
             inProgressCount={inProgressCount}
             backlogCount={backlogCount}
+            stateBreakdown={stateBreakdown}
           />
         </td>
       </tr>

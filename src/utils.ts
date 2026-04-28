@@ -7,7 +7,7 @@
  */
 import { WorkflowStorageConfig, EpicConfig, TeamConfig } from './types';
 
-export const COMPLETE_STATE_NAMES = new Set(['complete', 'ready for release']);
+export const COMPLETE_STATE_NAMES = new Set(['complete']);
 
 export const STORAGE_KEYS = {
   API_TOKEN: 'shortcut_api_token',
