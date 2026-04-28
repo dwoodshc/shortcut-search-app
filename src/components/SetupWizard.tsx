@@ -45,6 +45,13 @@ export default function SetupWizard({ step, onStepChange, onClose }: Props): Rea
     setEpicListError('');
     try {
       const epics = epicsText.split('\n').filter(name => name.trim() !== '').map(name => ({ name: name.trim() }));
+      const lowerNames = epics.map(e => e.name.toLowerCase());
+      const duplicateLowers = lowerNames.filter((n, i) => lowerNames.indexOf(n) !== i);
+      if (duplicateLowers.length > 0) {
+        const displayNames = [...new Set(duplicateLowers)].map(lower => epics.find(e => e.name.toLowerCase() === lower)!.name);
+        setEpicListError(`Duplicate epic${displayNames.length > 1 ? 's' : ''}: ${displayNames.join(', ')}`);
+        return false;
+      }
       storage.setEpicsConfig({ epics });
       setFilteredEpicNames(epics.map(e => e.name));
       return true;
