@@ -231,6 +231,7 @@ function getEpicLastChanged(stories: Story[]): number | null {
 function EpicStatusTable(): React.JSX.Element | null {
   const { epics, workflowConfig, filteredStateIds, getDisplayStories, getEpicStateInfo, getEpicStateClass, sortState, toggleSortState, resetSortState, teamNameMap, filterByTeam, selectedTeamIds } = useDashboard();
   const [openPopover, setOpenPopover] = useState<number | string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
   useEffect(() => {
     if (!openPopover) return;
     const close = () => setOpenPopover(null);
@@ -382,9 +383,13 @@ function EpicStatusTable(): React.JSX.Element | null {
     );
   };
 
-  const half = Math.ceil(sortedEpics.length / 2);
-  const leftEpics = sortedEpics.slice(0, half);
-  const rightEpics = sortedEpics.slice(half);
+  const visibleEpics = searchQuery.trim()
+    ? sortedEpics.filter(e => e.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    : sortedEpics;
+
+  const half = Math.ceil(visibleEpics.length / 2);
+  const leftEpics = visibleEpics.slice(0, half);
+  const rightEpics = visibleEpics.slice(half);
 
   const tableClass = "w-full bg-white rounded-lg shadow-[0_2px_4px_rgba(0,0,0,0.08)] border border-[#F0F0F7]";
   const theadRow = (
@@ -403,21 +408,45 @@ function EpicStatusTable(): React.JSX.Element | null {
 
   return (
     <div id="summary-table" className="mb-4">
-      <h2 className="m-0 mb-3 text-[1.1rem] font-semibold text-[#1a202c]">Epic Status</h2>
-      <div className="summary-table-grid">
-        <div className="flex-1">
-          <table className={tableClass} style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
-            <thead>{theadRow}</thead>
-            <tbody>{leftEpics.map((epic) => renderRow(epic))}</tbody>
-          </table>
-        </div>
-        <div className="flex-1">
-          <table className={tableClass} style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
-            <thead>{theadRow}</thead>
-            <tbody>{rightEpics.map((epic) => renderRow(epic))}</tbody>
-          </table>
-        </div>
+      <div className="flex items-center gap-3 mb-3">
+        <h2 className="m-0 text-[1.1rem] font-semibold text-[#1a202c]">Epic Status</h2>
+        <input
+          type="text"
+          placeholder="Filter epics…"
+          value={searchQuery}
+          onChange={e => setSearchQuery(e.target.value)}
+          className="border border-[#E2E8F0] rounded px-2 py-[0.2rem] text-sm text-[#1a202c] bg-white focus:outline-none focus:border-[#494BCB]"
+          style={{ width: '200px' }}
+        />
+        {searchQuery && (
+          <button
+            onClick={() => setSearchQuery('')}
+            className="text-[0.75rem] text-[#94a3b8] bg-transparent border-0 cursor-pointer p-0 hover:text-[#475569]"
+            title="Clear filter"
+          >✕ clear</button>
+        )}
       </div>
+      {searchQuery.trim() ? (
+        <table className={tableClass} style={{ borderCollapse: 'separate', borderSpacing: 0, width: '100%' }}>
+          <thead>{theadRow}</thead>
+          <tbody>{visibleEpics.map((epic) => renderRow(epic))}</tbody>
+        </table>
+      ) : (
+        <div className="summary-table-grid">
+          <div className="flex-1">
+            <table className={tableClass} style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
+              <thead>{theadRow}</thead>
+              <tbody>{leftEpics.map((epic) => renderRow(epic))}</tbody>
+            </table>
+          </div>
+          <div className="flex-1">
+            <table className={tableClass} style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
+              <thead>{theadRow}</thead>
+              <tbody>{rightEpics.map((epic) => renderRow(epic))}</tbody>
+            </table>
+          </div>
+        </div>
+      )}
       <hr className="border-0 border-t-2 border-slate-200 mt-4" />
     </div>
   );
