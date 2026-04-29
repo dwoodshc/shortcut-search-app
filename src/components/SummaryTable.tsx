@@ -299,7 +299,7 @@ function EpicStatusTable(): React.JSX.Element | null {
       .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
       .slice(0, 5);
     return (
-      <tr key={epic.id as React.Key}>
+      <tr key={epic.id as React.Key} className="relative">
         <td className="px-3 py-2 text-sm sm:whitespace-nowrap border-b border-[#F0F0F7]">
           <a href={`#epic-${epic.id}`} className="text-[#1a202c] no-underline">
             {epic.name}
@@ -312,7 +312,7 @@ function EpicStatusTable(): React.JSX.Element | null {
             </span>
           ) : null}
         </td>
-        <td className="px-3 py-2 text-center text-sm border-b border-[#F0F0F7] whitespace-nowrap relative">
+        <td className="px-3 py-2 text-center text-sm border-b border-[#F0F0F7] whitespace-nowrap">
           <button
             onClick={(e) => { e.stopPropagation(); setOpenPopover(openPopover === epic.id ? null : epic.id); }}
             className={`underline decoration-dotted cursor-pointer bg-transparent border-0 p-0 font-inherit text-sm ${lastChanged === 0 ? 'text-[#16a34a] font-semibold' : lastChanged !== null && lastChanged <= 3 ? 'text-[#0369a1]' : 'text-[#64748b]'}`}
@@ -323,7 +323,7 @@ function EpicStatusTable(): React.JSX.Element | null {
             <div
               onClick={(e) => e.stopPropagation()}
               className="absolute z-50 bg-white rounded-lg shadow-[0_4px_16px_rgba(0,0,0,0.15)] border border-[#E2E8F0] p-3 text-left"
-              style={{ top: 'calc(100% + 4px)', left: '50%', transform: 'translateX(-50%)', minWidth: '560px' }}
+              style={{ top: 'calc(100% + 4px)', left: 0, minWidth: '560px' }}
             >
               <div className="text-xs font-semibold text-[#64748b] mb-2 uppercase tracking-wide">Recent Changes</div>
               <table className="w-full" style={{ borderCollapse: 'collapse', tableLayout: 'auto' }}>

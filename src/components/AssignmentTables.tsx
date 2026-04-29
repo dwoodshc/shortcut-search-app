@@ -12,6 +12,15 @@ import { EpicTeamEntry, EpicRef } from '../types';
 import { ResetIcon } from './icons';
 import { COMPLETE_STATE_NAMES } from '../utils';
 
+const TICKET_STATE_COLORS: Record<string, { bg: string; text: string }> = {
+  'backlog':               { bg: '#d1d5db', text: '#374151' },
+  'ready for development': { bg: '#a7f3d0', text: '#374151' },
+  'in development':        { bg: '#6ee7b7', text: '#374151' },
+  'in review':             { bg: '#4ade80', text: '#374151' },
+  'ready for release':     { bg: '#22c55e', text: '#374151' },
+};
+const DEFAULT_TICKET_STATE_COLOR = { bg: '#F1F5F9', text: '#475569' };
+
 export default function AssignmentTables(): React.JSX.Element | null {
   const {
     epics, members, workflowConfig,
@@ -24,7 +33,7 @@ export default function AssignmentTables(): React.JSX.Element | null {
   } = useDashboard();
 
   const memberTicketData = useMemo(() => {
-    const map: Record<string, Array<{ id: number; name: string; app_url?: string; epicName: string; epicAppUrl?: string }>> = {};
+    const map: Record<string, Array<{ id: number; name: string; app_url?: string; epicName: string; epicAppUrl?: string; stateName: string }>> = {};
     for (const epic of epics) {
       if (epic.notFound) continue;
       const stories = epic.stories || [];
@@ -38,7 +47,7 @@ export default function AssignmentTables(): React.JSX.Element | null {
           const ownerName = members[ownerId] || ownerId;
           if (filterIgnoredInTickets && ignoredUsers.includes(ownerName)) continue;
           if (!map[ownerName]) map[ownerName] = [];
-          map[ownerName].push({ id: story.id, name: story.name, app_url: story.app_url, epicName: epic.name, epicAppUrl: epic.app_url });
+          map[ownerName].push({ id: story.id, name: story.name, app_url: story.app_url, epicName: epic.name, epicAppUrl: epic.app_url, stateName: workflowConfig.states[story.workflow_state_id] || '' });
         }
       }
     }
@@ -167,7 +176,7 @@ export default function AssignmentTables(): React.JSX.Element | null {
     </tr>
   );
 
-  const renderMemberTicketRow = (row: { member: string; tickets: Array<{ id: number; name: string; app_url?: string; epicName: string; epicAppUrl?: string }> }) => (
+  const renderMemberTicketRow = (row: { member: string; tickets: Array<{ id: number; name: string; app_url?: string; epicName: string; epicAppUrl?: string; stateName: string }> }) => (
     <tr key={row.member}>
       <td className={tdClass}>
         {!filterIgnoredInTickets && ignoredUsers.includes(row.member)
@@ -186,14 +195,18 @@ export default function AssignmentTables(): React.JSX.Element | null {
             <div key={epicName} className="mb-1 last:mb-0">
               <div className="text-[0.85rem] font-semibold text-[#6b7280] mb-[0.1rem]">{tickets[0].epicAppUrl ? <a href={tickets[0].epicAppUrl} className="text-[#6b7280] no-underline" target="_blank" rel="noreferrer">{epicName}</a> : epicName} <span className="font-normal text-[0.75rem]">({tickets.length})</span></div>
               <ul className="m-0 pl-3 list-none">
-                {[...tickets].sort((a, b) => a.name.localeCompare(b.name)).map((t) => (
-                  <li key={t.id} className="text-[0.7rem]">
-                    {t.app_url
-                      ? <a href={t.app_url} className="text-[#1a202c] no-underline" target="_blank" rel="noreferrer">{t.name}</a>
-                      : <span>{t.name}</span>
-                    }
-                  </li>
-                ))}
+                {[...tickets].sort((a, b) => a.name.localeCompare(b.name)).map((t) => {
+                  const sc = TICKET_STATE_COLORS[t.stateName.toLowerCase()] ?? DEFAULT_TICKET_STATE_COLOR;
+                  return (
+                    <li key={t.id} className="text-[0.7rem]">
+                      {t.app_url
+                        ? <a href={t.app_url} className="text-[#1a202c] no-underline" target="_blank" rel="noreferrer">{t.name}</a>
+                        : <span>{t.name}</span>
+                      }
+                      {t.stateName && <span className="ml-1 text-[0.6rem] font-medium px-1 py-[0.05rem] rounded" style={{ backgroundColor: sc.bg, color: sc.text }}>{t.stateName}</span>}
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           ));
