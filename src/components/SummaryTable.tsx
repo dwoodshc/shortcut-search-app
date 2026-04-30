@@ -429,7 +429,16 @@ function EpicStatusTable(): React.JSX.Element | null {
       {searchQuery.trim() ? (
         <table className={tableClass} style={{ borderCollapse: 'separate', borderSpacing: 0, width: '100%' }}>
           <thead>{theadRow}</thead>
-          <tbody>{visibleEpics.map((epic) => renderRow(epic))}</tbody>
+          <tbody>
+            {visibleEpics.map((epic) => renderRow(epic))}
+            <tr>
+              <td colSpan={4} className="px-3 py-2 text-sm text-[#1e40af] text-left rounded-b-lg" style={{ background: '#dbeafe' }}>
+                {visibleEpics.length === 0
+                  ? 'No epics match your search.'
+                  : `${visibleEpics.length} epic${visibleEpics.length === 1 ? '' : 's'} filtered.`}
+              </td>
+            </tr>
+          </tbody>
         </table>
       ) : (
         <div className="summary-table-grid">
