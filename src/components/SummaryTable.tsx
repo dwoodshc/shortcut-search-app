@@ -25,12 +25,6 @@ const STATE_PILL_COLORS: Record<string, { bg: string; text: string }> = {
 };
 const DEFAULT_PILL = { bg: '#F1F5F9', text: '#475569' };
 
-const TYPE_COLORS: Record<string, string> = {
-  epic:    '#7c3aed',
-  bug:     '#dc2626',
-  chore:   '#64748b',
-  feature: '#1d4ed8',
-};
 
 function getGroup(name: string): 'backlog' | 'complete' | 'inprogress' | null {
   const n = (name || '').toLowerCase().trim();
@@ -229,7 +223,7 @@ function getEpicLastChanged(stories: Story[]): number | null {
 }
 
 function EpicStatusTable(): React.JSX.Element | null {
-  const { epics, workflowConfig, filteredStateIds, getDisplayStories, getEpicStateInfo, getEpicStateClass, sortState, toggleSortState, resetSortState, teamNameMap, filterByTeam, selectedTeamIds } = useDashboard();
+  const { epics, members, workflowConfig, filteredStateIds, getDisplayStories, getEpicStateInfo, getEpicStateClass, sortState, toggleSortState, resetSortState, filterByTeam, selectedTeamIds } = useDashboard();
   const [openPopover, setOpenPopover] = useState<number | string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   useEffect(() => {
@@ -291,11 +285,10 @@ function EpicStatusTable(): React.JSX.Element | null {
       .map(s => ({
         id: s.id,
         name: s.name,
-        type: s.story_type,
         updated_at: s.updated_at!,
         app_url: s.app_url,
         stateName: workflowConfig.states[s.workflow_state_id] || '',
-        teamName: (s.group_id ? teamNameMap[s.group_id] : '') || '',
+        ownerNames: (s.owner_ids || []).map(id => members[id] || id),
       }))
       .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
       .slice(0, 5);
@@ -324,20 +317,23 @@ function EpicStatusTable(): React.JSX.Element | null {
             <div
               onClick={(e) => e.stopPropagation()}
               className="absolute z-50 bg-white rounded-lg shadow-[0_4px_16px_rgba(0,0,0,0.15)] border border-[#E2E8F0] p-3 text-left"
-              style={{ top: 'calc(100% + 4px)', left: 0, minWidth: '560px' }}
+              style={{ top: 'calc(100% + 4px)', left: '5px', minWidth: '560px' }}
             >
               <div className="text-xs font-semibold text-[#64748b] mb-2 uppercase tracking-wide">Recent Changes</div>
               <table className="w-full" style={{ borderCollapse: 'collapse', tableLayout: 'auto' }}>
+                <thead>
+                  <tr className="border-b border-[#E2E8F0]">
+                    <th className="pb-1 pr-2 text-[0.6rem] font-semibold text-[#94a3b8] uppercase tracking-wide text-left">Ticket</th>
+                    <th className="pb-1 pr-2 text-[0.6rem] font-semibold text-[#94a3b8] uppercase tracking-wide text-center" style={{ whiteSpace: 'nowrap' }}>Owner</th>
+                    <th className="pb-1 pr-2 text-[0.6rem] font-semibold text-[#94a3b8] uppercase tracking-wide text-center" style={{ whiteSpace: 'nowrap' }}>Status</th>
+                    <th className="pb-1 text-[0.6rem] font-semibold text-[#94a3b8] uppercase tracking-wide text-right" style={{ whiteSpace: 'nowrap' }}>Changed</th>
+                  </tr>
+                </thead>
                 <tbody>
                   {recentItems.map((item) => {
                     const sc = STATE_PILL_COLORS[item.stateName.toLowerCase()] ?? DEFAULT_PILL;
                     return (
-                      <tr key={`${item.type}-${item.id}`} className="border-b border-[#F0F0F7] last:border-0">
-                        <td className="py-[0.3rem] pr-2 align-middle" style={{ width: '1%', whiteSpace: 'nowrap', textAlign: 'center' }}>
-                          <span className="text-[0.65rem] font-semibold px-1.5 py-[0.1rem] rounded-full text-white" style={{ backgroundColor: TYPE_COLORS[item.type] ?? TYPE_COLORS.feature }}>
-                            {item.type.charAt(0).toUpperCase() + item.type.slice(1)}
-                          </span>
-                        </td>
+                      <tr key={item.id} className="border-b border-[#F0F0F7] last:border-0">
                         <td className="py-[0.3rem] pr-2 align-middle" style={{ width: '99%' }}>
                           {item.app_url ? (
                             <a href={item.app_url} target="_blank" rel="noopener noreferrer" className="text-[#494BCB] text-xs hover:underline">{item.name}</a>
@@ -346,9 +342,9 @@ function EpicStatusTable(): React.JSX.Element | null {
                           )}
                         </td>
                         <td className="py-[0.3rem] pr-2 align-middle" style={{ width: '1%', whiteSpace: 'nowrap', textAlign: 'center' }}>
-                          {item.teamName && (
-                            <span className="text-[0.65rem] font-medium px-1.5 py-[0.1rem] rounded bg-[#EEF2FF] text-[#4338CA]">{item.teamName}</span>
-                          )}
+                          {item.ownerNames.length > 0
+                            ? <span className="text-[0.65rem] text-[#475569]">{item.ownerNames.join(', ')}</span>
+                            : <span className="text-[0.65rem] text-[#cbd5e0] italic">Unassigned</span>}
                         </td>
                         <td className="py-[0.3rem] pr-2 align-middle" style={{ width: '1%', whiteSpace: 'nowrap', textAlign: 'center' }}>
                           {item.stateName && (
