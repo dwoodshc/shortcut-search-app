@@ -100,6 +100,15 @@ export interface EpicRef {
   isBlocked: boolean;
 }
 
+export interface ViewSettings {
+  showEpicFilter: boolean;
+  showObjectivesFilter: boolean;
+  showEpicObjective: boolean;
+  showEpicOwners: boolean;
+  showEpicStoryCount: boolean;
+  showUserStoryBoard: boolean;
+}
+
 export interface ModalState {
   settingsMenu: boolean;
   about: boolean;
@@ -110,6 +119,7 @@ export interface ModalState {
   rateLimit: boolean;
   storyDetailFilter: string | null;
   themeSelector: boolean;
+  viewSettings: boolean;
 }
 
 export type ModalKey = keyof ModalState;
@@ -208,4 +218,6 @@ export interface DashboardContextValue {
   handleOpenReadme: () => Promise<void>;
   displayTheme: 'normal' | 'dark' | 'star-trek' | 'matrix';
   selectTheme: (theme: 'normal' | 'dark' | 'star-trek' | 'matrix') => void;
+  viewSettings: ViewSettings;
+  setViewSettings: (s: ViewSettings) => void;
 }

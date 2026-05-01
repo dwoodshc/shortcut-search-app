@@ -70,6 +70,15 @@ Three collapsible assignment tables appear above the epic cards, controlled by t
 - When shown, ignored users are rendered as a **gray pill** to distinguish them from active users
 - Hidden by default (ignored users are filtered out)
 
+### Epic Card
+
+Each tracked epic renders as a card with a collapsible body.
+
+- **Collapse/Expand** — Click the **▶/▼** chevron beside the epic name to toggle the card body. Epics in the "Done" state start collapsed by default.
+- **Meta area** — Shows the epic's Objective(s), Owner(s), story count, and status as styled pills below the title.
+- **Objectives** — Displayed before Owners when one or more Shortcut Objectives are linked to the epic.
+- **View Settings** (see Settings Menu) — any hidden field shows a **👁** peek icon in its place; click the icon to reveal it globally, click the field itself to hide it again.
+
 ### Interactive Visualizations
 
 Per epic, three visualizations are available. Each has a **▶/▼ toggle** in its heading. The **Collapse/Expand Charts** button controls the Workflow Status Pie Chart and Story Type Breakdown across all epics simultaneously.
@@ -140,6 +149,7 @@ Appears below all content after a successful data load. Shows five stats in a li
 ### Settings Menu
 - **Setup Wizard** — Re-run the setup wizard
 - **README.md** — View this documentation in-app
+- **View** — Toggle visibility of per-epic card fields (Objective, Owners, Story Count, User Story Board) and Epic Status table filters (Filter Epics, Objectives filter); preferences saved to localStorage
 - **Theme** — Open the Theme Selector to choose a display theme (see below); preference is saved to localStorage
 - **Export/Import** — Backup and restore configuration as JSON
 - **Wipe Settings** — Clear all localStorage data to start fresh
@@ -277,6 +287,7 @@ All configuration is stored in **browser localStorage**:
 | `shortcut_team_members_cache` | Team member IDs keyed by team ID; cached per team, populated on demand |
 | `shortcut_epic_workflow_cache` | Epic workflow states cache |
 | `shortcut_display_mode` | Display theme preference (`normal`, `dark`, `star-trek`, or `matrix`) |
+| `shortcut_view_settings` | View Settings preferences (which card fields and table filters to display) |
 | `migration_completed` | One-time migration flag (legacy server-side config → localStorage) |
 
 **Backup & Portability:**

@@ -115,6 +115,14 @@ function App(): React.JSX.Element {
     storage.setDisplayMode(t);
   }, []);
 
+  const [viewSettings, setViewSettingsState] = useState(() => storage.getViewSettings());
+  const setViewSettings = useCallback((s: ReturnType<typeof storage.getViewSettings>) => {
+    setViewSettingsState(s);
+    storage.setViewSettings(s);
+  }, []);
+  const updateViewSetting = useCallback((key: keyof typeof viewSettings, value: boolean) =>
+    setViewSettings({ ...viewSettings, [key]: value }), [viewSettings, setViewSettings]);
+
   const {
     workflowConfig, setWorkflowConfig, setWorkflowField,
     shortcutWebUrl, setShortcutWebUrl,
@@ -367,7 +375,8 @@ function App(): React.JSX.Element {
     handleSaveShortcutUrl, handleSelectWorkflow,
     toggleAllCharts, handleOpenReadme,
     displayTheme: theme, selectTheme,
-  }), [epics, objectives, members, epicStates, teamMemberIds, loadStats, workflowConfig, setWorkflowField, modals, setModal, sortState, toggleSortState, resetSortState, collapsedCharts, setCollapsedCharts, toggleChart, filterByTeam, setFilterByTeam, ignoredUsers, setIgnoredUsers, filterIgnoredInTickets, setFilterIgnoredInTickets, selectedTeams, setSelectedTeams, selectedTeamIds, selectedTeamLabel, teamNameMap, shortcutWebUrl, setShortcutWebUrl, error, setError, loading, successMessage, filteredEpicNames, setFilteredEpicNames, setupWizardStep, setSetupWizardStep, getDisplayStories, generateShortcutUrl, getEpicStateInfo, getEpicStateClass, filteredStateIds, epicTeamData, memberEpicMap, allDisplayStories, searchEpics, handleSaveShortcutUrl, handleSelectWorkflow, toggleAllCharts, handleOpenReadme, theme, selectTheme]);
+    viewSettings, setViewSettings,
+  }), [epics, objectives, members, epicStates, teamMemberIds, loadStats, workflowConfig, setWorkflowField, modals, setModal, sortState, toggleSortState, resetSortState, collapsedCharts, setCollapsedCharts, toggleChart, filterByTeam, setFilterByTeam, ignoredUsers, setIgnoredUsers, filterIgnoredInTickets, setFilterIgnoredInTickets, selectedTeams, setSelectedTeams, selectedTeamIds, selectedTeamLabel, teamNameMap, shortcutWebUrl, setShortcutWebUrl, error, setError, loading, successMessage, filteredEpicNames, setFilteredEpicNames, setupWizardStep, setSetupWizardStep, getDisplayStories, generateShortcutUrl, getEpicStateInfo, getEpicStateClass, filteredStateIds, epicTeamData, memberEpicMap, allDisplayStories, searchEpics, handleSaveShortcutUrl, handleSelectWorkflow, toggleAllCharts, handleOpenReadme, theme, selectTheme, viewSettings, setViewSettings]);
 
   return (
     <DashboardContext.Provider value={dashboardContext}>
@@ -442,6 +451,7 @@ function App(): React.JSX.Element {
               <li><strong>Epic Owner Assignments:</strong> Maps each epic to its assigned team members</li>
               <li><strong>Team Member Epic Assignments:</strong> Inverted view — each member and their epics</li>
               <li><strong>Team Member Ticket Assignments:</strong> Open tickets grouped by epic, with status pills</li>
+              <li><strong>Epic Card:</strong> Collapsible; Done epics start collapsed by default</li>
               <li><strong>Ticket Status Breakdown:</strong> 3D column chart; click a bar to view tickets in that state</li>
               <li><strong>Workflow Status Pie Chart:</strong> Stories by workflow state with clickable Shortcut links</li>
               <li><strong>Story Type Breakdown:</strong> Feature / Bug / Chore pie chart per epic</li>
@@ -451,6 +461,7 @@ function App(): React.JSX.Element {
               <li><strong>Ignored Users:</strong> Users excluded from assignment and ticket tables</li>
               <li><strong>Setup Wizard:</strong> 7-step setup: token, URL, workflow, teams, name, epic list</li>
               <li><strong>Configuration Management:</strong> Export / Import all settings as JSON</li>
+              <li><strong>View Settings:</strong> Show/hide card fields and table filters globally</li>
               <li><strong>Load Stats Bar:</strong> Load time, API call breakdown, page size, and download</li>
               <li><strong>Themes:</strong> Normal, Dark Mode, Star Trek (LCARS), and Matrix</li>
             </ul>
@@ -536,6 +547,81 @@ function App(): React.JSX.Element {
             />
             <div className="modal-buttons">
               <button type="button" onClick={() => setModal('readme', false)} className="btn-primary">Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {modals.viewSettings && (
+        <div className="modal-overlay" onClick={() => setModal('viewSettings', false)}>
+          <div className="modal-content" style={{ maxWidth: '420px' }} onClick={(e) => e.stopPropagation()}>
+            <h2>View Settings</h2>
+            <p className="mb-4 text-[#64748b] text-sm">Choose which data to display on the dashboard.</p>
+            <div className="mb-6">
+              <h3 className="text-sm font-semibold text-[#374151] mb-3">Epic Status</h3>
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={viewSettings.showEpicFilter}
+                  onChange={(e) => updateViewSetting('showEpicFilter', e.target.checked)}
+                  className="w-4 h-4"
+                />
+                <span className="text-sm">Show Filter Epics input</span>
+              </label>
+              <label className="flex items-center gap-3 cursor-pointer mt-2">
+                <input
+                  type="checkbox"
+                  checked={viewSettings.showObjectivesFilter}
+                  onChange={(e) => updateViewSetting('showObjectivesFilter', e.target.checked)}
+                  className="w-4 h-4"
+                />
+                <span className="text-sm">Show Filter Objectives checkboxes</span>
+              </label>
+            </div>
+            <div className="mb-6">
+              <h3 className="text-sm font-semibold text-[#374151] mb-3">Epic Card</h3>
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={viewSettings.showEpicObjective}
+                  onChange={(e) => updateViewSetting('showEpicObjective', e.target.checked)}
+                  className="w-4 h-4"
+                />
+                <span className="text-sm">Show Objective in Epic Card</span>
+              </label>
+              <label className="flex items-center gap-3 cursor-pointer mt-2">
+                <input
+                  type="checkbox"
+                  checked={viewSettings.showEpicOwners}
+                  onChange={(e) => updateViewSetting('showEpicOwners', e.target.checked)}
+                  className="w-4 h-4"
+                />
+                <span className="text-sm">Show Owners in Epic Card</span>
+              </label>
+              <label className="flex items-center gap-3 cursor-pointer mt-2">
+                <input
+                  type="checkbox"
+                  checked={viewSettings.showEpicStoryCount}
+                  onChange={(e) => updateViewSetting('showEpicStoryCount', e.target.checked)}
+                  className="w-4 h-4"
+                />
+                <span className="text-sm">Show Story Count in Epic Card</span>
+              </label>
+            </div>
+            <div className="mb-6">
+              <h3 className="text-sm font-semibold text-[#374151] mb-3">User Story Board</h3>
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={viewSettings.showUserStoryBoard}
+                  onChange={(e) => updateViewSetting('showUserStoryBoard', e.target.checked)}
+                  className="w-4 h-4"
+                />
+                <span className="text-sm">Show User Story Board</span>
+              </label>
+            </div>
+            <div className="modal-buttons">
+              <button type="button" onClick={() => setModal('viewSettings', false)} className="btn-primary">Close</button>
             </div>
           </div>
         </div>

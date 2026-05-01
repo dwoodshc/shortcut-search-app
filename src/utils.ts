@@ -5,7 +5,7 @@
  * a dynamic API base URL helper (getApiBaseUrl), and an SVG arc-path generator for
  * pie chart slices (createPieSlice).
  */
-import { WorkflowStorageConfig, EpicConfig, TeamConfig } from './types';
+import { WorkflowStorageConfig, EpicConfig, TeamConfig, ViewSettings } from './types';
 
 export const COMPLETE_STATE_NAMES = new Set(['complete']);
 
@@ -21,6 +21,7 @@ export const STORAGE_KEYS = {
   DISPLAY_MODE: 'shortcut_display_mode',
   MY_NAME: 'shortcut_my_name',
   MIGRATION_COMPLETED: 'migration_completed',
+  VIEW_SETTINGS: 'shortcut_view_settings',
 } as const;
 
 const migrateApiToken = (): void => {
@@ -117,6 +118,16 @@ export const storage = {
 
   getMyName: (): string => localStorage.getItem(STORAGE_KEYS.MY_NAME) || '',
   setMyName: (name: string): void => { localStorage.setItem(STORAGE_KEYS.MY_NAME, name); },
+
+  getViewSettings: (): ViewSettings => {
+    const data = localStorage.getItem(STORAGE_KEYS.VIEW_SETTINGS);
+    const defaults: ViewSettings = { showEpicFilter: true, showObjectivesFilter: true, showEpicObjective: true, showEpicOwners: true, showEpicStoryCount: true, showUserStoryBoard: true };
+    if (!data) return defaults;
+    try { return { ...defaults, ...JSON.parse(data) }; } catch { return defaults; }
+  },
+  setViewSettings: (settings: ViewSettings): void => {
+    localStorage.setItem(STORAGE_KEYS.VIEW_SETTINGS, JSON.stringify(settings));
+  },
 };
 
 export const getApiBaseUrl = (): string => `http://${window.location.hostname}:3001`;

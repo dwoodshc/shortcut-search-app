@@ -9,7 +9,7 @@
 import React, { useState, useEffect } from 'react';
 import { useDashboard } from '../context/DashboardContext';
 import { createPieSlice, COMPLETE_STATE_NAMES } from '../utils';
-import { Epic } from '../types';
+import { Epic, ViewSettings } from '../types';
 
 interface Props {
   epic: Epic;
@@ -69,11 +69,12 @@ function formatDaysAgo(days: number | null): string {
 
 export default function EpicCard({ epic }: Props): React.JSX.Element {
   const {
-    members, workflowConfig, filteredStateIds,
+    members, objectives, workflowConfig, filteredStateIds,
     collapsedCharts, toggleChart,
     generateShortcutUrl, shortcutWebUrl,
     getDisplayStories, getEpicStateInfo, getEpicStateClass,
     selectedTeamIds, selectedTeamLabel, teamMemberIds, teamNameMap, filterByTeam, filterIgnoredInTickets, ignoredUsers,
+    viewSettings, setViewSettings,
   } = useDashboard();
 
   const [hoveredPieSegment, setHoveredPieSegment] = useState<WorkflowSegment | null>(null);
@@ -87,6 +88,8 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
     return () => document.removeEventListener('click', close);
   }, [clickedBarStateId]);
 
+  const [cardCollapsed, setCardCollapsed] = useState(() => getEpicStateInfo(epic).type.toLowerCase() === 'done');
+
   if (epic.notFound) {
     return (
       <div className="epic-not-found">
@@ -98,6 +101,17 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
 
   const displayStories = getDisplayStories(epic);
   const si = getEpicStateInfo(epic);
+  const updateViewSetting = (key: keyof ViewSettings, value: boolean) =>
+    setViewSettings({ ...viewSettings, [key]: value });
+  const objectiveNames = (epic.objective_ids || [])
+    .map(id => objectives.find(o => o.id === id)?.name)
+    .filter(Boolean) as string[];
+  const objectiveEl = objectiveNames.length === 0 ? null
+    : !viewSettings.showEpicObjective
+      ? <button className="view-peek-btn" onClick={() => updateViewSetting('showEpicObjective', true)} title="Show Objective">👁</button>
+      : <span className="epic-owner" style={{ cursor: 'pointer' }} onClick={() => updateViewSetting('showEpicObjective', false)} title="Click to hide">
+          <strong>{objectiveNames.length > 1 ? 'Objectives: ' : 'Objective: '}</strong>{objectiveNames.join(', ')}
+        </span>;
 
   // --- Workflow status bar chart ---
   const workflowStateCounts: Record<number, number> = {};
@@ -189,6 +203,9 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
     <div id={`epic-${epic.id}`} className="epic-card">
       <div className="epic-header">
         <div className="epic-title">
+          <span className="expand-icon cursor-pointer select-none" onClick={() => setCardCollapsed(prev => !prev)} title={cardCollapsed ? 'Expand' : 'Collapse'}>
+            {cardCollapsed ? '▶' : '▼'}
+          </span>
           <h3>
             {epic.app_url ? (
               <a href={epic.app_url} target="_blank" rel="noopener noreferrer">{epic.name}</a>
@@ -198,18 +215,25 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
           </h3>
         </div>
         <div className="epic-meta">
-          <span className="epic-owner">
-            <strong>{epic.owner_ids && epic.owner_ids.length > 1 ? 'Owners: ' : 'Owner: '}</strong>
-            {epic.owner_ids && epic.owner_ids.length > 0
-              ? epic.owner_ids.map(id => members[id] || id).join(', ')
-              : 'No Owner'}
-          </span>
-          <span className="story-count">{displayStories.length} stories</span>
+          {objectiveEl}
+          {viewSettings.showEpicOwners
+            ? <span className="epic-owner" style={{ cursor: 'pointer' }} onClick={() => updateViewSetting('showEpicOwners', false)} title="Click to hide">
+                <strong>{epic.owner_ids && epic.owner_ids.length > 1 ? 'Owners: ' : 'Owner: '}</strong>
+                {epic.owner_ids && epic.owner_ids.length > 0 ? epic.owner_ids.map(id => members[id] || id).join(', ') : 'No Owner'}
+              </span>
+            : <button className="view-peek-btn" onClick={() => updateViewSetting('showEpicOwners', true)} title="Show Owners">👁</button>
+          }
+          {viewSettings.showEpicStoryCount
+            ? <span className="story-count" style={{ cursor: 'pointer' }} onClick={() => updateViewSetting('showEpicStoryCount', false)} title="Click to hide">{displayStories.length} stories</span>
+            : <button className="view-peek-btn" onClick={() => updateViewSetting('showEpicStoryCount', true)} title="Show Story Count">👁</button>
+          }
           <span className={`epic-state ${getEpicStateClass(si.type, si.name)}`}>
             {si.type.toLowerCase() === 'done' ? 'Done ✓' : si.name}
           </span>
         </div>
       </div>
+
+      {!cardCollapsed && (<>
 
       {epic.stories && workflowConfig.stateOrder.length > 0 && (
         <div className="epic-stats-container">
@@ -494,10 +518,14 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
       )}
 
       {/* User Story Board */}
-      {epic.stories && (
+      {!viewSettings.showUserStoryBoard && epic.stories && (
+        <button className="view-peek-board-btn" onClick={() => updateViewSetting('showUserStoryBoard', true)} title="Show User Story Board">👁 User Story Board</button>
+      )}
+      {viewSettings.showUserStoryBoard && epic.stories && (
         <div className="stories-section">
           <h4 className="cursor-pointer select-none flex items-center gap-[0.4rem]" onClick={() => toggleChart(epic.id, 'stories')} title="Show or hide the User Story Board for this epic">
             <span>{collapsedCharts[`${epic.id}-stories`] ? '▶' : '▼'}</span> User Story Board
+            <button className="view-peek-close" onClick={(e) => { e.stopPropagation(); updateViewSetting('showUserStoryBoard', false); }} title="Hide">✕</button>
           </h4>
           {!collapsedCharts[`${epic.id}-stories`] && (
             <div className="border-t-2 border-slate-200 pt-3">
@@ -547,6 +575,8 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
           )}
         </div>
       )}
+
+      </>)}
 
       <div className="text-left mt-2">
         <a href="#top" className="text-[#494BCB] text-[0.8rem] no-underline font-medium">

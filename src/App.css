@@ -742,6 +742,47 @@ textarea.input-field {
   width: 100%;
 }
 
+.view-peek-btn {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  font-size: 0.7rem;
+  padding: 0.1rem 0.4rem;
+  line-height: 1.4;
+  transition: color 0.15s;
+}
+.view-peek-btn:hover {
+  color: #64748b;
+}
+.view-peek-board-btn {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  font-size: 0.8rem;
+  padding: 0.25rem 0.6rem;
+  margin-top: 0.5rem;
+  display: inline-block;
+  transition: color 0.15s;
+}
+.view-peek-board-btn:hover {
+  color: #64748b;
+}
+.view-peek-close {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  font-size: 0.75rem;
+  padding: 0 0.25rem;
+  margin-left: auto;
+  line-height: 1;
+}
+.view-peek-close:hover {
+  color: #475569;
+}
+
 .story-owners-table,
 .email-ticket-counts-table {
   flex: 1 1 240px;
@@ -777,7 +818,7 @@ textarea.input-field {
 
 .story-owners-table th,
 .email-ticket-counts-table th {
-  padding: 0.75rem 1rem;
+  padding: 0.4rem 1rem;
   text-align: left;
   font-weight: 600;
   font-size: 0.875rem;
@@ -792,7 +833,7 @@ textarea.input-field {
 
 .story-owners-table td,
 .email-ticket-counts-table td {
-  padding: 0.75rem 1rem;
+  padding: 0.4rem 1rem;
   border-bottom: 1px solid #F0F0F7;
   color: #03045E;
   font-size: 0.875rem;

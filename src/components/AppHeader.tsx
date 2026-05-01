@@ -102,6 +102,15 @@ export default function AppHeader(): React.JSX.Element {
                 className="settings-menu-item"
                 onClick={() => {
                   setModal('settingsMenu', false);
+                  setModal('viewSettings', true);
+                }}
+              >
+                View
+              </button>
+              <button
+                className="settings-menu-item"
+                onClick={() => {
+                  setModal('settingsMenu', false);
                   setModal('themeSelector', true);
                 }}
               >

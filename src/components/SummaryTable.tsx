@@ -7,7 +7,7 @@
  */
 import React, { useState, useEffect } from 'react';
 import { useDashboard } from '../context/DashboardContext';
-import { Epic, Story } from '../types';
+import { Epic, Story, ViewSettings } from '../types';
 import { ResetIcon } from './icons';
 import { COMPLETE_STATE_NAMES } from '../utils';
 
@@ -223,7 +223,9 @@ function getEpicLastChanged(stories: Story[]): number | null {
 }
 
 function EpicStatusTable(): React.JSX.Element | null {
-  const { epics, objectives, members, workflowConfig, filteredStateIds, getDisplayStories, getEpicStateInfo, getEpicStateClass, sortState, toggleSortState, resetSortState, filterByTeam, selectedTeamIds } = useDashboard();
+  const { epics, objectives, members, workflowConfig, filteredStateIds, getDisplayStories, getEpicStateInfo, getEpicStateClass, sortState, toggleSortState, resetSortState, filterByTeam, selectedTeamIds, viewSettings, setViewSettings } = useDashboard();
+  const updateViewSetting = (key: keyof ViewSettings, value: boolean) =>
+    setViewSettings({ ...viewSettings, [key]: value });
   const [openPopover, setOpenPopover] = useState<number | string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [deselectedObjectiveIds, setDeselectedObjectiveIds] = useState<Set<number | -1>>(new Set());
@@ -324,7 +326,7 @@ function EpicStatusTable(): React.JSX.Element | null {
             {epic.name}
           </a>
         </td>
-        <td className="px-3 py-[0.4rem] text-center border-b border-[#F0F0F7]">
+        <td className="px-3 py-[0.4rem] text-center border-b border-[#F0F0F7] whitespace-nowrap">
           {si.name ? (
             <span className={`epic-state ${getEpicStateClass(si.type, si.name)} !text-[0.75rem] !py-[0.15rem] !px-2`}>
               {si.type.toLowerCase() === 'done' ? 'Done ✓' : si.name}
@@ -430,26 +432,41 @@ function EpicStatusTable(): React.JSX.Element | null {
   return (
     <div id="summary-table" className="mb-4">
       <div className="flex flex-col gap-2 mb-3">
-        <h2 className="m-0 text-[1.1rem] font-semibold text-[#1a202c]">Epic Status</h2>
-        <div className="flex items-center gap-3">
-          <input
-            type="text"
-            placeholder="Filter epics…"
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            className="border border-[#E2E8F0] rounded px-2 py-[0.2rem] text-sm text-[#1a202c] bg-white focus:outline-none focus:border-[#494BCB]"
-            style={{ width: '200px' }}
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery('')}
-              className="text-[0.75rem] text-[#94a3b8] bg-transparent border-0 cursor-pointer p-0 hover:text-[#475569]"
-              title="Clear filter"
-            >✕ clear</button>
+        <div className="flex items-center gap-2">
+          <h2 className="m-0 text-[1.1rem] font-semibold text-[#1a202c]">Epic Status</h2>
+          {!viewSettings.showEpicFilter && (
+            <button className="view-peek-btn" onClick={() => updateViewSetting('showEpicFilter', true)} title="Show filter">👁</button>
+          )}
+          {!viewSettings.showObjectivesFilter && showObjectiveFilter && (
+            <button className="view-peek-btn" onClick={() => updateViewSetting('showObjectivesFilter', true)} title="Show objectives filter">👁</button>
           )}
         </div>
+        {viewSettings.showEpicFilter && (
+          <div className="flex items-center gap-3">
+            <input
+              type="text"
+              placeholder="Filter epics…"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="border border-[#E2E8F0] rounded px-2 py-[0.2rem] text-sm text-[#1a202c] bg-white focus:outline-none focus:border-[#494BCB]"
+              style={{ width: '200px' }}
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="text-[0.75rem] text-[#94a3b8] bg-transparent border-0 cursor-pointer p-0 hover:text-[#475569]"
+                title="Clear filter"
+              >✕ clear</button>
+            )}
+            <button
+              onClick={() => { updateViewSetting('showEpicFilter', false); setSearchQuery(''); }}
+              className="text-[0.75rem] text-[#94a3b8] bg-transparent border-0 cursor-pointer p-0 hover:text-[#475569]"
+              title="Hide filter"
+            >✕ hide</button>
+          </div>
+        )}
       </div>
-      {showObjectiveFilter && (
+      {viewSettings.showObjectivesFilter && showObjectiveFilter && (
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-3">
           <span className="text-xs font-semibold text-[#64748b] uppercase tracking-wide whitespace-nowrap">Objectives:</span>
           {relevantObjectives.map(obj => (
@@ -483,6 +500,12 @@ function EpicStatusTable(): React.JSX.Element | null {
             onClick={() => setDeselectedObjectiveIds(new Set([...relevantObjectives.map(o => o.id as number | -1), ...(hasUnObjectived ? [-1 as const] : [])]))}
             className="text-[0.75rem] text-[#494BCB] bg-transparent border-0 cursor-pointer p-0 hover:underline whitespace-nowrap"
           >Clear all</button>
+          <span className="text-[#cbd5e0] text-xs select-none">|</span>
+          <button
+            onClick={() => { updateViewSetting('showObjectivesFilter', false); setDeselectedObjectiveIds(new Set()); }}
+            className="text-[0.75rem] text-[#94a3b8] bg-transparent border-0 cursor-pointer p-0 hover:text-[#475569] whitespace-nowrap"
+            title="Hide objectives filter"
+          >✕ hide</button>
         </div>
       )}
       {searchQuery.trim() || deselectedObjectiveIds.size > 0 ? (
