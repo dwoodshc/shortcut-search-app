@@ -261,8 +261,16 @@ export function useEpicsData({ epicNames, loadSelectedWorkflow, setCollapsedChar
       const allOwnerIds = new Set(allEpics.flatMap(e => (e.stories || []).flatMap(s => s.owner_ids || [])));
       const cachedMemberIds = Object.keys(storage.getMembersCache());
       const uncachedMemberCalls = [...allOwnerIds].filter(id => !cachedMemberIds.includes(id)).length;
-      const totalApiCalls = (teamApiCall ? 1 : 0) + (workflowApiCall ? 1 : 0) + epicNamesToSearch.length + (foundCount * 2) + uncachedMemberCalls;
-      setLoadStats({ loadTime: Date.now() - searchStartTime, apiCallCount: totalApiCalls, loadedAt: new Date() });
+      const apiCallBreakdown: Record<string, number> = {};
+      if (teamApiCall) apiCallBreakdown['GET /api/teams'] = 1;
+      apiCallBreakdown['GET /api/objectives'] = 1;
+      if (workflowApiCall) apiCallBreakdown['GET /api/epic-workflow'] = 1;
+      if (epicNamesToSearch.length > 0) apiCallBreakdown['GET /api/search/epics'] = epicNamesToSearch.length;
+      if (foundCount > 0) apiCallBreakdown['GET /api/epics/:id'] = foundCount;
+      if (foundCount > 0) apiCallBreakdown['GET /api/epics/:id/stories'] = foundCount;
+      if (uncachedMemberCalls > 0) apiCallBreakdown['GET /api/users/:id'] = uncachedMemberCalls;
+      const totalApiCalls = Object.values(apiCallBreakdown).reduce((a, b) => a + b, 0);
+      setLoadStats({ loadTime: Date.now() - searchStartTime, apiCallCount: totalApiCalls, apiCallBreakdown, loadedAt: new Date() });
 
       const newCollapsedState: Record<string, boolean> = { 'assignment-epic': true, 'assignment-member': true, 'assignment-ticket': true };
       allEpics.forEach(epic => {

@@ -35,6 +35,7 @@ const toTitleCase = (str: string): string =>
   str.toLowerCase().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 
 function LoadStatsFooter({ loadStats, pageSizeKb }: { loadStats: import('./types').LoadStats; pageSizeKb: string | null }) {
+  const [showApiModal, setShowApiModal] = React.useState(false);
   const handleDownload = () => {
     const blob = new Blob([document.documentElement.outerHTML], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
@@ -46,23 +47,60 @@ function LoadStatsFooter({ loadStats, pageSizeKb }: { loadStats: import('./types
   };
   const statClass = "flex items-center gap-[0.35rem] text-[#718096] text-[0.78rem]";
   const divider = <span className="text-[#cbd5e0]">|</span>;
+  const sortedBreakdown = Object.entries(loadStats.apiCallBreakdown || {})
+    .sort((a, b) => b[1] - a[1]);
   return (
-    <div className="bg-[#f8fafc] border-t border-slate-200 px-8 py-2 flex flex-wrap gap-4 items-center justify-center">
-      <div className={statClass}><span>⏱</span><span>Load time: <strong>{(loadStats.loadTime / 1000).toFixed(2)}s</strong></span></div>
-      {divider}
-      <div className={statClass}><span>🔗</span><span>API calls: <strong>{loadStats.apiCallCount}</strong></span></div>
-      {divider}
-      <div className={statClass}><span>🕐</span><span>Generated: <strong>{loadStats.loadedAt.toLocaleString()}</strong></span></div>
-      {divider}
-      <div className={statClass}><span>📄</span><span>Page size: <strong>{pageSizeKb} KB</strong></span></div>
-      {divider}
-      <div className={statClass}>
-        <span>💾</span>
-        <button onClick={handleDownload} className="bg-transparent border-0 cursor-pointer text-[#494BCB] text-[0.78rem] font-semibold p-0 underline">
-          Download page
-        </button>
+    <>
+      {showApiModal && (
+        <div className="modal-overlay" onClick={() => setShowApiModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '480px' }}>
+            <h2 className="m-0 mb-4 text-[1.1rem]">API Call Breakdown</h2>
+            <table className="w-full" style={{ borderCollapse: 'collapse' }}>
+              <thead>
+                <tr className="border-b-2 border-[#E2E8F0]">
+                  <th className="text-left pb-2 pr-4 text-sm font-semibold text-[#64748b]">Endpoint</th>
+                  <th className="text-right pb-2 text-sm font-semibold text-[#64748b]">Calls</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sortedBreakdown.map(([endpoint, count]) => (
+                  <tr key={endpoint} className="border-b border-[#F0F0F7] last:border-0">
+                    <td className="py-2 pr-4 text-sm font-mono text-[#1a202c]">{endpoint}</td>
+                    <td className="py-2 text-right text-sm font-semibold text-[#494BCB]">{count}</td>
+                  </tr>
+                ))}
+                <tr className="border-t-2 border-[#E2E8F0]">
+                  <td className="pt-2 pr-4 text-sm font-semibold text-[#64748b]">Total</td>
+                  <td className="pt-2 text-right text-sm font-semibold text-[#1a202c]">{loadStats.apiCallCount}</td>
+                </tr>
+              </tbody>
+            </table>
+            <div className="modal-buttons mt-4">
+              <button type="button" onClick={() => setShowApiModal(false)} className="btn-primary">Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+      <div className="bg-[#f8fafc] border-t border-slate-200 px-8 py-2 flex flex-wrap gap-4 items-center justify-center">
+        <div className={statClass}><span>⏱</span><span>Load time: <strong>{(loadStats.loadTime / 1000).toFixed(2)}s</strong></span></div>
+        {divider}
+        <div className={statClass}>
+          <span>🔗</span>
+          <span>API calls: <button onClick={() => setShowApiModal(true)} className="bg-transparent border-0 cursor-pointer text-[#494BCB] text-[0.78rem] font-bold p-0 underline decoration-dotted">{loadStats.apiCallCount}</button></span>
+        </div>
+        {divider}
+        <div className={statClass}><span>🕐</span><span>Generated: <strong>{loadStats.loadedAt.toLocaleString()}</strong></span></div>
+        {divider}
+        <div className={statClass}><span>📄</span><span>Page size: <strong>{pageSizeKb} KB</strong></span></div>
+        {divider}
+        <div className={statClass}>
+          <span>💾</span>
+          <button onClick={handleDownload} className="bg-transparent border-0 cursor-pointer text-[#494BCB] text-[0.78rem] font-semibold p-0 underline">
+            Download page
+          </button>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -413,6 +451,7 @@ function App(): React.JSX.Element {
               <li><strong>Ignored Users:</strong> Users excluded from assignment and ticket tables</li>
               <li><strong>Setup Wizard:</strong> 7-step setup: token, URL, workflow, teams, name, epic list</li>
               <li><strong>Configuration Management:</strong> Export / Import all settings as JSON</li>
+              <li><strong>Load Stats Bar:</strong> Load time, API call breakdown, page size, and download</li>
               <li><strong>Themes:</strong> Normal, Dark Mode, Star Trek (LCARS), and Matrix</li>
             </ul>
             <p className="mt-4 text-sm text-[#718096]">

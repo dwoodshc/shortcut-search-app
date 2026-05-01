@@ -74,6 +74,7 @@ export interface EpicState {
 export interface LoadStats {
   loadTime: number;
   apiCallCount: number;
+  apiCallBreakdown: Record<string, number>;
   loadedAt: Date;
 }
 

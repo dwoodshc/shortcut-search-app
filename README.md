@@ -129,6 +129,14 @@ Displayed in the header when epics are loaded:
 - **Expand Charts / Collapse Charts** — Toggle the Workflow Status Pie Chart and Story Type Breakdown across all epics
 - **Show [Team Names] Only / Show All Teams** — Toggle filtering tickets to only the selected teams (shown when one or more teams are configured). The button label and header subtitle both reflect the currently selected team names (e.g. **Show Engineering & Design Only**)
 
+### Load Stats Bar
+Appears below all content after a successful data load. Shows five stats in a light-gray bar:
+- **Load time** — total time from search start to data ready
+- **API calls** — total count; **clicking the number** opens a modal showing each endpoint called and its call count, sorted by most-called first, with a total row
+- **Generated** — timestamp of when the load completed
+- **Page size** — current DOM size in KB
+- **Download page** — saves the current rendered page as a standalone HTML file
+
 ### Settings Menu
 - **Setup Wizard** — Re-run the setup wizard
 - **README.md** — View this documentation in-app
