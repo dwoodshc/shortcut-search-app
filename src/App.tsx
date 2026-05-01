@@ -115,6 +115,7 @@ function App(): React.JSX.Element {
     epicStates,
     teamMemberIds, setTeamMemberIds,
     teamNameMap,
+    objectives,
     loadEpics: searchEpics, cancelSearch,
   } = useEpicsData({
     epicNames: filteredEpicNames,
@@ -305,7 +306,7 @@ function App(): React.JSX.Element {
 
   const dashboardContext = useMemo(() => ({
     // Data
-    epics, members, epicStates, teamMemberIds, loadStats,
+    epics, objectives, members, epicStates, teamMemberIds, loadStats,
     workflowConfig, setWorkflowField,
     // UI state
     modals, setModal,
@@ -328,7 +329,7 @@ function App(): React.JSX.Element {
     handleSaveShortcutUrl, handleSelectWorkflow,
     toggleAllCharts, handleOpenReadme,
     displayTheme: theme, selectTheme,
-  }), [epics, members, epicStates, teamMemberIds, loadStats, workflowConfig, setWorkflowField, modals, setModal, sortState, toggleSortState, resetSortState, collapsedCharts, setCollapsedCharts, toggleChart, filterByTeam, setFilterByTeam, ignoredUsers, setIgnoredUsers, filterIgnoredInTickets, setFilterIgnoredInTickets, selectedTeams, setSelectedTeams, selectedTeamIds, selectedTeamLabel, teamNameMap, shortcutWebUrl, setShortcutWebUrl, error, setError, loading, successMessage, filteredEpicNames, setFilteredEpicNames, setupWizardStep, setSetupWizardStep, getDisplayStories, generateShortcutUrl, getEpicStateInfo, getEpicStateClass, filteredStateIds, epicTeamData, memberEpicMap, allDisplayStories, searchEpics, handleSaveShortcutUrl, handleSelectWorkflow, toggleAllCharts, handleOpenReadme, theme, selectTheme]);
+  }), [epics, objectives, members, epicStates, teamMemberIds, loadStats, workflowConfig, setWorkflowField, modals, setModal, sortState, toggleSortState, resetSortState, collapsedCharts, setCollapsedCharts, toggleChart, filterByTeam, setFilterByTeam, ignoredUsers, setIgnoredUsers, filterIgnoredInTickets, setFilterIgnoredInTickets, selectedTeams, setSelectedTeams, selectedTeamIds, selectedTeamLabel, teamNameMap, shortcutWebUrl, setShortcutWebUrl, error, setError, loading, successMessage, filteredEpicNames, setFilteredEpicNames, setupWizardStep, setSetupWizardStep, getDisplayStories, generateShortcutUrl, getEpicStateInfo, getEpicStateClass, filteredStateIds, epicTeamData, memberEpicMap, allDisplayStories, searchEpics, handleSaveShortcutUrl, handleSelectWorkflow, toggleAllCharts, handleOpenReadme, theme, selectTheme]);
 
   return (
     <DashboardContext.Provider value={dashboardContext}>
@@ -398,11 +399,11 @@ function App(): React.JSX.Element {
             <p>A React-based dashboard for tracking Shortcut.com epics, visualising progress, and monitoring team workload.</p>
             <ul>
               <li><strong>Story Summary:</strong> Overall story counts across all epics by workflow state</li>
-              <li><strong>Epic Status Table:</strong> Progress bars, state badges, and Last Changed per epic</li>
+              <li><strong>Epic Status Table:</strong> Progress bars, Last Changed; search and objective filters</li>
               <li><strong>Unwatched Tickets:</strong> Open tickets in your selected teams you are not watching</li>
               <li><strong>Epic Owner Assignments:</strong> Maps each epic to its assigned team members</li>
               <li><strong>Team Member Epic Assignments:</strong> Inverted view — each member and their epics</li>
-              <li><strong>Team Member Ticket Assignments:</strong> Open tickets grouped by epic per member</li>
+              <li><strong>Team Member Ticket Assignments:</strong> Open tickets grouped by epic, with status pills</li>
               <li><strong>Ticket Status Breakdown:</strong> 3D column chart; click a bar to view tickets in that state</li>
               <li><strong>Workflow Status Pie Chart:</strong> Stories by workflow state with clickable Shortcut links</li>
               <li><strong>Story Type Breakdown:</strong> Feature / Bug / Chore pie chart per epic</li>

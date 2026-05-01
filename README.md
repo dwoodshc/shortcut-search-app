@@ -17,16 +17,18 @@ Two tables appear at the top of the dashboard, above the epic cards.
 #### Epic Status Table
 - At-a-glance progress overview for all tracked epics
 - Three-section chevron progress bar per epic: **Complete** (green) → **In Progress** (yellow) → **Backlog** (white)
-  - Complete = "Complete" + "Ready for Release"
-  - In Progress = "Ready for Development" + "In Development" + "In Review"
+  - Complete = "Complete"
+  - In Progress = "Ready for Development" + "In Development" + "In Review" + "Ready for Release"
   - Backlog = "Backlog"
 - Percentage label shown inside the Complete segment
-- Hover tooltip showing counts and percentages for each group, plus a legend explaining the groupings
+- Hover tooltip showing a per-state breakdown with count and percentage for each state
 - Two-column responsive layout (stacks to single column on narrow screens)
 - Sortable columns: **Epic Name** (A→Z / Z→A), **Epic Status**, **Last Changed**, and **Epic Progress** (% complete)
-- **Last Changed** column — days since any story was last updated (respects the active team filter); clicking the value opens a popover listing the 5 most recently changed stories with type pill, name link, team pill, status pill, and age
+- **Last Changed** column — days since any story was last updated (respects the active team filter); clicking the value opens a popover listing the 5 most recently changed stories with columns: Ticket, Owner, Status, Changed
 - Restore icon to return epics to their configured list order
 - Epic name links scroll to the epic's detail section on the page
+- **Search filter** — text input beside the "Epic Status" heading; filters the table in real time; collapses to a single-column view with a result count row when active
+- **Objectives filter** — checkbox row after the table; one checkbox per Shortcut Objective associated with the loaded epics; filters the table to matching epics; includes **Select All** / **Clear All** controls; active filter details shown in the result count row
 
 ### Epic Management
 - Epics loaded automatically on page load (no manual search required)
@@ -53,13 +55,14 @@ Three collapsible assignment tables appear above the epic cards, controlled by t
 
 #### Team Member Epic Assignments
 - Inverted view: lists each team member alongside the epics they are assigned to
-- Shows epic count per member, e.g. `Alice (3)`
+- Dedicated **Count** column (sortable) showing the number of epics per member
 - Epics shown as a list per member
 
 #### Team Member Ticket Assignments
 - Lists all open (non-complete) tickets assigned to each team member
+- Dedicated **Count** column (sortable) showing the number of open tickets per member
 - Tickets grouped under their epic heading (linked to Shortcut), with a ticket count per epic
-- Each ticket name is a direct link to Shortcut (opens in a new tab)
+- Each ticket name is a direct link to Shortcut, followed by a coloured workflow-state pill
 - Respects the active team filter and ignored-users toggle
 
 #### Ignored Users Display
@@ -75,7 +78,7 @@ Per epic, three visualizations are available. Each has a **▶/▼ toggle** in i
 - Workflow status breakdown showing story distribution across workflow states
 - Visual bars for: Backlog, Ready for Development, In Development, In Review, Ready for Release, Complete
 - Story counts displayed above each column
-- Clicking any bar except **Complete** opens a popover listing all tickets in that state (type pill, name link, team, age); click the same bar or outside to dismiss
+- Clicking any bar except **Complete** opens a scrollable popover listing all tickets in that state (name link, owner, age); click the same bar or outside to dismiss
 - Always visible (no collapse toggle)
 
 #### Workflow Status Pie Chart
@@ -280,6 +283,7 @@ The app makes the following calls to the Express proxy on page load:
 | Call | Frequency | Notes |
 |------|-----------|-------|
 | `GET /api/teams` | Every load | Build complete team name map; member IDs cached per team ID |
+| `GET /api/objectives` | Every load | Fetch all Shortcut Objectives for the epic Objectives filter |
 | `GET /api/epic-workflow` | Once (cached) | Fetch epic workflow states |
 | `GET /api/search/epics?query=` | 1 per tracked epic | Run in parallel via `Promise.all` |
 | `GET /api/epics/:id` | 1 per epic found | Full epic details |
@@ -298,6 +302,7 @@ Epic workflow states are cached to localStorage and skipped on subsequent loads.
 - `GET /api/workflows` — All workflows with states
 - `GET /api/epic-workflow` — Epic workflow states
 - `GET /api/teams` — All Shortcut teams (groups)
+- `GET /api/objectives` — All Shortcut Objectives
 - `GET /api/members` — All workspace members
 - `GET /api/users/:id` — Member display name
 - `GET /api/migrate-data` — One-time migration of legacy server-side config to localStorage

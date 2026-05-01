@@ -181,6 +181,21 @@ app.get('/api/epic-workflow', async (req, res) => {
   }
 });
 
+// Get objectives
+app.get('/api/objectives', async (req, res) => {
+  try {
+    const token = getTokenFromHeader(req);
+    if (!token) return res.status(401).json({ error: 'Authorization token required' });
+    const response = await axios.get(`${SHORTCUT_API_BASE}/objectives`, {
+      headers: { 'Shortcut-Token': token, 'Content-Type': 'application/json' }
+    });
+    res.json(response.data);
+  } catch (error) {
+    console.error('Error fetching objectives:', error.response?.data || error.message);
+    res.status(error.response?.status || 500).json({ error: error.response?.data || 'Failed to fetch objectives' });
+  }
+});
+
 // Get stories for an epic
 app.get('/api/epics/:id/stories', async (req, res) => {
   try {

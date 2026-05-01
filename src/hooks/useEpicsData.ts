@@ -8,7 +8,7 @@
  */
 import { useState, useRef, useCallback, useEffect, Dispatch, SetStateAction } from 'react';
 import { storage, getApiBaseUrl } from '../utils';
-import { Epic, EpicState, LoadProgress, LoadStats } from '../types';
+import { Epic, EpicState, LoadProgress, LoadStats, Objective } from '../types';
 
 interface UseEpicsDataParams {
   epicNames: string[];
@@ -31,6 +31,7 @@ export function useEpicsData({ epicNames, loadSelectedWorkflow, setCollapsedChar
   const [epicStates, setEpicStates] = useState<Record<number, EpicState>>({});
   const [teamMemberIds, setTeamMemberIds] = useState<Set<string>>(new Set());
   const [teamNameMap, setTeamNameMap] = useState<Record<string, string>>({});
+  const [objectives, setObjectives] = useState<Objective[]>([]);
   const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
@@ -167,6 +168,14 @@ export function useEpicsData({ epicNames, loadSelectedWorkflow, setCollapsedChar
         setTeamMemberIds(allMemberIds);
       }
 
+      try {
+        const objRes = await fetch(`${getApiBaseUrl()}/api/objectives`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+          signal: controller.signal
+        });
+        if (objRes.ok) setObjectives(await objRes.json());
+      } catch (err) {}
+
       let workflowApiCall = false;
       const cachedEpicWorkflow = storage.getEpicWorkflowCache();
       if (cachedEpicWorkflow) {
@@ -282,6 +291,7 @@ export function useEpicsData({ epicNames, loadSelectedWorkflow, setCollapsedChar
     epicStates,
     teamMemberIds, setTeamMemberIds,
     teamNameMap,
+    objectives,
     loadEpics, cancelSearch,
   };
 }

@@ -223,9 +223,10 @@ function getEpicLastChanged(stories: Story[]): number | null {
 }
 
 function EpicStatusTable(): React.JSX.Element | null {
-  const { epics, members, workflowConfig, filteredStateIds, getDisplayStories, getEpicStateInfo, getEpicStateClass, sortState, toggleSortState, resetSortState, filterByTeam, selectedTeamIds } = useDashboard();
+  const { epics, objectives, members, workflowConfig, filteredStateIds, getDisplayStories, getEpicStateInfo, getEpicStateClass, sortState, toggleSortState, resetSortState, filterByTeam, selectedTeamIds } = useDashboard();
   const [openPopover, setOpenPopover] = useState<number | string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [deselectedObjectiveIds, setDeselectedObjectiveIds] = useState<Set<number | -1>>(new Set());
   useEffect(() => {
     if (!openPopover) return;
     const close = () => setOpenPopover(null);
@@ -236,13 +237,37 @@ function EpicStatusTable(): React.JSX.Element | null {
   const foundEpics = epics.filter(e => !e.notFound);
   if (foundEpics.length === 0 || filteredStateIds.length === 0) return null;
 
+  // Objectives present in the loaded epics, sorted by name
+  const epicObjectiveIdSet = new Set(foundEpics.flatMap(e => e.objective_ids || []));
+  const relevantObjectives = objectives
+    .filter(o => !o.archived && epicObjectiveIdSet.has(o.id))
+    .sort((a, b) => a.name.localeCompare(b.name));
+  const hasUnObjectived = foundEpics.some(e => !e.objective_ids || e.objective_ids.length === 0);
+  const showObjectiveFilter = relevantObjectives.length > 0;
+
+  const toggleObjective = (id: number | -1) => {
+    setDeselectedObjectiveIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const objectiveFilteredEpics = deselectedObjectiveIds.size === 0
+    ? foundEpics
+    : foundEpics.filter(e => {
+        const ids = e.objective_ids || [];
+        if (ids.length === 0) return !deselectedObjectiveIds.has(-1);
+        return ids.some(id => !deselectedObjectiveIds.has(id));
+      });
+
   const getCompletePct = (epic: Epic): number => {
     const stories = getDisplayStories(epic);
     const { completeCount } = getGroupCounts(stories, filteredStateIds, workflowConfig.states);
     return stories.length > 0 ? (completeCount / stories.length) * 100 : 0;
   };
 
-  const sortedEpics = [...foundEpics].sort((a, b) => {
+  const sortedEpics = [...objectiveFilteredEpics].sort((a, b) => {
     if (!sortState.summary.col) return 0;
     const dir = sortState.summary.dir === 'asc' ? 1 : -1;
     if (sortState.summary.col === 'name') return dir * a.name.localeCompare(b.name);
@@ -422,16 +447,28 @@ function EpicStatusTable(): React.JSX.Element | null {
           >✕ clear</button>
         )}
       </div>
-      {searchQuery.trim() ? (
+      {searchQuery.trim() || deselectedObjectiveIds.size > 0 ? (
         <table className={tableClass} style={{ borderCollapse: 'separate', borderSpacing: 0, width: '100%' }}>
           <thead>{theadRow}</thead>
           <tbody>
             {visibleEpics.map((epic) => renderRow(epic))}
             <tr>
               <td colSpan={4} className="px-3 py-2 text-sm text-[#1e40af] text-left rounded-b-lg" style={{ background: '#dbeafe' }}>
-                {visibleEpics.length === 0
-                  ? 'No epics match your search.'
-                  : `${visibleEpics.length} epic${visibleEpics.length === 1 ? '' : 's'} filtered.`}
+                <span className="font-semibold">
+                  {visibleEpics.length === 0 ? 'No epics match your filter.' : `${visibleEpics.length} epic${visibleEpics.length === 1 ? '' : 's'} found.`}
+                </span>
+                {searchQuery.trim() && (
+                  <span className="ml-3 text-[#3b82f6]">Search: <span className="italic">"{searchQuery.trim()}"</span></span>
+                )}
+                {deselectedObjectiveIds.size > 0 && (() => {
+                  const selectedNames = relevantObjectives
+                    .filter(o => !deselectedObjectiveIds.has(o.id))
+                    .map(o => o.name);
+                  if (hasUnObjectived && !deselectedObjectiveIds.has(-1)) selectedNames.push('No Objective');
+                  return selectedNames.length > 0
+                    ? <span className="ml-3 text-[#3b82f6]">Objectives: <span className="italic">{selectedNames.join(', ')}</span></span>
+                    : null;
+                })()}
               </td>
             </tr>
           </tbody>
@@ -452,7 +489,43 @@ function EpicStatusTable(): React.JSX.Element | null {
           </div>
         </div>
       )}
-      <hr className="border-0 border-t-2 border-slate-200 mt-4" />
+      {showObjectiveFilter && (
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-3 pb-3 border-b-2 border-slate-200">
+          <span className="text-xs font-semibold text-[#64748b] uppercase tracking-wide whitespace-nowrap">Objectives:</span>
+          {relevantObjectives.map(obj => (
+            <label key={obj.id} className="flex items-center gap-1 cursor-pointer text-sm text-[#1a202c] whitespace-nowrap">
+              <input
+                type="checkbox"
+                checked={!deselectedObjectiveIds.has(obj.id)}
+                onChange={() => toggleObjective(obj.id)}
+                className="cursor-pointer"
+              />
+              {obj.name}
+            </label>
+          ))}
+          {hasUnObjectived && (
+            <label className="flex items-center gap-1 cursor-pointer text-sm text-[#94a3b8] italic whitespace-nowrap">
+              <input
+                type="checkbox"
+                checked={!deselectedObjectiveIds.has(-1)}
+                onChange={() => toggleObjective(-1)}
+                className="cursor-pointer"
+              />
+              No Objective
+            </label>
+          )}
+          <span className="text-[#cbd5e0] text-xs select-none">|</span>
+          <button
+            onClick={() => setDeselectedObjectiveIds(new Set())}
+            className="text-[0.75rem] text-[#494BCB] bg-transparent border-0 cursor-pointer p-0 hover:underline whitespace-nowrap"
+          >Select all</button>
+          <button
+            onClick={() => setDeselectedObjectiveIds(new Set([...relevantObjectives.map(o => o.id as number | -1), ...(hasUnObjectived ? [-1 as const] : [])]))}
+            className="text-[0.75rem] text-[#494BCB] bg-transparent border-0 cursor-pointer p-0 hover:underline whitespace-nowrap"
+          >Clear all</button>
+        </div>
+      )}
+      {!showObjectiveFilter && <hr className="border-0 border-t-2 border-slate-200 mt-4" />}
     </div>
   );
 }

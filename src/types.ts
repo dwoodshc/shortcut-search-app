@@ -21,6 +21,13 @@ export interface Story {
   updated_at?: string;
 }
 
+export interface Objective {
+  id: number;
+  name: string;
+  state?: string;
+  archived?: boolean;
+}
+
 export interface Epic {
   id: number | string;
   name: string;
@@ -28,6 +35,7 @@ export interface Epic {
   epic_state_id?: number;
   owner_ids?: string[];
   follower_ids?: string[];
+  objective_ids?: number[];
   stories?: Story[];
   notFound?: boolean;
   app_url?: string;
@@ -146,6 +154,7 @@ export interface Team {
 export interface DashboardContextValue {
   // Data
   epics: Epic[];
+  objectives: Objective[];
   members: Record<string, string>;
   epicStates: Record<number, EpicState>;
   teamMemberIds: Set<string>;
