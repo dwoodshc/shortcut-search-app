@@ -429,24 +429,62 @@ function EpicStatusTable(): React.JSX.Element | null {
 
   return (
     <div id="summary-table" className="mb-4">
-      <div className="flex items-center gap-3 mb-3">
+      <div className="flex flex-col gap-2 mb-3">
         <h2 className="m-0 text-[1.1rem] font-semibold text-[#1a202c]">Epic Status</h2>
-        <input
-          type="text"
-          placeholder="Filter epics…"
-          value={searchQuery}
-          onChange={e => setSearchQuery(e.target.value)}
-          className="border border-[#E2E8F0] rounded px-2 py-[0.2rem] text-sm text-[#1a202c] bg-white focus:outline-none focus:border-[#494BCB]"
-          style={{ width: '200px' }}
-        />
-        {searchQuery && (
-          <button
-            onClick={() => setSearchQuery('')}
-            className="text-[0.75rem] text-[#94a3b8] bg-transparent border-0 cursor-pointer p-0 hover:text-[#475569]"
-            title="Clear filter"
-          >✕ clear</button>
-        )}
+        <div className="flex items-center gap-3">
+          <input
+            type="text"
+            placeholder="Filter epics…"
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            className="border border-[#E2E8F0] rounded px-2 py-[0.2rem] text-sm text-[#1a202c] bg-white focus:outline-none focus:border-[#494BCB]"
+            style={{ width: '200px' }}
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="text-[0.75rem] text-[#94a3b8] bg-transparent border-0 cursor-pointer p-0 hover:text-[#475569]"
+              title="Clear filter"
+            >✕ clear</button>
+          )}
+        </div>
       </div>
+      {showObjectiveFilter && (
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-3">
+          <span className="text-xs font-semibold text-[#64748b] uppercase tracking-wide whitespace-nowrap">Objectives:</span>
+          {relevantObjectives.map(obj => (
+            <label key={obj.id} className="flex items-center gap-1 cursor-pointer text-sm text-[#1a202c] whitespace-nowrap">
+              <input
+                type="checkbox"
+                checked={!deselectedObjectiveIds.has(obj.id)}
+                onChange={() => toggleObjective(obj.id)}
+                className="cursor-pointer"
+              />
+              {obj.name}
+            </label>
+          ))}
+          {hasUnObjectived && (
+            <label className="flex items-center gap-1 cursor-pointer text-sm text-[#94a3b8] italic whitespace-nowrap">
+              <input
+                type="checkbox"
+                checked={!deselectedObjectiveIds.has(-1)}
+                onChange={() => toggleObjective(-1)}
+                className="cursor-pointer"
+              />
+              No Objective
+            </label>
+          )}
+          <span className="text-[#cbd5e0] text-xs select-none">|</span>
+          <button
+            onClick={() => setDeselectedObjectiveIds(new Set())}
+            className="text-[0.75rem] text-[#494BCB] bg-transparent border-0 cursor-pointer p-0 hover:underline whitespace-nowrap"
+          >Select all</button>
+          <button
+            onClick={() => setDeselectedObjectiveIds(new Set([...relevantObjectives.map(o => o.id as number | -1), ...(hasUnObjectived ? [-1 as const] : [])]))}
+            className="text-[0.75rem] text-[#494BCB] bg-transparent border-0 cursor-pointer p-0 hover:underline whitespace-nowrap"
+          >Clear all</button>
+        </div>
+      )}
       {searchQuery.trim() || deselectedObjectiveIds.size > 0 ? (
         <table className={tableClass} style={{ borderCollapse: 'separate', borderSpacing: 0, width: '100%' }}>
           <thead>{theadRow}</thead>
@@ -489,43 +527,7 @@ function EpicStatusTable(): React.JSX.Element | null {
           </div>
         </div>
       )}
-      {showObjectiveFilter && (
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-3 pb-3 border-b-2 border-slate-200">
-          <span className="text-xs font-semibold text-[#64748b] uppercase tracking-wide whitespace-nowrap">Objectives:</span>
-          {relevantObjectives.map(obj => (
-            <label key={obj.id} className="flex items-center gap-1 cursor-pointer text-sm text-[#1a202c] whitespace-nowrap">
-              <input
-                type="checkbox"
-                checked={!deselectedObjectiveIds.has(obj.id)}
-                onChange={() => toggleObjective(obj.id)}
-                className="cursor-pointer"
-              />
-              {obj.name}
-            </label>
-          ))}
-          {hasUnObjectived && (
-            <label className="flex items-center gap-1 cursor-pointer text-sm text-[#94a3b8] italic whitespace-nowrap">
-              <input
-                type="checkbox"
-                checked={!deselectedObjectiveIds.has(-1)}
-                onChange={() => toggleObjective(-1)}
-                className="cursor-pointer"
-              />
-              No Objective
-            </label>
-          )}
-          <span className="text-[#cbd5e0] text-xs select-none">|</span>
-          <button
-            onClick={() => setDeselectedObjectiveIds(new Set())}
-            className="text-[0.75rem] text-[#494BCB] bg-transparent border-0 cursor-pointer p-0 hover:underline whitespace-nowrap"
-          >Select all</button>
-          <button
-            onClick={() => setDeselectedObjectiveIds(new Set([...relevantObjectives.map(o => o.id as number | -1), ...(hasUnObjectived ? [-1 as const] : [])]))}
-            className="text-[0.75rem] text-[#494BCB] bg-transparent border-0 cursor-pointer p-0 hover:underline whitespace-nowrap"
-          >Clear all</button>
-        </div>
-      )}
-      {!showObjectiveFilter && <hr className="border-0 border-t-2 border-slate-200 mt-4" />}
+      <hr className="border-0 border-t-2 border-slate-200 mt-4" />
     </div>
   );
 }
