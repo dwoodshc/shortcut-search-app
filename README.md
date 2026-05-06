@@ -29,7 +29,8 @@ Two tables appear at the top of the dashboard, above the epic cards.
 - Epic name links scroll to the epic's detail section on the page
 - **Search filter** — text input below the "Epic Status" heading; filters the table in real time; collapses to a single-column view with a result count row when active
 - **Objectives filter** — checkbox row above the table; one checkbox per Shortcut Objective associated with the loaded epics; filters the table to matching epics; includes **Select All** / **Clear All** controls; active filter details shown in the result count row
-- Both filters apply **globally** — when active, the same epics are also hidden from the Epic Cards, Assignment Tables, and Unwatched Tickets, and the Story Summary counts are recalculated from the visible epics only
+- **Done epics toggle** — `👁 Done` button on the "Epic Status" heading row hides or shows epics with a Done status; a strikethrough on the label indicates Done epics are currently hidden
+- All three filters apply **globally** — when active, the same epics are also hidden from the Epic Cards, Assignment Tables, and Unwatched Tickets, and the Story Summary counts are recalculated from the visible epics only
 
 ### Epic Management
 - Epics loaded automatically on page load (no manual search required)
@@ -150,7 +151,7 @@ Appears below all content after a successful data load. Shows five stats in a li
 ### Settings Menu
 - **Setup Wizard** — Re-run the setup wizard
 - **README.md** — View this documentation in-app
-- **View** — Toggle visibility of per-epic card fields (Objective, Owners, Story Count, User Story Board) and Epic Status table filters (Filter Epics, Objectives filter); preferences saved to localStorage
+- **View** — Toggle visibility of per-epic card fields (Objective, Owners, Story Count, User Story Board), Epic Status table filters (Filter Epics, Objectives filter), and Done epic visibility; preferences saved to localStorage
 - **Theme** — Open the Theme Selector to choose a display theme (see below); preference is saved to localStorage
 - **Export/Import** — Backup and restore configuration as JSON
 - **Wipe Settings** — Clear all localStorage data to start fresh

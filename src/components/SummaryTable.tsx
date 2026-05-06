@@ -428,6 +428,12 @@ function EpicStatusTable(): React.JSX.Element | null {
           {!viewSettings.showObjectivesFilter && showObjectiveFilter && (
             <button className="view-peek-btn" onClick={() => updateViewSetting('showObjectivesFilter', true)} title="Show objectives filter">👁</button>
           )}
+          <button
+            className="view-peek-btn"
+            onClick={() => updateViewSetting('showDoneEpics', !viewSettings.showDoneEpics)}
+            title={viewSettings.showDoneEpics ? 'Hide Done epics' : 'Show Done epics'}
+            style={!viewSettings.showDoneEpics ? { textDecoration: 'line-through' } : undefined}
+          >👁 Done</button>
         </div>
         {viewSettings.showEpicFilter && (
           <div className="flex items-center gap-3">

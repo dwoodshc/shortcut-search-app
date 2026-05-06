@@ -121,7 +121,7 @@ export const storage = {
 
   getViewSettings: (): ViewSettings => {
     const data = localStorage.getItem(STORAGE_KEYS.VIEW_SETTINGS);
-    const defaults: ViewSettings = { showEpicFilter: true, showObjectivesFilter: true, showEpicObjective: true, showEpicOwners: true, showEpicStoryCount: true, showUserStoryBoard: true };
+    const defaults: ViewSettings = { showEpicFilter: true, showObjectivesFilter: true, showDoneEpics: true, showEpicObjective: true, showEpicOwners: true, showEpicStoryCount: true, showUserStoryBoard: true };
     if (!data) return defaults;
     try { return { ...defaults, ...JSON.parse(data) }; } catch { return defaults; }
   },

@@ -320,6 +320,7 @@ function App(): React.JSX.Element {
     for (const epic of epics) {
       if (epic.notFound) continue;
       if (trimmed && !epic.name.toLowerCase().includes(trimmed)) continue;
+      if (!viewSettings.showDoneEpics && getEpicStateInfo(epic).type.toLowerCase() === 'done') continue;
       if (deselectedObjectiveIds.size > 0) {
         const objIds = epic.objective_ids || [];
         if (objIds.length === 0) {
@@ -331,7 +332,7 @@ function App(): React.JSX.Element {
       ids.add(epic.id);
     }
     return ids;
-  }, [epics, epicSearchQuery, deselectedObjectiveIds]);
+  }, [epics, epicSearchQuery, deselectedObjectiveIds, viewSettings.showDoneEpics, getEpicStateInfo]);
 
   const allDisplayStories = useMemo(() =>
     epics.filter(e => !e.notFound && visibleEpicIds.has(e.id)).flatMap(epic => getDisplayStories(epic)),
@@ -601,6 +602,15 @@ function App(): React.JSX.Element {
                   className="w-4 h-4"
                 />
                 <span className="text-sm">Show Filter Objectives checkboxes</span>
+              </label>
+              <label className="flex items-center gap-3 cursor-pointer mt-2">
+                <input
+                  type="checkbox"
+                  checked={viewSettings.showDoneEpics}
+                  onChange={(e) => updateViewSetting('showDoneEpics', e.target.checked)}
+                  className="w-4 h-4"
+                />
+                <span className="text-sm">Show Done epics</span>
               </label>
             </div>
             <div className="mb-6">
