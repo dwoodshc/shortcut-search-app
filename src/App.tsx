@@ -472,7 +472,7 @@ function App(): React.JSX.Element {
             <ul>
               <li><strong>Story Summary:</strong> Overall story counts across all epics by workflow state</li>
               <li><strong>Epic Status Table:</strong> Progress bars, Last Changed; search and objective filters</li>
-              <li><strong>Global Filters:</strong> Search/objective filters apply across all dashboard sections</li>
+              <li><strong>Global Filters:</strong> Search/objective/Done filters apply across all sections</li>
               <li><strong>Unwatched Tickets:</strong> Open tickets in your selected teams you are not watching</li>
               <li><strong>Epic Owner Assignments:</strong> Maps each epic to its assigned team members</li>
               <li><strong>Team Member Epic Assignments:</strong> Inverted view — each member and their epics</li>
