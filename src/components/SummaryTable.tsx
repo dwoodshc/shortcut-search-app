@@ -223,12 +223,10 @@ function getEpicLastChanged(stories: Story[]): number | null {
 }
 
 function EpicStatusTable(): React.JSX.Element | null {
-  const { epics, objectives, members, workflowConfig, filteredStateIds, getDisplayStories, getEpicStateInfo, getEpicStateClass, sortState, toggleSortState, resetSortState, filterByTeam, selectedTeamIds, viewSettings, setViewSettings } = useDashboard();
+  const { epics, objectives, members, workflowConfig, filteredStateIds, getDisplayStories, getEpicStateInfo, getEpicStateClass, sortState, toggleSortState, resetSortState, filterByTeam, selectedTeamIds, viewSettings, setViewSettings, epicSearchQuery, setEpicSearchQuery, deselectedObjectiveIds, setDeselectedObjectiveIds, visibleEpicIds } = useDashboard();
   const updateViewSetting = (key: keyof ViewSettings, value: boolean) =>
     setViewSettings({ ...viewSettings, [key]: value });
   const [openPopover, setOpenPopover] = useState<number | string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [deselectedObjectiveIds, setDeselectedObjectiveIds] = useState<Set<number | -1>>(new Set());
   useEffect(() => {
     if (!openPopover) return;
     const close = () => setOpenPopover(null);
@@ -255,21 +253,13 @@ function EpicStatusTable(): React.JSX.Element | null {
     });
   };
 
-  const objectiveFilteredEpics = deselectedObjectiveIds.size === 0
-    ? foundEpics
-    : foundEpics.filter(e => {
-        const ids = e.objective_ids || [];
-        if (ids.length === 0) return !deselectedObjectiveIds.has(-1);
-        return ids.some(id => !deselectedObjectiveIds.has(id));
-      });
-
   const getCompletePct = (epic: Epic): number => {
     const stories = getDisplayStories(epic);
     const { completeCount } = getGroupCounts(stories, filteredStateIds, workflowConfig.states);
     return stories.length > 0 ? (completeCount / stories.length) * 100 : 0;
   };
 
-  const sortedEpics = [...objectiveFilteredEpics].sort((a, b) => {
+  const sortedEpics = [...foundEpics].sort((a, b) => {
     if (!sortState.summary.col) return 0;
     const dir = sortState.summary.dir === 'asc' ? 1 : -1;
     if (sortState.summary.col === 'name') return dir * a.name.localeCompare(b.name);
@@ -406,9 +396,7 @@ function EpicStatusTable(): React.JSX.Element | null {
     );
   };
 
-  const visibleEpics = searchQuery.trim()
-    ? sortedEpics.filter(e => e.name.toLowerCase().includes(searchQuery.toLowerCase()))
-    : sortedEpics;
+  const visibleEpics = sortedEpics.filter(e => visibleEpicIds.has(e.id));
 
   const half = Math.ceil(visibleEpics.length / 2);
   const leftEpics = visibleEpics.slice(0, half);
@@ -446,20 +434,20 @@ function EpicStatusTable(): React.JSX.Element | null {
             <input
               type="text"
               placeholder="Filter epics…"
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
+              value={epicSearchQuery}
+              onChange={e => setEpicSearchQuery(e.target.value)}
               className="border border-[#E2E8F0] rounded px-2 py-[0.2rem] text-sm text-[#1a202c] bg-white focus:outline-none focus:border-[#494BCB]"
               style={{ width: '200px' }}
             />
-            {searchQuery && (
+            {epicSearchQuery && (
               <button
-                onClick={() => setSearchQuery('')}
+                onClick={() => setEpicSearchQuery('')}
                 className="text-[0.75rem] text-[#94a3b8] bg-transparent border-0 cursor-pointer p-0 hover:text-[#475569]"
                 title="Clear filter"
               >✕ clear</button>
             )}
             <button
-              onClick={() => { updateViewSetting('showEpicFilter', false); setSearchQuery(''); }}
+              onClick={() => { updateViewSetting('showEpicFilter', false); setEpicSearchQuery(''); }}
               className="text-[0.75rem] text-[#94a3b8] bg-transparent border-0 cursor-pointer p-0 hover:text-[#475569]"
               title="Hide filter"
             >✕ hide</button>
@@ -508,7 +496,7 @@ function EpicStatusTable(): React.JSX.Element | null {
           >✕ hide</button>
         </div>
       )}
-      {searchQuery.trim() || deselectedObjectiveIds.size > 0 ? (
+      {epicSearchQuery.trim() || deselectedObjectiveIds.size > 0 ? (
         <table className={tableClass} style={{ borderCollapse: 'separate', borderSpacing: 0, width: '100%' }}>
           <thead>{theadRow}</thead>
           <tbody>
@@ -518,8 +506,8 @@ function EpicStatusTable(): React.JSX.Element | null {
                 <span className="font-semibold">
                   {visibleEpics.length === 0 ? 'No epics match your filter.' : `${visibleEpics.length} epic${visibleEpics.length === 1 ? '' : 's'} found.`}
                 </span>
-                {searchQuery.trim() && (
-                  <span className="ml-3 text-[#3b82f6]">Search: <span className="italic">"{searchQuery.trim()}"</span></span>
+                {epicSearchQuery.trim() && (
+                  <span className="ml-3 text-[#3b82f6]">Search: <span className="italic">"{epicSearchQuery.trim()}"</span></span>
                 )}
                 {deselectedObjectiveIds.size > 0 && (() => {
                   const selectedNames = relevantObjectives

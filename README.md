@@ -27,8 +27,9 @@ Two tables appear at the top of the dashboard, above the epic cards.
 - **Last Changed** column — days since any story was last updated (respects the active team filter); clicking the value opens a popover listing the 5 most recently changed stories with columns: Ticket, Owner, Status, Changed
 - Restore icon to return epics to their configured list order
 - Epic name links scroll to the epic's detail section on the page
-- **Search filter** — text input beside the "Epic Status" heading; filters the table in real time; collapses to a single-column view with a result count row when active
-- **Objectives filter** — checkbox row after the table; one checkbox per Shortcut Objective associated with the loaded epics; filters the table to matching epics; includes **Select All** / **Clear All** controls; active filter details shown in the result count row
+- **Search filter** — text input below the "Epic Status" heading; filters the table in real time; collapses to a single-column view with a result count row when active
+- **Objectives filter** — checkbox row above the table; one checkbox per Shortcut Objective associated with the loaded epics; filters the table to matching epics; includes **Select All** / **Clear All** controls; active filter details shown in the result count row
+- Both filters apply **globally** — when active, the same epics are also hidden from the Epic Cards, Assignment Tables, and Unwatched Tickets, and the Story Summary counts are recalculated from the visible epics only
 
 ### Epic Management
 - Epics loaded automatically on page load (no manual search required)

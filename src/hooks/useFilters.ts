@@ -23,6 +23,8 @@ export function useFilters() {
     storyDetail: { col: null, dir: 'asc' },
   });
   const [collapsedCharts, setCollapsedCharts] = useState<Record<string, boolean>>({});
+  const [epicSearchQuery, setEpicSearchQuery] = useState('');
+  const [deselectedObjectiveIds, setDeselectedObjectiveIds] = useState<Set<number | -1>>(new Set());
 
   const selectedTeamIds = useMemo(() => selectedTeams.map(t => t.id), [selectedTeams]);
   const selectedTeamLabel = useMemo(() => selectedTeams.map(t => t.name).join(' & '), [selectedTeams]);
@@ -55,6 +57,8 @@ export function useFilters() {
     selectedTeamLabel,
     sortState, toggleSortState, resetSortState,
     collapsedCharts, setCollapsedCharts, toggleChart,
+    epicSearchQuery, setEpicSearchQuery,
+    deselectedObjectiveIds, setDeselectedObjectiveIds,
     getDisplayStories,
   };
 }

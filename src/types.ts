@@ -202,6 +202,11 @@ export interface DashboardContextValue {
   setFilteredEpicNames: Dispatch<SetStateAction<string[]>>;
   setupWizardStep: number;
   setSetupWizardStep: Dispatch<SetStateAction<number>>;
+  epicSearchQuery: string;
+  setEpicSearchQuery: Dispatch<SetStateAction<string>>;
+  deselectedObjectiveIds: Set<number | -1>;
+  setDeselectedObjectiveIds: Dispatch<SetStateAction<Set<number | -1>>>;
+  visibleEpicIds: Set<number | string>;
   // Derived / callbacks
   getDisplayStories: (epic: Epic) => Story[];
   generateShortcutUrl: (epicId: number | string, stateName?: string) => string;

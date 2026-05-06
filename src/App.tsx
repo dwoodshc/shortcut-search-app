@@ -140,6 +140,8 @@ function App(): React.JSX.Element {
     selectedTeams, setSelectedTeams, selectedTeamIds, selectedTeamLabel,
     sortState, toggleSortState, resetSortState,
     collapsedCharts, setCollapsedCharts, toggleChart,
+    epicSearchQuery, setEpicSearchQuery,
+    deselectedObjectiveIds, setDeselectedObjectiveIds,
     getDisplayStories,
   } = useFilters();
 
@@ -312,12 +314,31 @@ function App(): React.JSX.Element {
   }, [epicStates]);
 
   // Derived data that assembles outputs from multiple hooks
+  const visibleEpicIds = useMemo(() => {
+    const trimmed = epicSearchQuery.trim().toLowerCase();
+    const ids = new Set<number | string>();
+    for (const epic of epics) {
+      if (epic.notFound) continue;
+      if (trimmed && !epic.name.toLowerCase().includes(trimmed)) continue;
+      if (deselectedObjectiveIds.size > 0) {
+        const objIds = epic.objective_ids || [];
+        if (objIds.length === 0) {
+          if (deselectedObjectiveIds.has(-1)) continue;
+        } else if (!objIds.some(id => !deselectedObjectiveIds.has(id))) {
+          continue;
+        }
+      }
+      ids.add(epic.id);
+    }
+    return ids;
+  }, [epics, epicSearchQuery, deselectedObjectiveIds]);
+
   const allDisplayStories = useMemo(() =>
-    epics.filter(e => !e.notFound).flatMap(epic => getDisplayStories(epic)),
-  [epics, getDisplayStories]);
+    epics.filter(e => !e.notFound && visibleEpicIds.has(e.id)).flatMap(epic => getDisplayStories(epic)),
+  [epics, visibleEpicIds, getDisplayStories]);
 
   const epicTeamData = useMemo(() => {
-    return epics.filter(e => !e.notFound).map(epic => {
+    return epics.filter(e => !e.notFound && visibleEpicIds.has(e.id)).map(epic => {
       const stateInfo = getEpicStateInfo(epic);
       const stateNameNorm = stateInfo.name.toLowerCase().trim();
       return {
@@ -332,7 +353,7 @@ function App(): React.JSX.Element {
           .filter(name => !filterIgnoredInTickets || !ignoredUsers.includes(name)),
       };
     });
-  }, [epics, selectedTeamIds, teamMemberIds, members, filterIgnoredInTickets, ignoredUsers, getEpicStateInfo]);
+  }, [epics, visibleEpicIds, selectedTeamIds, teamMemberIds, members, filterIgnoredInTickets, ignoredUsers, getEpicStateInfo]);
 
   const memberEpicMap = useMemo(() => {
     const map: Record<string, Array<{ id: number | string; name: string; isDone: boolean; isReadyForRelease: boolean; isBlocked: boolean }>> = {};
@@ -376,7 +397,10 @@ function App(): React.JSX.Element {
     toggleAllCharts, handleOpenReadme,
     displayTheme: theme, selectTheme,
     viewSettings, setViewSettings,
-  }), [epics, objectives, members, epicStates, teamMemberIds, loadStats, workflowConfig, setWorkflowField, modals, setModal, sortState, toggleSortState, resetSortState, collapsedCharts, setCollapsedCharts, toggleChart, filterByTeam, setFilterByTeam, ignoredUsers, setIgnoredUsers, filterIgnoredInTickets, setFilterIgnoredInTickets, selectedTeams, setSelectedTeams, selectedTeamIds, selectedTeamLabel, teamNameMap, shortcutWebUrl, setShortcutWebUrl, error, setError, loading, successMessage, filteredEpicNames, setFilteredEpicNames, setupWizardStep, setSetupWizardStep, getDisplayStories, generateShortcutUrl, getEpicStateInfo, getEpicStateClass, filteredStateIds, epicTeamData, memberEpicMap, allDisplayStories, searchEpics, handleSaveShortcutUrl, handleSelectWorkflow, toggleAllCharts, handleOpenReadme, theme, selectTheme, viewSettings, setViewSettings]);
+    epicSearchQuery, setEpicSearchQuery,
+    deselectedObjectiveIds, setDeselectedObjectiveIds,
+    visibleEpicIds,
+  }), [epics, objectives, members, epicStates, teamMemberIds, loadStats, workflowConfig, setWorkflowField, modals, setModal, sortState, toggleSortState, resetSortState, collapsedCharts, setCollapsedCharts, toggleChart, filterByTeam, setFilterByTeam, ignoredUsers, setIgnoredUsers, filterIgnoredInTickets, setFilterIgnoredInTickets, selectedTeams, setSelectedTeams, selectedTeamIds, selectedTeamLabel, teamNameMap, shortcutWebUrl, setShortcutWebUrl, error, setError, loading, successMessage, filteredEpicNames, setFilteredEpicNames, setupWizardStep, setSetupWizardStep, getDisplayStories, generateShortcutUrl, getEpicStateInfo, getEpicStateClass, filteredStateIds, epicTeamData, memberEpicMap, allDisplayStories, searchEpics, handleSaveShortcutUrl, handleSelectWorkflow, toggleAllCharts, handleOpenReadme, theme, selectTheme, viewSettings, setViewSettings, epicSearchQuery, setEpicSearchQuery, deselectedObjectiveIds, setDeselectedObjectiveIds, visibleEpicIds]);
 
   return (
     <DashboardContext.Provider value={dashboardContext}>
@@ -447,6 +471,7 @@ function App(): React.JSX.Element {
             <ul>
               <li><strong>Story Summary:</strong> Overall story counts across all epics by workflow state</li>
               <li><strong>Epic Status Table:</strong> Progress bars, Last Changed; search and objective filters</li>
+              <li><strong>Global Filters:</strong> Search/objective filters apply across all dashboard sections</li>
               <li><strong>Unwatched Tickets:</strong> Open tickets in your selected teams you are not watching</li>
               <li><strong>Epic Owner Assignments:</strong> Maps each epic to its assigned team members</li>
               <li><strong>Team Member Epic Assignments:</strong> Inverted view — each member and their epics</li>
@@ -676,7 +701,7 @@ function App(): React.JSX.Element {
             <UnwatchedTickets />
             <AssignmentTables />
 
-            {epics.map((epic) => (
+            {epics.filter(epic => epic.notFound || visibleEpicIds.has(epic.id)).map((epic) => (
               <EpicCard key={epic.id as React.Key} epic={epic} />
             ))}
           </div>

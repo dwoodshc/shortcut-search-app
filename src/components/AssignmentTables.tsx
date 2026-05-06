@@ -30,12 +30,13 @@ export default function AssignmentTables(): React.JSX.Element | null {
     filterByTeam, selectedTeamIds,
     filterIgnoredInTickets, ignoredUsers,
     getEpicStateClass,
+    visibleEpicIds,
   } = useDashboard();
 
   const memberTicketData = useMemo(() => {
     const map: Record<string, Array<{ id: number; name: string; app_url?: string; epicName: string; epicAppUrl?: string; stateName: string }>> = {};
     for (const epic of epics) {
-      if (epic.notFound) continue;
+      if (epic.notFound || !visibleEpicIds.has(epic.id)) continue;
       const stories = epic.stories || [];
       const filtered = filterByTeam && selectedTeamIds.length > 0
         ? stories.filter(s => !s.group_id || selectedTeamIds.includes(s.group_id))
@@ -52,7 +53,7 @@ export default function AssignmentTables(): React.JSX.Element | null {
       }
     }
     return Object.entries(map).map(([member, tickets]) => ({ member, tickets }));
-  }, [epics, members, workflowConfig.states, filterByTeam, selectedTeamIds, filterIgnoredInTickets, ignoredUsers]);
+  }, [epics, visibleEpicIds, members, workflowConfig.states, filterByTeam, selectedTeamIds, filterIgnoredInTickets, ignoredUsers]);
 
   const donePill = <span className={`epic-state ${getEpicStateClass('done', 'Done')} !text-[0.75rem] !py-[0.15rem] !px-2 ml-[0.4rem]`}>Done ✓</span>;
   const readyForReleasePill = <span className={`epic-state ${getEpicStateClass('', 'Ready for Release')} !text-[0.75rem] !py-[0.15rem] !px-2 ml-[0.4rem]`}>Ready for Release</span>;

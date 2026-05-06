@@ -64,7 +64,7 @@ function collectUnwatched(
 }
 
 export default function UnwatchedTickets(): React.JSX.Element | null {
-  const { epics, members, selectedTeamIds, workflowConfig, getEpicStateInfo } = useDashboard();
+  const { epics, members, selectedTeamIds, workflowConfig, getEpicStateInfo, visibleEpicIds } = useDashboard();
   const [myMemberId, setMyMemberId] = useState<string | null>(null);
   const [nameNotFound, setNameNotFound] = useState(false);
 
@@ -99,7 +99,8 @@ export default function UnwatchedTickets(): React.JSX.Element | null {
   ) : null;
 
   const getEpicStateDone = (epic: Epic) => getEpicStateInfo(epic).type?.toLowerCase() === 'done';
-  const tickets = collectUnwatched(epics, selectedTeamIds, workflowConfig.states, myMemberId, getEpicStateDone);
+  const visibleEpics = epics.filter(e => e.notFound || visibleEpicIds.has(e.id));
+  const tickets = collectUnwatched(visibleEpics, selectedTeamIds, workflowConfig.states, myMemberId, getEpicStateDone);
 
   if (tickets.length === 0) return null;
 
