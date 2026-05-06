@@ -29,7 +29,7 @@ import { useModals } from './hooks/useModals';
 import { useFilters } from './hooks/useFilters';
 import { useConfigIO } from './hooks/useConfigIO';
 import { DashboardContext } from './context/DashboardContext';
-import { Epic, EpicState } from './types';
+import { Epic, EpicState, Story } from './types';
 
 const toTitleCase = (str: string): string =>
   str.toLowerCase().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
@@ -334,9 +334,14 @@ function App(): React.JSX.Element {
     return ids;
   }, [epics, epicSearchQuery, deselectedObjectiveIds, viewSettings.showDoneEpics, getEpicStateInfo]);
 
-  const allDisplayStories = useMemo(() =>
-    epics.filter(e => !e.notFound && visibleEpicIds.has(e.id)).flatMap(epic => getDisplayStories(epic)),
-  [epics, visibleEpicIds, getDisplayStories]);
+  const allDisplayStories = useMemo(() => {
+    const result: Story[] = [];
+    for (const epic of epics) {
+      if (epic.notFound || !visibleEpicIds.has(epic.id)) continue;
+      result.push(...getDisplayStories(epic));
+    }
+    return result;
+  }, [epics, visibleEpicIds, getDisplayStories]);
 
   const epicTeamData = useMemo(() => {
     return epics.filter(e => !e.notFound && visibleEpicIds.has(e.id)).map(epic => {

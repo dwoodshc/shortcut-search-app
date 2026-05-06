@@ -9,7 +9,8 @@ import React, { useState, useEffect } from 'react';
 import { useDashboard } from '../context/DashboardContext';
 import { Epic, Story, ViewSettings } from '../types';
 import { ResetIcon } from './icons';
-import { COMPLETE_STATE_NAMES } from '../utils';
+import { COMPLETE_STATE_NAMES, daysAgo, formatDaysAgo } from '../utils';
+import SortIcon from './SortIcon';
 
 const STATE_ORDER = ['Backlog', 'Ready for Development', 'In Development', 'In Review', 'Ready for Release', 'Complete'];
 const BACKLOG_STATES = ['backlog'];
@@ -195,22 +196,6 @@ function StoryTotalsSummary(): React.JSX.Element | null {
 }
 
 
-function daysAgo(dateStr: string | undefined): number | null {
-  if (!dateStr) return null;
-  const now = new Date();
-  const then = new Date(dateStr);
-  const nowDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const thenDay = new Date(then.getFullYear(), then.getMonth(), then.getDate());
-  return Math.round((nowDay.getTime() - thenDay.getTime()) / 86_400_000);
-}
-
-function formatDaysAgo(days: number | null): string {
-  if (days === null) return '—';
-  if (days === 0) return 'Today';
-  if (days === 1) return '1d ago';
-  return `${days}d ago`;
-}
-
 function getEpicLastChanged(stories: Story[]): number | null {
   const candidates: (string | undefined)[] = stories.map(s => s.updated_at);
   let mostRecentDaysAgo: number | null = null;
@@ -272,15 +257,6 @@ function EpicStatusTable(): React.JSX.Element | null {
     }
     return 0;
   });
-
-  const sortIcon = (col: string, isNumeric = false) => {
-    const unsorted = 'Click to sort';
-    const ascLabel = isNumeric ? 'Sorted low→high, click to reverse' : 'Sorted A→Z, click to reverse';
-    const descLabel = isNumeric ? 'Sorted high→low, click to reverse' : 'Sorted Z→A, click to reverse';
-    const label = sortState.summary.col !== col ? unsorted : sortState.summary.dir === 'asc' ? ascLabel : descLabel;
-    const icon = sortState.summary.col !== col ? ' ↕' : sortState.summary.dir === 'asc' ? ' ↑' : ' ↓';
-    return <span className="summary-sort-icon" data-tooltip={label}>{icon}</span>;
-  };
 
   const renderRow = (epic: Epic) => {
     const epicDisplayStories = getDisplayStories(epic);
@@ -406,14 +382,14 @@ function EpicStatusTable(): React.JSX.Element | null {
   const theadRow = (
     <tr className="bg-[#494BCB] text-white">
       <th className="cursor-pointer select-none px-3 py-2 text-left font-semibold text-sm rounded-tl-lg w-[35%]">
-        <span onClick={() => toggleSortState('summary', 'name')} className="cursor-pointer select-none">Epic Name{sortIcon('name')}</span>
+        <span onClick={() => toggleSortState('summary', 'name')} className="cursor-pointer select-none">Epic Name<SortIcon sort={sortState.summary} col="name" /></span>
         <span className="summary-sort-icon ml-[6px] cursor-pointer" data-tooltip="Restore original order" onClick={(e) => { e.stopPropagation(); resetSortState('summary'); }} style={{ opacity: sortState.summary.col ? 1 : 0.4 }}>
           {ResetIcon}
         </span>
       </th>
-      <th onClick={() => toggleSortState('summary', 'status')} className="cursor-pointer select-none px-3 py-2 text-center font-semibold text-sm w-[20%] whitespace-nowrap">Epic Status{sortIcon('status')}</th>
-      <th onClick={() => toggleSortState('summary', 'lastchanged')} className="cursor-pointer select-none px-3 py-2 text-center font-semibold text-sm whitespace-nowrap w-[15%]">Last Changed{sortIcon('lastchanged')}</th>
-      <th onClick={() => toggleSortState('summary', 'progress')} className="cursor-pointer select-none px-3 py-2 text-center font-semibold text-sm rounded-tr-lg w-[33%]">Epic Progress{sortIcon('progress', true)}</th>
+      <th onClick={() => toggleSortState('summary', 'status')} className="cursor-pointer select-none px-3 py-2 text-center font-semibold text-sm w-[20%] whitespace-nowrap">Epic Status<SortIcon sort={sortState.summary} col="status" /></th>
+      <th onClick={() => toggleSortState('summary', 'lastchanged')} className="cursor-pointer select-none px-3 py-2 text-center font-semibold text-sm whitespace-nowrap w-[15%]">Last Changed<SortIcon sort={sortState.summary} col="lastchanged" /></th>
+      <th onClick={() => toggleSortState('summary', 'progress')} className="cursor-pointer select-none px-3 py-2 text-center font-semibold text-sm rounded-tr-lg w-[33%]">Epic Progress<SortIcon sort={sortState.summary} col="progress" isNumeric /></th>
     </tr>
   );
 

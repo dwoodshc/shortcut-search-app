@@ -132,6 +132,22 @@ export const storage = {
 
 export const getApiBaseUrl = (): string => `http://${window.location.hostname}:3001`;
 
+export function daysAgo(dateStr: string | undefined): number | null {
+  if (!dateStr) return null;
+  const now = new Date();
+  const then = new Date(dateStr);
+  const nowDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const thenDay = new Date(then.getFullYear(), then.getMonth(), then.getDate());
+  return Math.round((nowDay.getTime() - thenDay.getTime()) / 86_400_000);
+}
+
+export function formatDaysAgo(days: number | null): string {
+  if (days === null) return '—';
+  if (days === 0) return 'Today';
+  if (days === 1) return '1d ago';
+  return `${days}d ago`;
+}
+
 export const createPieSlice = (startAngle: number, angle: number, radius = 80): string => {
   const centerX = 100;
   const centerY = 100;

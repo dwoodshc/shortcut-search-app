@@ -10,6 +10,7 @@ import React, { useMemo } from 'react';
 import { useDashboard } from '../context/DashboardContext';
 import { EpicTeamEntry, EpicRef } from '../types';
 import { ResetIcon } from './icons';
+import SortIcon from './SortIcon';
 import { COMPLETE_STATE_NAMES } from '../utils';
 
 const TICKET_STATE_COLORS: Record<string, { bg: string; text: string }> = {
@@ -68,14 +69,6 @@ export default function AssignmentTables(): React.JSX.Element | null {
   const thBaseClass = "px-3 py-2 font-semibold text-sm text-left cursor-pointer select-none whitespace-nowrap text-white";
   const tdClass = "px-3 py-[0.4rem] text-sm border-b border-[#F0F0F7] break-words overflow-hidden";
 
-  const makeSortIcon = (sort: { col: string | null; dir: string }, col: string, isNumeric = false) => {
-    const unsorted = 'Click to sort';
-    const ascLabel = isNumeric ? 'Sorted low→high, click to reverse' : 'Sorted A→Z, click to reverse';
-    const descLabel = isNumeric ? 'Sorted high→low, click to reverse' : 'Sorted Z→A, click to reverse';
-    const label = sort.col !== col ? unsorted : sort.dir === 'asc' ? ascLabel : descLabel;
-    const icon = sort.col !== col ? ' ↕' : sort.dir === 'asc' ? ' ↑' : ' ↓';
-    return <span className="summary-sort-icon" data-tooltip={label}>{icon}</span>;
-  };
 
   const sortedEpicTeam = [...epicTeamData].sort((a, b) => {
     if (!sortState.epicTeam.col) return 0;
@@ -104,7 +97,7 @@ export default function AssignmentTables(): React.JSX.Element | null {
   const epicTeamHead = (
     <tr className="bg-[#494BCB]">
       <th className={`${thBaseClass} rounded-tl-lg`} onClick={() => toggleSortState('epicTeam', 'epic')}>
-        Epic{makeSortIcon(sortState.epicTeam, 'epic')}
+        Epic<SortIcon sort={sortState.epicTeam} col="epic" />
         <span className="summary-sort-icon ml-[6px] cursor-pointer" data-tooltip="Restore original order" onClick={(e) => { e.stopPropagation(); resetSortState('epicTeam'); }} style={{ opacity: sortState.epicTeam.col ? 1 : 0.4 }}>
           {ResetIcon}
         </span>
@@ -116,13 +109,13 @@ export default function AssignmentTables(): React.JSX.Element | null {
   const memberEpicHead = (
     <tr className="bg-[#494BCB]">
       <th className={`${thBaseClass} rounded-tl-lg`} onClick={() => toggleSortState('memberEpic', 'member')}>
-        Team Member{makeSortIcon(sortState.memberEpic, 'member')}
+        Team Member<SortIcon sort={sortState.memberEpic} col="member" />
         <span className="summary-sort-icon ml-[6px] cursor-pointer" data-tooltip="Restore original order" onClick={(e) => { e.stopPropagation(); resetSortState('memberEpic'); }} style={{ opacity: sortState.memberEpic.col ? 1 : 0.4 }}>
           {ResetIcon}
         </span>
       </th>
       <th className={`${thBaseClass} text-center`} onClick={() => toggleSortState('memberEpic', 'count')}>
-        Count{makeSortIcon(sortState.memberEpic, 'count', true)}
+        Count<SortIcon sort={sortState.memberEpic} col="count" isNumeric />
       </th>
       <th className={`${thBaseClass} rounded-tr-lg cursor-default`}>Epics</th>
     </tr>
@@ -131,13 +124,13 @@ export default function AssignmentTables(): React.JSX.Element | null {
   const memberTicketHead = (
     <tr className="bg-[#494BCB]">
       <th className={`${thBaseClass} rounded-tl-lg`} onClick={() => toggleSortState('memberTicket', 'member')}>
-        Team Member{makeSortIcon(sortState.memberTicket, 'member')}
+        Team Member<SortIcon sort={sortState.memberTicket} col="member" />
         <span className="summary-sort-icon ml-[6px] cursor-pointer" data-tooltip="Restore original order" onClick={(e) => { e.stopPropagation(); resetSortState('memberTicket'); }} style={{ opacity: sortState.memberTicket.col ? 1 : 0.4 }}>
           {ResetIcon}
         </span>
       </th>
       <th className={`${thBaseClass} text-center`} onClick={() => toggleSortState('memberTicket', 'count')}>
-        Count{makeSortIcon(sortState.memberTicket, 'count', true)}
+        Count<SortIcon sort={sortState.memberTicket} col="count" isNumeric />
       </th>
       <th className={`${thBaseClass} rounded-tr-lg cursor-default`}>Open Tickets</th>
     </tr>

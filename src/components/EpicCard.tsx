@@ -8,7 +8,7 @@
  */
 import React, { useState, useEffect } from 'react';
 import { useDashboard } from '../context/DashboardContext';
-import { createPieSlice, COMPLETE_STATE_NAMES } from '../utils';
+import { createPieSlice, COMPLETE_STATE_NAMES, daysAgo, formatDaysAgo } from '../utils';
 import { Epic, ViewSettings } from '../types';
 
 interface Props {
@@ -51,21 +51,6 @@ interface TypeSegment {
   angle: number;
 }
 
-function daysAgo(dateStr: string | undefined): number | null {
-  if (!dateStr) return null;
-  const now = new Date();
-  const then = new Date(dateStr);
-  const nowDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const thenDay = new Date(then.getFullYear(), then.getMonth(), then.getDate());
-  return Math.round((nowDay.getTime() - thenDay.getTime()) / 86_400_000);
-}
-
-function formatDaysAgo(days: number | null): string {
-  if (days === null) return '—';
-  if (days === 0) return 'Today';
-  if (days === 1) return '1d ago';
-  return `${days}d ago`;
-}
 
 export default function EpicCard({ epic }: Props): React.JSX.Element {
   const {
