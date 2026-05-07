@@ -8,7 +8,7 @@
 import React, { useState, useEffect } from 'react';
 import { useDashboard } from '../context/DashboardContext';
 import { storage, getApiBaseUrl, COMPLETE_STATE_NAMES } from '../utils';
-import { Epic, Story } from '../types';
+import { Epic } from '../types';
 
 interface UnwatchedTicket {
   id: number | string;

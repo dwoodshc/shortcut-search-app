@@ -14,7 +14,8 @@ export function useConfigIO() {
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   useEffect(() => {
-    return () => { timersRef.current.forEach(clearTimeout); };
+    const timers = timersRef.current;
+    return () => { timers.forEach(clearTimeout); };
   }, []);
 
   const addTimer = (fn: () => void, delay: number) => {

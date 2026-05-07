@@ -23,8 +23,13 @@ export default function AppHeader(): React.JSX.Element {
     setSetupWizardStep,
   } = useDashboard();
 
+  const handleHeaderClick = (e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).closest('button, a, input, label')) return;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
-    <header className="App-header">
+    <header className="App-header" onClick={handleHeaderClick} style={{ cursor: 'pointer' }} title="Back to top">
       <div className="header-logo">
         <a href="#top" title="Back to top">
           <img
