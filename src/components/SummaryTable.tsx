@@ -11,6 +11,7 @@ import { Epic, Story, ViewSettings } from '../types';
 import { ResetIcon, FilterIcon, TargetActiveIcon, CheckCircleIcon } from './icons';
 import { COMPLETE_STATE_NAMES, daysAgo, formatDaysAgo } from '../utils';
 import SortIcon from './SortIcon';
+import PeekButton from './PeekButton';
 
 const STATE_ORDER = ['Backlog', 'Ready for Development', 'In Development', 'In Review', 'Ready for Release', 'Complete'];
 const BACKLOG_STATES = ['backlog'];
@@ -399,32 +400,31 @@ function EpicStatusTable(): React.JSX.Element | null {
       <div className="flex flex-col gap-2 mb-3">
         <div className="flex items-center gap-2">
           <h2 className="m-0 text-[1.1rem] font-semibold text-[#1a202c]">Epic Status</h2>
-          <button
-            className="view-peek-btn"
+          <PeekButton
+            icon={FilterIcon}
+            label="Filter Epics"
+            tooltip={viewSettings.showEpicFilter ? 'Hide Epics Filter' : 'Show Epics Filter'}
             onClick={() => updateViewSetting('showEpicFilter', !viewSettings.showEpicFilter)}
-            data-tooltip={viewSettings.showEpicFilter ? 'Hide Epics Filter' : 'Show Epics Filter'}
-            style={{
-              ...(viewSettings.showEpicFilter ? {} : { textDecoration: 'line-through' }),
-              ...(epicSearchQuery.trim() ? { color: '#2563eb' } : {}),
-            }}
-          >{FilterIcon} Filter Epics</button>
+            hidden={!viewSettings.showEpicFilter}
+            activeColor={epicSearchQuery.trim() ? '#2563eb' : undefined}
+          />
           {showObjectiveFilter && (
-            <button
-              className="view-peek-btn"
+            <PeekButton
+              icon={TargetActiveIcon}
+              label="Filter Objectives"
+              tooltip={viewSettings.showObjectivesFilter ? 'Hide Objectives Filter' : 'Show Objectives Filter'}
               onClick={() => updateViewSetting('showObjectivesFilter', !viewSettings.showObjectivesFilter)}
-              data-tooltip={viewSettings.showObjectivesFilter ? 'Hide Objectives Filter' : 'Show Objectives Filter'}
-              style={{
-                ...(viewSettings.showObjectivesFilter ? {} : { textDecoration: 'line-through' }),
-                ...(deselectedObjectiveIds.size > 0 ? { color: '#dc2626' } : {}),
-              }}
-            >{TargetActiveIcon} Filter Objectives</button>
+              hidden={!viewSettings.showObjectivesFilter}
+              activeColor={deselectedObjectiveIds.size > 0 ? '#dc2626' : undefined}
+            />
           )}
-          <button
-            className="view-peek-btn"
+          <PeekButton
+            icon={CheckCircleIcon}
+            label={viewSettings.showDoneEpics ? 'Hide Done' : 'Show Done'}
+            tooltip={viewSettings.showDoneEpics ? 'Hide Done epics' : 'Show Done epics'}
             onClick={() => updateViewSetting('showDoneEpics', !viewSettings.showDoneEpics)}
-            data-tooltip={viewSettings.showDoneEpics ? 'Hide Done epics' : 'Show Done epics'}
-            style={viewSettings.showDoneEpics ? undefined : { color: '#16a34a' }}
-          >{CheckCircleIcon} {viewSettings.showDoneEpics ? 'Hide Done' : 'Show Done'}</button>
+            activeColor={viewSettings.showDoneEpics ? undefined : '#16a34a'}
+          />
         </div>
         {viewSettings.showEpicFilter && (
           <div className="flex items-center gap-3">

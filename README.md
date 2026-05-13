@@ -27,9 +27,10 @@ Two tables appear at the top of the dashboard, above the epic cards.
 - **Last Changed** column — days since any story was last updated (respects the active team filter); clicking the value opens a popover listing the 5 most recently changed stories with columns: Ticket, Owner, Status, Changed
 - Restore icon to return epics to their configured list order
 - Epic name links scroll to the epic's detail section on the page
-- **Search filter** — text input below the "Epic Status" heading; filters the table in real time; collapses to a single-column view with a result count row when active
-- **Objectives filter** — checkbox row above the table; one checkbox per Shortcut Objective associated with the loaded epics; filters the table to matching epics; includes **Select All** / **Clear All** controls; active filter details shown in the result count row
-- **Done epics toggle** — `👁 Done` button on the "Epic Status" heading row hides or shows epics with a Done status; a strikethrough on the label indicates Done epics are currently hidden
+- The three filter peek toggles (**Filter Epics**, **Filter Objectives**, **Hide/Show Done**) are always visible on the "Epic Status" heading row; each is a clickable button with an icon + label; a strikethrough on the label indicates the corresponding filter UI is currently hidden; the icon/label turns blue/red/green when its filter is actively filtering
+- **Search filter** — text input below the "Epic Status" heading (prefixed with **EPICS:**); filters the table in real time; collapses to a single-column view with a result count row when active
+- **Objectives filter** — checkbox row above the table (prefixed with **OBJECTIVES:**); one checkbox per Shortcut Objective associated with the loaded epics; filters the table to matching epics; includes a **Filter objectives…** text input that narrows the displayed checkboxes and auto-deselects non-matching objectives; **Select All** / **Clear All** controls; active filter details shown in the result count row
+- **Done epics toggle** — check-circle button on the heading row; label toggles between **Hide Done** and **Show Done** depending on state; turns green when Done epics are currently hidden
 - All three filters apply **globally** — when active, the same epics are also hidden from the Epic Cards, Assignment Tables, and Unwatched Tickets, and the Story Summary counts are recalculated from the visible epics only
 
 ### Epic Management
@@ -79,7 +80,7 @@ Each tracked epic renders as a card with a collapsible body.
 - **Collapse/Expand** — Click the **▶/▼** chevron beside the epic name to toggle the card body. Epics in the "Done" state start collapsed by default.
 - **Meta area** — Shows the epic's Objective(s), Owner(s), story count, and status as styled pills below the title.
 - **Objectives** — Displayed before Owners when one or more Shortcut Objectives are linked to the epic.
-- **View Settings** (see Settings Menu) — any hidden field shows a **👁** peek icon in its place; click the icon to reveal it globally, click the field itself to hide it again.
+- **View Settings** (see Settings Menu) — any hidden field shows a small icon in its place (target for Objective, person for Owners, hash for Story Count, kanban for User Story Board); click the icon to reveal the field globally, click the field itself to hide it again.
 
 ### Interactive Visualizations
 

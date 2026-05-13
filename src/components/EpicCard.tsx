@@ -11,6 +11,7 @@ import { useDashboard } from '../context/DashboardContext';
 import { createPieSlice, COMPLETE_STATE_NAMES, daysAgo, formatDaysAgo } from '../utils';
 import { Epic, ViewSettings } from '../types';
 import { TargetIcon, UserIcon, HashIcon, KanbanIcon } from './icons';
+import PeekButton from './PeekButton';
 
 interface Props {
   epic: Epic;
@@ -94,7 +95,7 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
     .filter(Boolean) as string[];
   const objectiveEl = objectiveNames.length === 0 ? null
     : !viewSettings.showEpicObjective
-      ? <button className="view-peek-btn" onClick={() => updateViewSetting('showEpicObjective', true)} data-tooltip="Show Objective">{TargetIcon}</button>
+      ? <PeekButton icon={TargetIcon} tooltip="Show Objective" onClick={() => updateViewSetting('showEpicObjective', true)} />
       : <span className="epic-owner" style={{ cursor: 'pointer' }} onClick={() => updateViewSetting('showEpicObjective', false)} title="Click to hide">
           <strong>{objectiveNames.length > 1 ? 'Objectives: ' : 'Objective: '}</strong>{objectiveNames.join(', ')}
         </span>;
@@ -207,11 +208,11 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
                 <strong>{epic.owner_ids && epic.owner_ids.length > 1 ? 'Owners: ' : 'Owner: '}</strong>
                 {epic.owner_ids && epic.owner_ids.length > 0 ? epic.owner_ids.map(id => members[id] || id).join(', ') : 'No Owner'}
               </span>
-            : <button className="view-peek-btn" onClick={() => updateViewSetting('showEpicOwners', true)} data-tooltip="Show Owners">{UserIcon}</button>
+            : <PeekButton icon={UserIcon} tooltip="Show Owners" onClick={() => updateViewSetting('showEpicOwners', true)} />
           }
           {viewSettings.showEpicStoryCount
             ? <span className="story-count" style={{ cursor: 'pointer' }} onClick={() => updateViewSetting('showEpicStoryCount', false)} title="Click to hide">{displayStories.length} stories</span>
-            : <button className="view-peek-btn" onClick={() => updateViewSetting('showEpicStoryCount', true)} data-tooltip="Show Story Count">{HashIcon}</button>
+            : <PeekButton icon={HashIcon} tooltip="Show Story Count" onClick={() => updateViewSetting('showEpicStoryCount', true)} />
           }
           <span className={`epic-state ${getEpicStateClass(si.type, si.name)}`}>
             {si.type.toLowerCase() === 'done' ? 'Done ✓' : si.name}
@@ -505,7 +506,7 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
 
       {/* User Story Board */}
       {!viewSettings.showUserStoryBoard && epic.stories && (
-        <button className="view-peek-board-btn" onClick={() => updateViewSetting('showUserStoryBoard', true)} data-tooltip="Show User Story Board">{KanbanIcon} User Story Board</button>
+        <PeekButton icon={KanbanIcon} label="User Story Board" tooltip="Show User Story Board" onClick={() => updateViewSetting('showUserStoryBoard', true)} board />
       )}
       {viewSettings.showUserStoryBoard && epic.stories && (
         <div className="stories-section">
