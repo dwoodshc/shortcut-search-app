@@ -8,7 +8,7 @@
 import React, { useState, useEffect } from 'react';
 import { useDashboard } from '../context/DashboardContext';
 import { Epic, Story, ViewSettings } from '../types';
-import { ResetIcon, FilterIcon, TargetIcon, TargetActiveIcon, CheckCircleIcon } from './icons';
+import { ResetIcon, FilterIcon, TargetActiveIcon, CheckCircleIcon } from './icons';
 import { COMPLETE_STATE_NAMES, daysAgo, formatDaysAgo } from '../utils';
 import SortIcon from './SortIcon';
 
