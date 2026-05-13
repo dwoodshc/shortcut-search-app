@@ -8,7 +8,7 @@
 import React, { useState, useEffect } from 'react';
 import { useDashboard } from '../context/DashboardContext';
 import { Epic, Story, ViewSettings } from '../types';
-import { ResetIcon } from './icons';
+import { ResetIcon, FilterIcon, TargetIcon, CheckCircleIcon } from './icons';
 import { COMPLETE_STATE_NAMES, daysAgo, formatDaysAgo } from '../utils';
 import SortIcon from './SortIcon';
 
@@ -398,18 +398,26 @@ function EpicStatusTable(): React.JSX.Element | null {
       <div className="flex flex-col gap-2 mb-3">
         <div className="flex items-center gap-2">
           <h2 className="m-0 text-[1.1rem] font-semibold text-[#1a202c]">Epic Status</h2>
-          {!viewSettings.showEpicFilter && (
-            <button className="view-peek-btn" onClick={() => updateViewSetting('showEpicFilter', true)} title="Show filter">👁</button>
-          )}
-          {!viewSettings.showObjectivesFilter && showObjectiveFilter && (
-            <button className="view-peek-btn" onClick={() => updateViewSetting('showObjectivesFilter', true)} title="Show objectives filter">👁</button>
+          <button
+            className="view-peek-btn"
+            onClick={() => updateViewSetting('showEpicFilter', !viewSettings.showEpicFilter)}
+            data-tooltip={viewSettings.showEpicFilter ? 'Hide Epics Filter' : 'Show Epics Filter'}
+            style={!viewSettings.showEpicFilter ? { textDecoration: 'line-through' } : undefined}
+          >{FilterIcon} Filter</button>
+          {showObjectiveFilter && (
+            <button
+              className="view-peek-btn"
+              onClick={() => updateViewSetting('showObjectivesFilter', !viewSettings.showObjectivesFilter)}
+              data-tooltip={viewSettings.showObjectivesFilter ? 'Hide Objectives Filter' : 'Show Objectives Filter'}
+              style={!viewSettings.showObjectivesFilter ? { textDecoration: 'line-through' } : undefined}
+            >{TargetIcon} Objectives</button>
           )}
           <button
             className="view-peek-btn"
             onClick={() => updateViewSetting('showDoneEpics', !viewSettings.showDoneEpics)}
-            title={viewSettings.showDoneEpics ? 'Hide Done epics' : 'Show Done epics'}
+            data-tooltip={viewSettings.showDoneEpics ? 'Hide Done epics' : 'Show Done epics'}
             style={!viewSettings.showDoneEpics ? { textDecoration: 'line-through' } : undefined}
-          >👁 Done</button>
+          >{CheckCircleIcon} Done</button>
         </div>
         {viewSettings.showEpicFilter && (
           <div className="flex items-center gap-3">
