@@ -212,6 +212,7 @@ function EpicStatusTable(): React.JSX.Element | null {
   const updateViewSetting = (key: keyof ViewSettings, value: boolean) =>
     setViewSettings({ ...viewSettings, [key]: value });
   const [openPopover, setOpenPopover] = useState<number | string | null>(null);
+  const [objectiveSearchQuery, setObjectiveSearchQuery] = useState('');
   useEffect(() => {
     if (!openPopover) return;
     const close = () => setOpenPopover(null);
@@ -402,25 +403,32 @@ function EpicStatusTable(): React.JSX.Element | null {
             className="view-peek-btn"
             onClick={() => updateViewSetting('showEpicFilter', !viewSettings.showEpicFilter)}
             data-tooltip={viewSettings.showEpicFilter ? 'Hide Epics Filter' : 'Show Epics Filter'}
-            style={!viewSettings.showEpicFilter ? { textDecoration: 'line-through' } : undefined}
+            style={{
+              ...(viewSettings.showEpicFilter ? {} : { textDecoration: 'line-through' }),
+              ...(epicSearchQuery.trim() ? { color: '#2563eb' } : {}),
+            }}
           >{FilterIcon} Filter</button>
           {showObjectiveFilter && (
             <button
               className="view-peek-btn"
               onClick={() => updateViewSetting('showObjectivesFilter', !viewSettings.showObjectivesFilter)}
               data-tooltip={viewSettings.showObjectivesFilter ? 'Hide Objectives Filter' : 'Show Objectives Filter'}
-              style={!viewSettings.showObjectivesFilter ? { textDecoration: 'line-through' } : undefined}
+              style={{
+                ...(viewSettings.showObjectivesFilter ? {} : { textDecoration: 'line-through' }),
+                ...(deselectedObjectiveIds.size > 0 ? { color: '#dc2626' } : {}),
+              }}
             >{TargetIcon} Objectives</button>
           )}
           <button
             className="view-peek-btn"
             onClick={() => updateViewSetting('showDoneEpics', !viewSettings.showDoneEpics)}
             data-tooltip={viewSettings.showDoneEpics ? 'Hide Done epics' : 'Show Done epics'}
-            style={!viewSettings.showDoneEpics ? { textDecoration: 'line-through' } : undefined}
-          >{CheckCircleIcon} Done</button>
+            style={viewSettings.showDoneEpics ? undefined : { color: '#16a34a' }}
+          >{CheckCircleIcon} {viewSettings.showDoneEpics ? 'Hide Done' : 'Show Done'}</button>
         </div>
         {viewSettings.showEpicFilter && (
           <div className="flex items-center gap-3">
+            <span className="text-xs font-semibold text-[#64748b] uppercase tracking-wide whitespace-nowrap">Epics:</span>
             <input
               type="text"
               placeholder="Filter epics…"
@@ -444,10 +452,45 @@ function EpicStatusTable(): React.JSX.Element | null {
           </div>
         )}
       </div>
-      {viewSettings.showObjectivesFilter && showObjectiveFilter && (
+      {viewSettings.showObjectivesFilter && showObjectiveFilter && (() => {
+        const trimmed = objectiveSearchQuery.trim().toLowerCase();
+        const visibleObjectives = trimmed
+          ? relevantObjectives.filter(o => o.name.toLowerCase().includes(trimmed))
+          : relevantObjectives;
+        const showUnObjectivedRow = hasUnObjectived && (!trimmed || 'no objective'.includes(trimmed));
+        const handleObjectiveSearchChange = (text: string) => {
+          setObjectiveSearchQuery(text);
+          const t = text.trim().toLowerCase();
+          if (!t) {
+            setDeselectedObjectiveIds(new Set());
+            return;
+          }
+          const nonMatching = new Set<number | -1>();
+          relevantObjectives.forEach(o => {
+            if (!o.name.toLowerCase().includes(t)) nonMatching.add(o.id);
+          });
+          if (hasUnObjectived && !'no objective'.includes(t)) nonMatching.add(-1);
+          setDeselectedObjectiveIds(nonMatching);
+        };
+        return (
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-3">
           <span className="text-xs font-semibold text-[#64748b] uppercase tracking-wide whitespace-nowrap">Objectives:</span>
-          {relevantObjectives.map(obj => (
+          <input
+            type="text"
+            placeholder="Filter objectives…"
+            value={objectiveSearchQuery}
+            onChange={e => handleObjectiveSearchChange(e.target.value)}
+            className="border border-[#E2E8F0] rounded px-2 py-[0.2rem] text-sm text-[#1a202c] bg-white focus:outline-none focus:border-[#494BCB]"
+            style={{ width: '160px' }}
+          />
+          {objectiveSearchQuery && (
+            <button
+              onClick={() => handleObjectiveSearchChange('')}
+              className="text-[0.75rem] text-[#94a3b8] bg-transparent border-0 cursor-pointer p-0 hover:text-[#475569] whitespace-nowrap"
+              title="Clear filter"
+            >✕ clear</button>
+          )}
+          {visibleObjectives.map(obj => (
             <label key={obj.id} className="flex items-center gap-1 cursor-pointer text-sm text-[#1a202c] whitespace-nowrap">
               <input
                 type="checkbox"
@@ -458,7 +501,7 @@ function EpicStatusTable(): React.JSX.Element | null {
               {obj.name}
             </label>
           ))}
-          {hasUnObjectived && (
+          {showUnObjectivedRow && (
             <label className="flex items-center gap-1 cursor-pointer text-sm text-[#94a3b8] italic whitespace-nowrap">
               <input
                 type="checkbox"
@@ -485,7 +528,8 @@ function EpicStatusTable(): React.JSX.Element | null {
             title="Hide objectives filter"
           >✕ hide</button>
         </div>
-      )}
+        );
+      })()}
       {epicSearchQuery.trim() || deselectedObjectiveIds.size > 0 ? (
         <table className={tableClass} style={{ borderCollapse: 'separate', borderSpacing: 0, width: '100%' }}>
           <thead>{theadRow}</thead>
