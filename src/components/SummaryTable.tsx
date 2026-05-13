@@ -8,7 +8,7 @@
 import React, { useState, useEffect } from 'react';
 import { useDashboard } from '../context/DashboardContext';
 import { Epic, Story, ViewSettings } from '../types';
-import { ResetIcon, FilterIcon, TargetIcon, CheckCircleIcon } from './icons';
+import { ResetIcon, FilterIcon, TargetIcon, TargetActiveIcon, CheckCircleIcon } from './icons';
 import { COMPLETE_STATE_NAMES, daysAgo, formatDaysAgo } from '../utils';
 import SortIcon from './SortIcon';
 
@@ -407,7 +407,7 @@ function EpicStatusTable(): React.JSX.Element | null {
               ...(viewSettings.showEpicFilter ? {} : { textDecoration: 'line-through' }),
               ...(epicSearchQuery.trim() ? { color: '#2563eb' } : {}),
             }}
-          >{FilterIcon} Filter</button>
+          >{FilterIcon} Filter Epics</button>
           {showObjectiveFilter && (
             <button
               className="view-peek-btn"
@@ -417,7 +417,7 @@ function EpicStatusTable(): React.JSX.Element | null {
                 ...(viewSettings.showObjectivesFilter ? {} : { textDecoration: 'line-through' }),
                 ...(deselectedObjectiveIds.size > 0 ? { color: '#dc2626' } : {}),
               }}
-            >{TargetIcon} Objectives</button>
+            >{TargetActiveIcon} Filter Objectives</button>
           )}
           <button
             className="view-peek-btn"

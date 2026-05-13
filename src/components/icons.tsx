@@ -22,6 +22,15 @@ export const TargetIcon = (
   </svg>
 );
 
+export const TargetActiveIcon = (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-[14px] h-[14px] align-middle inline-block">
+    <circle cx="12" cy="12" r="11" fill="#dc2626" />
+    <circle cx="12" cy="12" r="8" fill="white" />
+    <circle cx="12" cy="12" r="5" fill="#dc2626" />
+    <circle cx="12" cy="12" r="2" fill="white" />
+  </svg>
+);
+
 export const CheckCircleIcon = (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-[14px] h-[14px] align-middle inline-block">
     <circle cx="12" cy="12" r="10" />
