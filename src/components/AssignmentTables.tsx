@@ -18,7 +18,6 @@ const TICKET_STATE_COLORS: Record<string, { bg: string; text: string }> = {
   'ready for development': { bg: '#a7f3d0', text: '#374151' },
   'in development':        { bg: '#6ee7b7', text: '#374151' },
   'in review':             { bg: '#4ade80', text: '#374151' },
-  'ready for release':     { bg: '#22c55e', text: '#374151' },
 };
 const DEFAULT_TICKET_STATE_COLOR = { bg: '#F1F5F9', text: '#475569' };
 
@@ -57,7 +56,6 @@ export default function AssignmentTables(): React.JSX.Element | null {
   }, [epics, visibleEpicIds, members, workflowConfig.states, filterByTeam, selectedTeamIds, filterIgnoredInTickets, ignoredUsers]);
 
   const donePill = <span className={`epic-state ${getEpicStateClass('done', 'Done')} !text-[0.75rem] !py-[0.15rem] !px-2 ml-[0.4rem]`}>Done ✓</span>;
-  const readyForReleasePill = <span className={`epic-state ${getEpicStateClass('', 'Ready for Release')} !text-[0.75rem] !py-[0.15rem] !px-2 ml-[0.4rem]`}>Ready for Release</span>;
   const blockedPill = <span className={`epic-state ${getEpicStateClass('', 'blocked')} !text-[0.75rem] !py-[0.15rem] !px-2 ml-[0.4rem]`}>Blocked</span>;
 
   if (epicTeamData.length === 0) return null;
@@ -141,7 +139,6 @@ export default function AssignmentTables(): React.JSX.Element | null {
       <td className={tdClass}>
         <a href={`#epic-${row.id}`} className="text-[#1a202c] no-underline">{row.name}</a>
         {row.isDone && donePill}
-        {row.isReadyForRelease && readyForReleasePill}
         {row.isBlocked && blockedPill}
       </td>
       <td className={tdClass}>
@@ -163,7 +160,7 @@ export default function AssignmentTables(): React.JSX.Element | null {
       <td className={tdClass}>
         <ul className="m-0 pl-0 list-none">
           {[...row.epics].sort((a, b) => a.name.localeCompare(b.name)).map((e) => (
-            <li key={e.id as React.Key}><a href={`#epic-${e.id}`} className="text-[#1a202c] no-underline">{e.name}</a>{e.isDone && donePill}{e.isReadyForRelease && readyForReleasePill}{e.isBlocked && blockedPill}</li>
+            <li key={e.id as React.Key}><a href={`#epic-${e.id}`} className="text-[#1a202c] no-underline">{e.name}</a>{e.isDone && donePill}{e.isBlocked && blockedPill}</li>
           ))}
         </ul>
       </td>

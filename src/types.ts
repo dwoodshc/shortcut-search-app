@@ -87,7 +87,6 @@ export interface EpicTeamEntry {
   id: number | string;
   name: string;
   isDone: boolean;
-  isReadyForRelease: boolean;
   isBlocked: boolean;
   team: string[];
 }
@@ -96,7 +95,6 @@ export interface EpicRef {
   id: number | string;
   name: string;
   isDone: boolean;
-  isReadyForRelease: boolean;
   isBlocked: boolean;
 }
 

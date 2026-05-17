@@ -17,7 +17,7 @@ interface Props {
   epic: Epic;
 }
 
-const STORY_COLUMNS = ['Backlog', 'Ready for Development', 'In Development', 'In Review', 'Ready for Release', 'Complete'];
+const STORY_COLUMNS = ['Backlog', 'Ready for Development', 'In Development', 'In Review', 'Complete'];
 const NON_CLICKABLE_STATES = ['complete'];
 
 const STATE_COLORS: Record<string, string> = {
@@ -25,7 +25,6 @@ const STATE_COLORS: Record<string, string> = {
   'ready for development': '#a7f3d0',
   'in development': '#6ee7b7',
   'in review': '#4ade80',
-  'ready for release': '#22c55e',
   'complete': '#16a34a',
 };
 

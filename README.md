@@ -18,7 +18,7 @@ Two tables appear at the top of the dashboard, above the epic cards.
 - At-a-glance progress overview for all tracked epics
 - Three-section chevron progress bar per epic: **Complete** (green) → **In Progress** (yellow) → **Backlog** (white)
   - Complete = "Complete"
-  - In Progress = "Ready for Development" + "In Development" + "In Review" + "Ready for Release"
+  - In Progress = "Ready for Development" + "In Development" + "In Review"
   - Backlog = "Backlog"
 - Percentage label shown inside the Complete segment
 - Hover tooltip showing a per-state breakdown with count and percentage for each state
@@ -88,7 +88,7 @@ Per epic, three visualizations are available. Each has a **▶/▼ toggle** in i
 
 #### Ticket Status Breakdown (Column Chart)
 - Workflow status breakdown showing story distribution across workflow states
-- Visual bars for: Backlog, Ready for Development, In Development, In Review, Ready for Release, Complete
+- Visual bars for: Backlog, Ready for Development, In Development, In Review, Complete
 - Story counts displayed above each column
 - Clicking any bar except **Complete** opens a scrollable popover listing all tickets in that state (name link, owner, age); click the same bar or outside to dismiss
 - Always visible (no collapse toggle)
@@ -123,7 +123,7 @@ Per epic, three visualizations are available. Each has a **▶/▼ toggle** in i
 - Ignored users are filtered out by default (toggle via **Show/Hide Ignored Users** button)
 
 ### User Story Board
-- Six-column kanban display: Backlog → Ready for Development → In Development → In Review → Ready for Release → Complete
+- Five-column kanban display: Backlog → Ready for Development → In Development → In Review → Complete
 - Story cards with clickable links to Shortcut
 - Story count badges on each column header
 - **▶/▼ toggle** in the "User Story Board" heading — starts **collapsed** by default

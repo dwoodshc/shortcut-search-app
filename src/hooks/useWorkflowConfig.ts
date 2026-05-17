@@ -10,7 +10,7 @@ import { useState, useCallback, useMemo } from 'react';
 import { storage } from '../utils';
 import { WorkflowConfig, Workflow } from '../types';
 
-const NORMALIZED_WORKFLOW_STATES = ['backlog', 'ready for development', 'in development', 'in review', 'ready for release', 'complete'];
+const NORMALIZED_WORKFLOW_STATES = ['backlog', 'ready for development', 'in development', 'in review', 'complete'];
 
 function buildStateMaps(states: Array<{ id: number; name: string }>) {
   const stateIds: Record<string, number> = {};
