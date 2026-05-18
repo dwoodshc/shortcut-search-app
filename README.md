@@ -122,6 +122,14 @@ Per epic, three visualizations are available. Each has a **▶/▼ toggle** in i
 - Highlights team members with zero open tickets
 - Ignored users are filtered out by default (toggle via **Show/Hide Ignored Users** button)
 
+### Pull Requests
+- Collapsible per-epic table linking each story to its associated GitHub Pull Requests
+- Columns: **Ticket** (story name → Shortcut) and **Pull Requests** (`#<number>` links with merged ✓ / closed ✕ / draft markers)
+- Sortable headers: **Ticket** (A→Z / Z→A) and **Pull Requests** (numeric, by PR count)
+- Footer row in light blue showing **Ticket Count** and **Pull Request Count** for the epic
+- **▶/▼ toggle** in the heading — starts **collapsed** by default
+- PR data is fetched lazily on first expand via `GET /api/stories/:id` (one call per story); results are cached on the card and the load is reflected in the **API calls** footer counter
+
 ### User Story Board
 - Five-column kanban display: Backlog → Ready for Development → In Development → In Review → Complete
 - Story cards with clickable links to Shortcut
@@ -310,6 +318,7 @@ The app makes the following calls to the Express proxy on page load:
 | `GET /api/search/epics?query=` | 1 per tracked epic | Run in parallel via `Promise.all` |
 | `GET /api/epics/:id` | 1 per epic found | Full epic details |
 | `GET /api/epics/:id/stories` | 1 per epic found | All non-archived stories |
+| `GET /api/stories/:id` | 1 per story per epic, on demand | Triggered on first expand of an epic's **Pull Requests** section; supplies `pull_requests` field |
 | `GET /api/users/:id` | 1 per unique owner **not in cache** | Cached to localStorage after first fetch |
 | `GET /api/members` | Once (on demand) | Fetched only if your name is configured and not already in the members cache; used to resolve your member UUID for unwatched ticket detection |
 
@@ -321,6 +330,7 @@ Epic workflow states are cached to localStorage and skipped on subsequent loads.
 - `GET /api/search/epics?query=` — Search epics by name
 - `GET /api/epics/:id` — Full epic details
 - `GET /api/epics/:id/stories` — Stories for an epic (archived excluded)
+- `GET /api/stories/:id` — Full story (includes top-level `pull_requests` array)
 - `GET /api/workflows` — All workflows with states
 - `GET /api/epic-workflow` — Epic workflow states
 - `GET /api/teams` — All Shortcut teams (groups)

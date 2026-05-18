@@ -290,10 +290,22 @@ export function useEpicsData({ epicNames, loadSelectedWorkflow, setCollapsedChar
     }
   }, [epicNames, loadSelectedWorkflow, setCollapsedCharts, setFilteredEpicNames, handleApiError]);
 
+  const incrementApiCalls = useCallback((endpoint: string, count: number) => {
+    if (count <= 0) return;
+    setLoadStats(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        apiCallCount: prev.apiCallCount + count,
+        apiCallBreakdown: { ...prev.apiCallBreakdown, [endpoint]: (prev.apiCallBreakdown[endpoint] || 0) + count },
+      };
+    });
+  }, []);
+
   return {
     epics, setEpics,
     members, setMembers,
-    loading, loadProgress, loadStats,
+    loading, loadProgress, loadStats, incrementApiCalls,
     error, setError,
     apiTokenIssue,
     epicStates,

@@ -21,6 +21,7 @@ export function useFilters() {
     memberEpic:  { col: 'member', dir: 'asc' },
     memberTicket:{ col: 'member', dir: 'asc' },
     storyDetail: { col: null, dir: 'asc' },
+    epicPrs:     { col: null, dir: 'asc' },
   });
   const [collapsedCharts, setCollapsedCharts] = useState<Record<string, boolean>>({});
   const [epicSearchQuery, setEpicSearchQuery] = useState('');

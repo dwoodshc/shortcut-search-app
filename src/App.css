@@ -897,7 +897,8 @@ textarea.input-field {
   margin-top: 0.75rem;
 }
 
-.stories-section h4 {
+.stories-section h4,
+.pull-requests-section h4 {
   color: #03045E;
   font-weight: 700;
   margin-bottom: 0.5rem;
@@ -1721,7 +1722,8 @@ textarea.input-field {
 [data-theme="dark"] .workflow-status-chart-container h4,
 [data-theme="dark"] .story-owners-table h4,
 [data-theme="dark"] .email-ticket-counts-table h4,
-[data-theme="dark"] .stories-section h4 {
+[data-theme="dark"] .stories-section h4,
+[data-theme="dark"] .pull-requests-section h4 {
   color: #E8F5E9;
 }
 
@@ -2182,7 +2184,8 @@ textarea.input-field {
 [data-theme="star-trek"] .workflow-status-chart-container h4,
 [data-theme="star-trek"] .story-owners-table h4,
 [data-theme="star-trek"] .email-ticket-counts-table h4,
-[data-theme="star-trek"] .stories-section h4 {
+[data-theme="star-trek"] .stories-section h4,
+[data-theme="star-trek"] .pull-requests-section h4 {
   color: #FFCC99;
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -2532,7 +2535,8 @@ textarea.input-field {
 [data-theme="matrix"] .workflow-status-chart-container h4,
 [data-theme="matrix"] .story-owners-table h4,
 [data-theme="matrix"] .email-ticket-counts-table h4,
-[data-theme="matrix"] .stories-section h4 {
+[data-theme="matrix"] .stories-section h4,
+[data-theme="matrix"] .pull-requests-section h4 {
   color: #00CC33;
   font-family: 'Courier New', Courier, monospace;
   text-transform: uppercase;

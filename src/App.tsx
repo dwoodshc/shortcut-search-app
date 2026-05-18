@@ -157,7 +157,7 @@ function App(): React.JSX.Element {
   const {
     epics, setEpics,
     members, setMembers,
-    loading, loadProgress, loadStats,
+    loading, loadProgress, loadStats, incrementApiCalls,
     error, setError,
     apiTokenIssue,
     epicStates,
@@ -378,7 +378,7 @@ function App(): React.JSX.Element {
 
   const dashboardContext = useMemo(() => ({
     // Data
-    epics, objectives, members, epicStates, teamMemberIds, loadStats,
+    epics, objectives, members, epicStates, teamMemberIds, loadStats, incrementApiCalls,
     workflowConfig, setWorkflowField,
     // UI state
     modals, setModal,
@@ -405,7 +405,7 @@ function App(): React.JSX.Element {
     epicSearchQuery, setEpicSearchQuery,
     deselectedObjectiveIds, setDeselectedObjectiveIds,
     visibleEpicIds,
-  }), [epics, objectives, members, epicStates, teamMemberIds, loadStats, workflowConfig, setWorkflowField, modals, setModal, sortState, toggleSortState, resetSortState, collapsedCharts, setCollapsedCharts, toggleChart, filterByTeam, setFilterByTeam, ignoredUsers, setIgnoredUsers, filterIgnoredInTickets, setFilterIgnoredInTickets, selectedTeams, setSelectedTeams, selectedTeamIds, selectedTeamLabel, teamNameMap, shortcutWebUrl, setShortcutWebUrl, error, setError, loading, successMessage, filteredEpicNames, setFilteredEpicNames, setupWizardStep, setSetupWizardStep, getDisplayStories, generateShortcutUrl, getEpicStateInfo, getEpicStateClass, filteredStateIds, epicTeamData, memberEpicMap, allDisplayStories, searchEpics, handleSaveShortcutUrl, handleSelectWorkflow, toggleAllCharts, handleOpenReadme, theme, selectTheme, viewSettings, setViewSettings, epicSearchQuery, setEpicSearchQuery, deselectedObjectiveIds, setDeselectedObjectiveIds, visibleEpicIds]);
+  }), [epics, objectives, members, epicStates, teamMemberIds, loadStats, incrementApiCalls, workflowConfig, setWorkflowField, modals, setModal, sortState, toggleSortState, resetSortState, collapsedCharts, setCollapsedCharts, toggleChart, filterByTeam, setFilterByTeam, ignoredUsers, setIgnoredUsers, filterIgnoredInTickets, setFilterIgnoredInTickets, selectedTeams, setSelectedTeams, selectedTeamIds, selectedTeamLabel, teamNameMap, shortcutWebUrl, setShortcutWebUrl, error, setError, loading, successMessage, filteredEpicNames, setFilteredEpicNames, setupWizardStep, setSetupWizardStep, getDisplayStories, generateShortcutUrl, getEpicStateInfo, getEpicStateClass, filteredStateIds, epicTeamData, memberEpicMap, allDisplayStories, searchEpics, handleSaveShortcutUrl, handleSelectWorkflow, toggleAllCharts, handleOpenReadme, theme, selectTheme, viewSettings, setViewSettings, epicSearchQuery, setEpicSearchQuery, deselectedObjectiveIds, setDeselectedObjectiveIds, visibleEpicIds]);
 
   return (
     <DashboardContext.Provider value={dashboardContext}>
@@ -487,6 +487,7 @@ function App(): React.JSX.Element {
               <li><strong>Story Type Breakdown:</strong> Feature / Bug / Chore pie chart per epic</li>
               <li><strong>Story Owners Table:</strong> Per-epic story owner counts including unassigned</li>
               <li><strong>Team Open Tickets:</strong> Open ticket counts per team member, excluding completed</li>
+              <li><strong>Pull Requests:</strong> Sortable table linking each story to its GitHub PRs</li>
               <li><strong>User Story Board:</strong> Kanban board (Backlog → Complete), collapsible per epic</li>
               <li><strong>Ignored Users:</strong> Users excluded from assignment and ticket tables</li>
               <li><strong>Setup Wizard:</strong> 7-step setup: token, URL, workflow, teams, name, epic list</li>

@@ -7,6 +7,16 @@
  */
 import type { Dispatch, SetStateAction } from 'react';
 
+export interface PullRequest {
+  id: number;
+  number: number;
+  url: string;
+  title?: string;
+  closed?: boolean;
+  draft?: boolean;
+  merged?: boolean;
+}
+
 export interface Story {
   id: number;
   name: string;
@@ -134,6 +144,7 @@ export interface SortState {
   memberEpic: SortEntry;
   memberTicket: SortEntry;
   storyDetail: SortEntry;
+  epicPrs: SortEntry;
 }
 
 export type SortStateKey = keyof SortState;
@@ -169,6 +180,7 @@ export interface DashboardContextValue {
   epicStates: Record<number, EpicState>;
   teamMemberIds: Set<string>;
   loadStats: LoadStats | null;
+  incrementApiCalls: (endpoint: string, count: number) => void;
   workflowConfig: WorkflowConfig;
   setWorkflowField: (key: keyof WorkflowConfig, value: WorkflowConfig[keyof WorkflowConfig]) => void;
   // UI state

@@ -8,10 +8,11 @@
  */
 import React, { useState, useEffect } from 'react';
 import { useDashboard } from '../context/DashboardContext';
-import { createPieSlice, COMPLETE_STATE_NAMES, daysAgo, formatDaysAgo } from '../utils';
-import { Epic, ViewSettings } from '../types';
+import { createPieSlice, COMPLETE_STATE_NAMES, daysAgo, formatDaysAgo, storage, getApiBaseUrl } from '../utils';
+import { Epic, ViewSettings, PullRequest } from '../types';
 import { TargetIcon, UserIcon, HashIcon, KanbanIcon } from './icons';
 import PeekButton from './PeekButton';
+import SortIcon from './SortIcon';
 
 interface Props {
   epic: Epic;
@@ -61,6 +62,8 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
     getDisplayStories, getEpicStateInfo, getEpicStateClass,
     selectedTeamIds, selectedTeamLabel, teamMemberIds, teamNameMap, filterByTeam, filterIgnoredInTickets, ignoredUsers,
     viewSettings, setViewSettings,
+    incrementApiCalls,
+    sortState, toggleSortState,
   } = useDashboard();
 
   const [hoveredPieSegment, setHoveredPieSegment] = useState<WorkflowSegment | null>(null);
@@ -75,6 +78,39 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
   }, [clickedBarStateId]);
 
   const [cardCollapsed, setCardCollapsed] = useState(() => getEpicStateInfo(epic).type.toLowerCase() === 'done');
+  const [prsCollapsed, setPrsCollapsed] = useState(true);
+  const [storyPrs, setStoryPrs] = useState<Record<number, PullRequest[]>>({});
+  const [prsLoading, setPrsLoading] = useState(false);
+  const [prsLoaded, setPrsLoaded] = useState(false);
+
+  useEffect(() => {
+    if (prsCollapsed || prsLoaded || !epic.stories || epic.stories.length === 0) return;
+    const token = storage.getApiToken();
+    if (!token) return;
+    let cancelled = false;
+    setPrsLoading(true);
+    Promise.all(
+      epic.stories.map(s =>
+        fetch(`${getApiBaseUrl()}/api/stories/${s.id}`, { headers: { 'Authorization': `Bearer ${token}` } })
+          .then(r => (r.ok ? r.json() : null))
+          .then(full => ({ id: s.id, prs: (full?.pull_requests || []) as PullRequest[], ok: full !== null }))
+          .catch(() => ({ id: s.id, prs: [] as PullRequest[], ok: false }))
+      )
+    ).then(results => {
+      if (cancelled) return;
+      const map: Record<number, PullRequest[]> = {};
+      let successful = 0;
+      for (const r of results) {
+        map[r.id] = r.prs;
+        if (r.ok) successful++;
+      }
+      setStoryPrs(map);
+      setPrsLoaded(true);
+      setPrsLoading(false);
+      incrementApiCalls('GET /api/stories/:id', successful);
+    });
+    return () => { cancelled = true; };
+  }, [prsCollapsed, prsLoaded, epic.stories]);
 
   if (epic.notFound) {
     return (
@@ -500,6 +536,92 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
               )}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Pull Requests */}
+      {epic.stories && (
+        <div className="pull-requests-section mt-3">
+          <h4 className="cursor-pointer select-none flex items-center gap-[0.4rem]" onClick={() => setPrsCollapsed(prev => !prev)} title="Show or hide pull requests for this epic">
+            <span>{prsCollapsed ? '▶' : '▼'}</span> Pull Requests
+          </h4>
+          {!prsCollapsed && (
+            <div className="border-t-2 border-slate-200 pt-3">
+              {epic.stories.length === 0 ? (
+                <p className="text-[#718096] text-sm italic">No stories</p>
+              ) : (
+                (() => {
+                  const totalPrs = prsLoaded ? Object.values(storyPrs).reduce((sum, arr) => sum + arr.length, 0) : 0;
+                  const prSort = sortState.epicPrs;
+                  const sortedStories = (() => {
+                    if (!prSort.col || !epic.stories) return epic.stories || [];
+                    const dir = prSort.dir === 'asc' ? 1 : -1;
+                    const arr = [...epic.stories];
+                    if (prSort.col === 'ticket') {
+                      arr.sort((a, b) => dir * a.name.localeCompare(b.name));
+                    } else if (prSort.col === 'prs') {
+                      arr.sort((a, b) => dir * ((storyPrs[a.id]?.length || 0) - (storyPrs[b.id]?.length || 0)));
+                    }
+                    return arr;
+                  })();
+                  return (
+                    <table className="w-full bg-white rounded-lg shadow-[0_2px_4px_rgba(0,0,0,0.08)] border border-[#F0F0F7]" style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
+                      <thead className="bg-[#494BCB] text-white">
+                        <tr>
+                          <th onClick={() => toggleSortState('epicPrs', 'ticket')} className="cursor-pointer select-none px-3 py-2 text-left font-semibold text-sm rounded-tl-lg w-1/2">Ticket<SortIcon sort={prSort} col="ticket" /></th>
+                          <th onClick={() => toggleSortState('epicPrs', 'prs')} className="cursor-pointer select-none px-3 py-2 text-left font-semibold text-sm rounded-tr-lg w-1/2">Pull Requests<SortIcon sort={prSort} col="prs" isNumeric /></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {sortedStories.map(story => {
+                          const prs = storyPrs[story.id] || [];
+                          return (
+                            <tr key={story.id}>
+                              <td className="px-3 py-2 text-sm border-b border-[#F0F0F7] align-top">
+                                {story.app_url
+                                  ? <a href={story.app_url} target="_blank" rel="noopener noreferrer" className="text-[#494BCB] hover:underline">{story.name}</a>
+                                  : story.name}
+                              </td>
+                              <td className="px-3 py-2 text-sm border-b border-[#F0F0F7] align-top">
+                                {prsLoading && !prsLoaded
+                                  ? <span className="text-[#94a3b8] italic">Loading…</span>
+                                  : prs.length === 0
+                                    ? <span className="text-[#94a3b8]">—</span>
+                                    : prs.map((pr, i) => (
+                                        <span key={pr.id}>
+                                          {i > 0 && ', '}
+                                          <a
+                                            href={pr.url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-[#494BCB] hover:underline"
+                                            title={pr.title}
+                                          >#{pr.number}{pr.merged ? ' ✓' : pr.closed ? ' ✕' : pr.draft ? ' (draft)' : ''}</a>
+                                        </span>
+                                      ))}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                      {prsLoaded && (
+                        <tfoot>
+                          <tr>
+                            <td className="px-3 py-2 text-sm font-semibold text-[#1e40af] rounded-bl-lg" style={{ background: '#dbeafe' }}>
+                              Ticket Count: {epic.stories.length}
+                            </td>
+                            <td className="px-3 py-2 text-sm font-semibold text-[#1e40af] rounded-br-lg" style={{ background: '#dbeafe' }}>
+                              Pull Request Count: {totalPrs}
+                            </td>
+                          </tr>
+                        </tfoot>
+                      )}
+                    </table>
+                  );
+                })()
+              )}
+            </div>
+          )}
         </div>
       )}
 
