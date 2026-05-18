@@ -30,6 +30,7 @@ export default function SetupWizard({ step, onStepChange, onClose }: Props): Rea
     loading,
     successMessage,
     searchEpics,
+    incrementApiCalls,
   } = useDashboard();
 
   const [apiToken, setApiToken] = useState('');
@@ -85,6 +86,7 @@ export default function SetupWizard({ step, onStepChange, onClose }: Props): Rea
           : 'Failed to verify token. Please check your connection and try again.');
         return;
       }
+      incrementApiCalls('GET /api/workflows', 1);
       setTokenError('');
       onStepChange(2);
     } catch (err) {
@@ -101,6 +103,7 @@ export default function SetupWizard({ step, onStepChange, onClose }: Props): Rea
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (workflowsResponse.ok) {
+        incrementApiCalls('GET /api/workflows', 1);
         setWorkflowField('workflows', await workflowsResponse.json());
       } else {
         setError('Failed to load workflows. You may need to go back and retry.');
@@ -121,8 +124,12 @@ export default function SetupWizard({ step, onStepChange, onClose }: Props): Rea
       const teamsRes = await fetch(`${getApiBaseUrl()}/api/teams`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      if (teamsRes.ok) setAllTeams(await teamsRes.json());
-      else setError('Failed to load teams. You can still proceed and skip team selection.');
+      if (teamsRes.ok) {
+        incrementApiCalls('GET /api/teams', 1);
+        setAllTeams(await teamsRes.json());
+      } else {
+        setError('Failed to load teams. You can still proceed and skip team selection.');
+      }
     } catch (err) {
       setError('Failed to load teams. Check your connection and try again.');
     }
@@ -358,8 +365,12 @@ export default function SetupWizard({ step, onStepChange, onClose }: Props): Rea
                         const teamsRes = await fetch(`${getApiBaseUrl()}/api/teams`, {
                           headers: { 'Authorization': `Bearer ${token}` }
                         });
-                        if (teamsRes.ok) setAllTeams(await teamsRes.json());
-                        else setError('Failed to load teams. Check your connection and try again.');
+                        if (teamsRes.ok) {
+                          incrementApiCalls('GET /api/teams', 1);
+                          setAllTeams(await teamsRes.json());
+                        } else {
+                          setError('Failed to load teams. Check your connection and try again.');
+                        }
                       } catch (err) {
                         setError('Failed to load teams. Check your connection and try again.');
                       }

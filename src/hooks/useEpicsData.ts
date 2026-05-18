@@ -168,12 +168,16 @@ export function useEpicsData({ epicNames, loadSelectedWorkflow, setCollapsedChar
         setTeamMemberIds(allMemberIds);
       }
 
+      let objectivesApiCall = false;
       try {
         const objRes = await fetch(`${getApiBaseUrl()}/api/objectives`, {
           headers: { 'Authorization': `Bearer ${token}` },
           signal: controller.signal
         });
-        if (objRes.ok) setObjectives(await objRes.json());
+        if (objRes.ok) {
+          objectivesApiCall = true;
+          setObjectives(await objRes.json());
+        }
       } catch (err) {}
 
       let workflowApiCall = false;
@@ -258,12 +262,16 @@ export function useEpicsData({ epicNames, loadSelectedWorkflow, setCollapsedChar
       setEpics(allEpics);
 
       const foundCount = allEpics.filter(e => !e.notFound).length;
-      const allOwnerIds = new Set(allEpics.flatMap(e => (e.stories || []).flatMap(s => s.owner_ids || [])));
+      const allOwnerIds = new Set<string>();
+      allEpics.forEach(e => {
+        (e.owner_ids || []).forEach(id => allOwnerIds.add(id));
+        (e.stories || []).forEach(s => (s.owner_ids || []).forEach(id => allOwnerIds.add(id)));
+      });
       const cachedMemberIds = Object.keys(storage.getMembersCache());
       const uncachedMemberCalls = [...allOwnerIds].filter(id => !cachedMemberIds.includes(id)).length;
       const apiCallBreakdown: Record<string, number> = {};
       if (teamApiCall) apiCallBreakdown['GET /api/teams'] = 1;
-      apiCallBreakdown['GET /api/objectives'] = 1;
+      if (objectivesApiCall) apiCallBreakdown['GET /api/objectives'] = 1;
       if (workflowApiCall) apiCallBreakdown['GET /api/epic-workflow'] = 1;
       if (epicNamesToSearch.length > 0) apiCallBreakdown['GET /api/search/epics'] = epicNamesToSearch.length;
       if (foundCount > 0) apiCallBreakdown['GET /api/epics/:id'] = foundCount;

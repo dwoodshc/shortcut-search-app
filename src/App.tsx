@@ -301,7 +301,6 @@ function App(): React.JSX.Element {
   const getEpicStateClass = useCallback((stateType: string, stateName: string): string => {
     const lowerName = (stateName || '').toLowerCase().trim();
     if (lowerName === 'blocked') return 'epic-state-blocked';
-    if (lowerName === 'ready for release') return 'epic-state-ready-for-release';
     const lower = (stateType || '').toLowerCase();
     if (lower === 'started' || lower === 'in progress') return 'epic-state-in-progress';
     if (lower === 'done') return 'epic-state-done';

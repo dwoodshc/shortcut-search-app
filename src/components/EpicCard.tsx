@@ -110,7 +110,7 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
       incrementApiCalls('GET /api/stories/:id', successful);
     });
     return () => { cancelled = true; };
-  }, [prsCollapsed, prsLoaded, epic.stories]);
+  }, [prsCollapsed, prsLoaded, epic.stories, incrementApiCalls]);
 
   if (epic.notFound) {
     return (

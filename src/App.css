@@ -432,11 +432,6 @@ textarea.input-field {
   color: #7f1d1d;
 }
 
-.epic-state-ready-for-release {
-  background-color: #bbf7d0;
-  color: #14532d;
-}
-
 .story-count {
   color: #494BCB;
   font-size: 0.875rem;

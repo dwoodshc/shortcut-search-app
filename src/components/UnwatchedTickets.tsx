@@ -64,7 +64,7 @@ function collectUnwatched(
 }
 
 export default function UnwatchedTickets(): React.JSX.Element | null {
-  const { epics, members, selectedTeamIds, workflowConfig, getEpicStateInfo, visibleEpicIds } = useDashboard();
+  const { epics, members, selectedTeamIds, workflowConfig, getEpicStateInfo, visibleEpicIds, incrementApiCalls } = useDashboard();
   const [myMemberId, setMyMemberId] = useState<string | null>(null);
   const [nameNotFound, setNameNotFound] = useState(false);
 
@@ -81,7 +81,11 @@ export default function UnwatchedTickets(): React.JSX.Element | null {
     const token = storage.getApiToken();
     if (!token) return;
     fetch(`${getApiBaseUrl()}/api/members`, { headers: { 'Authorization': `Bearer ${token}` } })
-      .then(r => r.ok ? r.json() : null)
+      .then(r => {
+        if (!r.ok) return null;
+        incrementApiCalls('GET /api/members', 1);
+        return r.json();
+      })
       .then((all: { id: string; profile: { name: string } }[] | null) => {
         if (!all) return;
         const match = all.find(m => m.profile.name.toLowerCase() === myName.toLowerCase());
@@ -89,7 +93,7 @@ export default function UnwatchedTickets(): React.JSX.Element | null {
         else setNameNotFound(true);
       })
       .catch(() => {});
-  }, [myName, myMemberId, members]);
+  }, [myName, myMemberId, members, incrementApiCalls]);
 
   if (!myName || epics.length === 0) return null;
   if (!myMemberId) return nameNotFound ? (
