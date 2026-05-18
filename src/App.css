@@ -914,7 +914,7 @@ textarea.input-field {
 /* Column-based story layout */
 .stories-columns {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 1rem;
   margin-top: 1rem;
 }
