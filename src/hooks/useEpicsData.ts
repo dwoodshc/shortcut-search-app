@@ -61,7 +61,9 @@ export function useEpicsData({ epicNames, loadSelectedWorkflow, setCollapsedChar
         setLoading(false);
         return true;
       }
-    } catch (e) {}
+    } catch (e) {
+      console.warn('Failed to parse API error response:', e);
+    }
     return false;
   }, [onRateLimit]);
 
@@ -81,7 +83,9 @@ export function useEpicsData({ epicNames, loadSelectedWorkflow, setCollapsedChar
       } else {
         await handleApiError(response);
       }
-    } catch (err) {}
+    } catch (err) {
+      console.warn(`Failed to fetch user ${userId}:`, err);
+    }
     return userId;
   }, [handleApiError]);
 
@@ -149,7 +153,9 @@ export function useEpicsData({ epicNames, loadSelectedWorkflow, setCollapsedChar
           allTeams.forEach(t => { nameMap[t.id] = t.name; });
           setTeamNameMap(nameMap);
         }
-      } catch (err) {}
+      } catch (err) {
+        if (err instanceof Error && err.name !== 'AbortError') console.warn('Failed to fetch teams:', err);
+      }
 
       if (teamConfigs.length > 0) {
         const allMemberIds = new Set<string>();
@@ -178,7 +184,9 @@ export function useEpicsData({ epicNames, loadSelectedWorkflow, setCollapsedChar
           objectivesApiCall = true;
           setObjectives(await objRes.json());
         }
-      } catch (err) {}
+      } catch (err) {
+        if (err instanceof Error && err.name !== 'AbortError') console.warn('Failed to fetch objectives:', err);
+      }
 
       let workflowApiCall = false;
       const cachedEpicWorkflow = storage.getEpicWorkflowCache();
@@ -206,6 +214,9 @@ export function useEpicsData({ epicNames, loadSelectedWorkflow, setCollapsedChar
       }
 
       setLoadProgress({ loaded: 0, total: epicNamesToSearch.length });
+      let searchCallCount = 0;
+      let epicDetailCallCount = 0;
+      let storiesCallCount = 0;
       const epicsWithStories = await Promise.all(
         epicNamesToSearch.map(async (name): Promise<Epic | null> => {
           try {
@@ -217,6 +228,7 @@ export function useEpicsData({ epicNames, loadSelectedWorkflow, setCollapsedChar
               await handleApiError(searchResponse);
               return null;
             }
+            searchCallCount++;
             const searchData = await searchResponse.json();
             const results: Epic[] = searchData.data || [];
             const match = results.find(e => e.name.toLowerCase() === name.toLowerCase());
@@ -228,6 +240,7 @@ export function useEpicsData({ epicNames, loadSelectedWorkflow, setCollapsedChar
                 signal: controller.signal
               });
               if (epicResponse.ok) {
+                epicDetailCallCount++;
                 const epic: Epic = await epicResponse.json();
                 try {
                   const storiesResponse = await fetch(`${getApiBaseUrl()}/api/epics/${epic.id}/stories`, {
@@ -235,18 +248,24 @@ export function useEpicsData({ epicNames, loadSelectedWorkflow, setCollapsedChar
                     signal: controller.signal
                   });
                   if (storiesResponse.ok) {
+                    storiesCallCount++;
                     return { ...epic, stories: await storiesResponse.json() };
                   } else {
                     await handleApiError(storiesResponse);
                   }
-                } catch (err) {}
+                } catch (err) {
+                  console.warn(`Failed to fetch stories for epic ${epic.id}:`, err);
+                }
                 return epic;
               } else {
                 await handleApiError(epicResponse);
               }
-            } catch (err) {}
+            } catch (err) {
+              console.warn(`Failed to fetch epic detail for ${match.id}:`, err);
+            }
             return match;
           } catch (err) {
+            if (err instanceof Error && err.name !== 'AbortError') console.warn(`Failed to search for epic "${name}":`, err);
             return null;
           } finally {
             setLoadProgress(prev => ({ ...prev, loaded: prev.loaded + 1 }));
@@ -261,7 +280,6 @@ export function useEpicsData({ epicNames, loadSelectedWorkflow, setCollapsedChar
       );
       setEpics(allEpics);
 
-      const foundCount = allEpics.filter(e => !e.notFound).length;
       const allOwnerIds = new Set<string>();
       allEpics.forEach(e => {
         (e.owner_ids || []).forEach(id => allOwnerIds.add(id));
@@ -273,9 +291,9 @@ export function useEpicsData({ epicNames, loadSelectedWorkflow, setCollapsedChar
       if (teamApiCall) apiCallBreakdown['GET /api/teams'] = 1;
       if (objectivesApiCall) apiCallBreakdown['GET /api/objectives'] = 1;
       if (workflowApiCall) apiCallBreakdown['GET /api/epic-workflow'] = 1;
-      if (epicNamesToSearch.length > 0) apiCallBreakdown['GET /api/search/epics'] = epicNamesToSearch.length;
-      if (foundCount > 0) apiCallBreakdown['GET /api/epics/:id'] = foundCount;
-      if (foundCount > 0) apiCallBreakdown['GET /api/epics/:id/stories'] = foundCount;
+      if (searchCallCount > 0) apiCallBreakdown['GET /api/search/epics'] = searchCallCount;
+      if (epicDetailCallCount > 0) apiCallBreakdown['GET /api/epics/:id'] = epicDetailCallCount;
+      if (storiesCallCount > 0) apiCallBreakdown['GET /api/epics/:id/stories'] = storiesCallCount;
       if (uncachedMemberCalls > 0) apiCallBreakdown['GET /api/users/:id'] = uncachedMemberCalls;
       const totalApiCalls = Object.values(apiCallBreakdown).reduce((a, b) => a + b, 0);
       setLoadStats({ loadTime: Date.now() - searchStartTime, apiCallCount: totalApiCalls, apiCallBreakdown, loadedAt: new Date() });

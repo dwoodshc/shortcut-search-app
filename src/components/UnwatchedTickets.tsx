@@ -92,7 +92,7 @@ export default function UnwatchedTickets(): React.JSX.Element | null {
         if (match) setMyMemberId(match.id);
         else setNameNotFound(true);
       })
-      .catch(() => {});
+      .catch(err => { console.warn('Failed to fetch members for unwatched-ticket lookup:', err); });
   }, [myName, myMemberId, members, incrementApiCalls]);
 
   if (!myName || epics.length === 0) return null;
