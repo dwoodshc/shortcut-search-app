@@ -414,7 +414,7 @@ function App(): React.JSX.Element {
       {loading && (
         <div className="modal-overlay" style={{ zIndex: 9999 }}>
           <div className="modal-content text-center !px-12 !py-10" style={{ maxWidth: '360px' }}>
-            <div className="text-[2.5rem] mb-4">⏳</div>
+            <div className="text-[2.5rem] mb-4 inline-block" style={{ animation: 'egg-timer-flip 1.5s linear infinite' }}>⏳</div>
             <h2 className="m-0 mb-2 text-[1.2rem] text-[#03045E]">Loading Epics…</h2>
             <p className="text-[#718096] mb-6 text-[0.9rem]">
               {loadProgress.total > 0
