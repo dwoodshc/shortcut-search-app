@@ -19,7 +19,6 @@ interface Props {
 }
 
 const STORY_COLUMNS = ['Backlog', 'Ready for Development', 'In Development', 'In Review', 'Complete'];
-const NON_CLICKABLE_STATES = ['complete'];
 
 const STATE_COLORS: Record<string, string> = {
   'backlog': '#d1d5db',
@@ -266,14 +265,13 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
                 const count = workflowStateCounts[stateId] || 0;
                 const percentage = workflowTotal > 0 ? (count / workflowTotal) * 100 : 0;
                 const stateName = workflowConfig.states[stateId] || String(stateId);
-                const isNonClickable = NON_CLICKABLE_STATES.includes(stateName.toLowerCase().trim());
                 const isActive = clickedBarStateId === stateId;
                 return (
                   <div
                     key={stateId}
-                    className={`status-bar-item${!isNonClickable ? ' cursor-pointer' : ''}`}
-                    onClick={!isNonClickable ? (e) => { e.stopPropagation(); setClickedBarStateId(prev => prev === stateId ? null : stateId); } : undefined}
-                    title={!isNonClickable ? `View ${count} ticket${count !== 1 ? 's' : ''} in ${stateName}` : undefined}
+                    className="status-bar-item cursor-pointer"
+                    onClick={(e) => { e.stopPropagation(); setClickedBarStateId(prev => prev === stateId ? null : stateId); }}
+                    title={`View ${count} ticket${count !== 1 ? 's' : ''} in ${stateName}`}
                     style={isActive ? { outline: '2px solid #494BCB', borderRadius: '4px' } : undefined}
                   >
                     <div className="column-3d-wrapper">
