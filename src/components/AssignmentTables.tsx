@@ -9,7 +9,8 @@
 import React, { useMemo } from 'react';
 import { useDashboard } from '../context/DashboardContext';
 import { EpicTeamEntry, EpicRef } from '../types';
-import { ResetIcon } from './icons';
+import { ResetIcon, TargetIcon, UsersIcon, TicketIcon } from './icons';
+import PeekButton from './PeekButton';
 import SortIcon from './SortIcon';
 import { COMPLETE_STATE_NAMES } from '../utils';
 
@@ -26,11 +27,13 @@ export default function AssignmentTables(): React.JSX.Element | null {
     epics, members, workflowConfig,
     epicTeamData, memberEpicMap,
     sortState, toggleSortState, resetSortState,
-    collapsedCharts, setCollapsedCharts,
     filterByTeam, selectedTeamIds,
     getEpicStateClass,
     visibleEpicIds,
+    viewSettings, setViewSettings,
   } = useDashboard();
+  const updateViewSetting = (key: keyof typeof viewSettings, value: boolean) =>
+    setViewSettings({ ...viewSettings, [key]: value });
 
   const memberTicketData = useMemo(() => {
     const map: Record<string, Array<{ id: number; name: string; app_url?: string; epicName: string; epicAppUrl?: string; stateName: string }>> = {};
@@ -206,16 +209,36 @@ export default function AssignmentTables(): React.JSX.Element | null {
   return (
     <>
       <div className="flex flex-col gap-4 mb-4">
+        {/* Peek-icon row: toggles for the three assignment tables */}
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-[0.8rem] font-semibold text-[#64748b]">Assignments Views:</span>
+          <PeekButton
+            icon={TargetIcon}
+            label="Epic Owner Assignments"
+            tooltip={viewSettings.showEpicOwnerAssignments ? 'Hide Epic Owner Assignments' : 'Show Epic Owner Assignments'}
+            onClick={() => updateViewSetting('showEpicOwnerAssignments', !viewSettings.showEpicOwnerAssignments)}
+            hidden={!viewSettings.showEpicOwnerAssignments}
+          />
+          <PeekButton
+            icon={UsersIcon}
+            label="Team Member Epic Assignments"
+            tooltip={viewSettings.showTeamMemberEpicAssignments ? 'Hide Team Member Epic Assignments' : 'Show Team Member Epic Assignments'}
+            onClick={() => updateViewSetting('showTeamMemberEpicAssignments', !viewSettings.showTeamMemberEpicAssignments)}
+            hidden={!viewSettings.showTeamMemberEpicAssignments}
+          />
+          <PeekButton
+            icon={TicketIcon}
+            label="Team Member Ticket Assignments"
+            tooltip={viewSettings.showTeamMemberTicketAssignments ? 'Hide Team Member Ticket Assignments' : 'Show Team Member Ticket Assignments'}
+            onClick={() => updateViewSetting('showTeamMemberTicketAssignments', !viewSettings.showTeamMemberTicketAssignments)}
+            hidden={!viewSettings.showTeamMemberTicketAssignments}
+          />
+        </div>
+
         {/* Epic Owner Assignments */}
-        <div>
-          <h3
-            onClick={() => setCollapsedCharts(prev => ({ ...prev, 'assignment-epic': !prev['assignment-epic'] }))}
-            className="m-0 mb-2 text-base font-semibold cursor-pointer select-none flex items-center gap-[0.4rem]"
-            title="Show or hide the Epic Owner Assignments table"
-          >
-            <span>{collapsedCharts['assignment-epic'] ? '▶' : '▼'}</span> Epic Owner Assignments
-          </h3>
-          {!collapsedCharts['assignment-epic'] && (
+        {viewSettings.showEpicOwnerAssignments && (
+          <div>
+            <h3 className="m-0 mb-2 text-base font-semibold">Epic Owner Assignments</h3>
             <div className="summary-table-grid">
               <div>
                 <table className={tableClass} style={{ tableLayout: 'fixed', borderCollapse: 'separate', borderSpacing: 0 }}>
@@ -232,19 +255,13 @@ export default function AssignmentTables(): React.JSX.Element | null {
                 </table>
               </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Team Member Epic Assignments */}
-        <div>
-          <h3
-            onClick={() => setCollapsedCharts(prev => ({ ...prev, 'assignment-member': !prev['assignment-member'] }))}
-            className="m-0 mb-2 text-base font-semibold cursor-pointer select-none flex items-center gap-[0.4rem]"
-            title="Show or hide the Team Member Epic Assignments table"
-          >
-            <span>{collapsedCharts['assignment-member'] ? '▶' : '▼'}</span> Team Member Epic Assignments
-          </h3>
-          {!collapsedCharts['assignment-member'] && (
+        {viewSettings.showTeamMemberEpicAssignments && (
+          <div>
+            <h3 className="m-0 mb-2 text-base font-semibold">Team Member Epic Assignments</h3>
             <div className="summary-table-grid">
               <div>
                 <table className={tableClass} style={{ tableLayout: 'fixed', borderCollapse: 'separate', borderSpacing: 0 }}>
@@ -261,19 +278,13 @@ export default function AssignmentTables(): React.JSX.Element | null {
                 </table>
               </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Team Member Ticket Assignments */}
-        <div>
-          <h3
-            onClick={() => setCollapsedCharts(prev => ({ ...prev, 'assignment-ticket': !prev['assignment-ticket'] }))}
-            className="m-0 mb-2 text-base font-semibold cursor-pointer select-none flex items-center gap-[0.4rem]"
-            title="Show or hide the Team Member Ticket Assignments table"
-          >
-            <span>{collapsedCharts['assignment-ticket'] ? '▶' : '▼'}</span> Team Member Ticket Assignments
-          </h3>
-          {!collapsedCharts['assignment-ticket'] && (
+        {viewSettings.showTeamMemberTicketAssignments && (
+          <div>
+            <h3 className="m-0 mb-2 text-base font-semibold">Team Member Ticket Assignments</h3>
             <div className="summary-table-grid">
               <div>
                 <table className={tableClass} style={{ tableLayout: 'fixed', borderCollapse: 'separate', borderSpacing: 0 }}>
@@ -290,8 +301,8 @@ export default function AssignmentTables(): React.JSX.Element | null {
                 </table>
               </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
       <hr className="border-0 border-t-2 border-slate-200 mb-4" />
     </>

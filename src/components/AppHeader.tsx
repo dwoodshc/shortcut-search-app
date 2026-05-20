@@ -13,14 +13,13 @@ export default function AppHeader(): React.JSX.Element {
   const {
     epics,
     modals, setModal,
-    collapsedCharts, setCollapsedCharts,
     filterByTeam, setFilterByTeam,
     selectedTeamIds, selectedTeamLabel,
     searchEpics,
     toggleAllCharts,
     handleOpenReadme,
     setSetupWizardStep,
-    viewSettings,
+    viewSettings, setViewSettings,
   } = useDashboard();
 
   const handleHeaderClick = (e: React.MouseEvent) => {
@@ -154,18 +153,28 @@ export default function AppHeader(): React.JSX.Element {
       </div>
       {epics.length > 0 && (
         <div className="header-actions-row">
-          {viewSettings.showExpandAssignmentsButton && (
-            <button
-              onClick={() => {
-                const allCollapsed = collapsedCharts['assignment-epic'] && collapsedCharts['assignment-member'] && collapsedCharts['assignment-ticket'];
-                setCollapsedCharts(prev => ({ ...prev, 'assignment-epic': !allCollapsed, 'assignment-member': !allCollapsed, 'assignment-ticket': !allCollapsed }));
-              }}
-              className={`header-action-btn${!(collapsedCharts['assignment-epic'] && collapsedCharts['assignment-member'] && collapsedCharts['assignment-ticket']) ? ' active' : ''}`}
-              title="Show or hide the Epic Owner Assignments, Team Member Epic Assignments, and Team Member Ticket Assignments tables"
-            >
-              {collapsedCharts['assignment-epic'] && collapsedCharts['assignment-member'] && collapsedCharts['assignment-ticket'] ? 'Expand Assignments' : 'Collapse Assignments'}
-            </button>
-          )}
+          {viewSettings.showExpandAssignmentsButton && (() => {
+            const allOn = viewSettings.showEpicOwnerAssignments
+              && viewSettings.showTeamMemberEpicAssignments
+              && viewSettings.showTeamMemberTicketAssignments;
+            return (
+              <button
+                onClick={() => {
+                  const next = !allOn;
+                  setViewSettings({
+                    ...viewSettings,
+                    showEpicOwnerAssignments: next,
+                    showTeamMemberEpicAssignments: next,
+                    showTeamMemberTicketAssignments: next,
+                  });
+                }}
+                className={`header-action-btn${allOn ? ' active' : ''}`}
+                title="Show or hide the Epic Owner Assignments, Team Member Epic Assignments, and Team Member Ticket Assignments tables"
+              >
+                {allOn ? 'Hide Assignments' : 'Show Assignments'}
+              </button>
+            );
+          })()}
           {viewSettings.showExpandChartsButton && (() => {
             const allOn = viewSettings.showTicketStatusBreakdown
               && viewSettings.showStoryOwners

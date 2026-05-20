@@ -485,16 +485,17 @@ function App(): React.JSX.Element {
               <li><strong>Team Member Epic Assignments:</strong> Inverted view — each member and their epics</li>
               <li><strong>Team Member Ticket Assignments:</strong> Open tickets grouped by epic, with status pills</li>
               <li><strong>Epic Card:</strong> Collapsible; Done epics start collapsed by default</li>
+              <li><strong>Additional Views Row:</strong> Per-card peek icons toggle sections globally</li>
               <li><strong>Ticket Status Breakdown:</strong> 3D column chart; click a bar to view tickets in that state</li>
               <li><strong>Workflow Status Pie Chart:</strong> Stories by workflow state with clickable Shortcut links</li>
               <li><strong>Story Type Breakdown:</strong> Feature / Bug / Chore pie chart per epic</li>
               <li><strong>Story Owners Table:</strong> Per-epic story owner counts including unassigned</li>
               <li><strong>Team Open Tickets:</strong> Open ticket counts per team member, excluding completed</li>
               <li><strong>Pull Requests:</strong> Sortable table linking each story to its GitHub PRs</li>
-              <li><strong>User Story Board:</strong> Kanban board (Backlog → Complete), collapsible per epic</li>
+              <li><strong>User Story Board:</strong> Kanban board (Backlog → Complete) per epic</li>
               <li><strong>Setup Wizard:</strong> 6-step setup: token, URL, workflow, teams, name, epic list</li>
               <li><strong>Configuration Management:</strong> Export / Import all settings as JSON</li>
-              <li><strong>View Settings:</strong> Show/hide card fields, page link, and toolbar buttons</li>
+              <li><strong>View Settings:</strong> Toggle the per-card Top of Page link</li>
               <li><strong>Load Stats Bar:</strong> Load time, API call breakdown, page size, and download</li>
               <li><strong>Themes:</strong> Normal, Dark Mode, Star Trek (LCARS), and Matrix</li>
             </ul>
@@ -591,78 +592,6 @@ function App(): React.JSX.Element {
             <h2>View Settings</h2>
             <p className="mb-4 text-[#64748b] text-sm">Choose which data to display on the dashboard.</p>
             <div className="mb-6">
-              <h3 className="text-sm font-semibold text-[#374151] mb-3">Epic Status</h3>
-              <label className="flex items-center gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={viewSettings.showEpicFilter}
-                  onChange={(e) => updateViewSetting('showEpicFilter', e.target.checked)}
-                  className="w-4 h-4"
-                />
-                <span className="text-sm">Show Filter Epics input</span>
-              </label>
-              <label className="flex items-center gap-3 cursor-pointer mt-2">
-                <input
-                  type="checkbox"
-                  checked={viewSettings.showObjectivesFilter}
-                  onChange={(e) => updateViewSetting('showObjectivesFilter', e.target.checked)}
-                  className="w-4 h-4"
-                />
-                <span className="text-sm">Show Filter Objectives checkboxes</span>
-              </label>
-              <label className="flex items-center gap-3 cursor-pointer mt-2">
-                <input
-                  type="checkbox"
-                  checked={viewSettings.showDoneEpics}
-                  onChange={(e) => updateViewSetting('showDoneEpics', e.target.checked)}
-                  className="w-4 h-4"
-                />
-                <span className="text-sm">Show Done epics</span>
-              </label>
-            </div>
-            <div className="mb-6">
-              <h3 className="text-sm font-semibold text-[#374151] mb-3">Epic Card</h3>
-              <label className="flex items-center gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={viewSettings.showEpicObjective}
-                  onChange={(e) => updateViewSetting('showEpicObjective', e.target.checked)}
-                  className="w-4 h-4"
-                />
-                <span className="text-sm">Show Objective in Epic Card</span>
-              </label>
-              <label className="flex items-center gap-3 cursor-pointer mt-2">
-                <input
-                  type="checkbox"
-                  checked={viewSettings.showEpicOwners}
-                  onChange={(e) => updateViewSetting('showEpicOwners', e.target.checked)}
-                  className="w-4 h-4"
-                />
-                <span className="text-sm">Show Owners in Epic Card</span>
-              </label>
-              <label className="flex items-center gap-3 cursor-pointer mt-2">
-                <input
-                  type="checkbox"
-                  checked={viewSettings.showEpicStoryCount}
-                  onChange={(e) => updateViewSetting('showEpicStoryCount', e.target.checked)}
-                  className="w-4 h-4"
-                />
-                <span className="text-sm">Show Story Count in Epic Card</span>
-              </label>
-            </div>
-            <div className="mb-6">
-              <h3 className="text-sm font-semibold text-[#374151] mb-3">User Story Board</h3>
-              <label className="flex items-center gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={viewSettings.showUserStoryBoard}
-                  onChange={(e) => updateViewSetting('showUserStoryBoard', e.target.checked)}
-                  className="w-4 h-4"
-                />
-                <span className="text-sm">Show User Story Board</span>
-              </label>
-            </div>
-            <div className="mb-6">
               <h3 className="text-sm font-semibold text-[#374151] mb-3">Top of Page Link</h3>
               <label className="flex items-center gap-3 cursor-pointer">
                 <input
@@ -672,27 +601,6 @@ function App(): React.JSX.Element {
                   className="w-4 h-4"
                 />
                 <span className="text-sm">Show ↑ Top of Page link on each epic card</span>
-              </label>
-            </div>
-            <div className="mb-6">
-              <h3 className="text-sm font-semibold text-[#374151] mb-3">Header Buttons</h3>
-              <label className="flex items-center gap-3 cursor-pointer mb-2">
-                <input
-                  type="checkbox"
-                  checked={viewSettings.showExpandAssignmentsButton}
-                  onChange={(e) => updateViewSetting('showExpandAssignmentsButton', e.target.checked)}
-                  className="w-4 h-4"
-                />
-                <span className="text-sm">Show Expand/Collapse Assignments button</span>
-              </label>
-              <label className="flex items-center gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={viewSettings.showExpandChartsButton}
-                  onChange={(e) => updateViewSetting('showExpandChartsButton', e.target.checked)}
-                  className="w-4 h-4"
-                />
-                <span className="text-sm">Show Expand/Collapse Charts button</span>
               </label>
             </div>
             <div className="modal-buttons">

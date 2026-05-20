@@ -8,12 +8,6 @@ export const ResetIcon = (
   </svg>
 );
 
-export const FilterIcon = (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-[14px] h-[14px] align-middle inline-block">
-    <path d="M4 5h16l-6 8v6l-4-2v-4z" />
-  </svg>
-);
-
 export const TargetIcon = (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-[14px] h-[14px] align-middle inline-block">
     <circle cx="12" cy="12" r="10" />

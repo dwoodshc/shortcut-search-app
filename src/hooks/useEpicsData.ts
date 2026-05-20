@@ -298,8 +298,6 @@ export function useEpicsData({ epicNames, loadSelectedWorkflow, setCollapsedChar
       const totalApiCalls = Object.values(apiCallBreakdown).reduce((a, b) => a + b, 0);
       setLoadStats({ loadTime: Date.now() - searchStartTime, apiCallCount: totalApiCalls, apiCallBreakdown, loadedAt: new Date() });
 
-      const newCollapsedState: Record<string, boolean> = { 'assignment-epic': true, 'assignment-member': true, 'assignment-ticket': true };
-      setCollapsedCharts(prev => ({ ...prev, ...newCollapsedState }));
 
     } catch (err: unknown) {
       if (err instanceof Error && err.name !== 'AbortError') setError(err.message);

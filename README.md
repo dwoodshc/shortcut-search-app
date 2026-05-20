@@ -27,15 +27,14 @@ Two tables appear at the top of the dashboard, above the epic cards.
 - **Last Changed** column — days since any story was last updated (respects the active team filter); clicking the value opens a popover listing the 5 most recently changed stories with columns: Ticket, Owner, Status, Changed
 - Restore icon to return epics to their configured list order
 - Epic name links scroll to the epic's detail section on the page
-- The three filter peek toggles (**Filter Epics**, **Filter Objectives**, **Hide/Show Done**) are always visible on the "Epic Status" heading row; each is a clickable button with an icon + label; a strikethrough on the label indicates the corresponding filter UI is currently hidden; the icon/label turns blue/red/green when its filter is actively filtering
-- **Search filter** — text input below the "Epic Status" heading (prefixed with **EPICS:**); filters the table in real time; collapses to a single-column view with a result count row when active
+- Two peek toggles (**Filter Objectives**, **Hide/Show Done**) and a **Filter Epics** input sit on the "Epic Status" heading row; the input is always visible and filters the table in real time (collapses to a single-column view with a result count row when active); the peek toggles use a strikethrough label when the corresponding filter UI is hidden, and turn red/green when actively filtering
 - **Objectives filter** — checkbox row above the table (prefixed with **OBJECTIVES:**); one checkbox per Shortcut Objective associated with the loaded epics; filters the table to matching epics; includes a **Filter objectives…** text input that narrows the displayed checkboxes and auto-deselects non-matching objectives; **Select All** / **Clear All** controls; active filter details shown in the result count row
 - **Done epics toggle** — check-circle button on the heading row; label toggles between **Hide Done** and **Show Done** depending on state; turns green when Done epics are currently hidden
 - All three filters apply **globally** — when active, the same epics are also hidden from the Epic Cards, Assignment Tables, and Unwatched Tickets, and the Story Summary counts are recalculated from the visible epics only
 
 ### Epic Management
 - Epics loaded automatically on page load (no manual search required)
-- Loading modal with animated progress bar, **"Loading X of Y Epics"** progress counter, and **Cancel** button during data fetch
+- Loading modal with rotating egg-timer animation, animated progress bar, **"Loading X of Y Epics"** progress counter, and **Cancel** button during data fetch
 - Epics not found in Shortcut are listed by name in red below the "Found X of Y Epics" count
 - Configure tracked epics via built-in editor with localStorage persistence
 - Export/Import configuration for backup and portability
@@ -48,7 +47,7 @@ When your Shortcut name is configured (Setup Wizard step 5), a table appears aft
 - Returns nothing if you are watching all open tickets
 
 ### Assignment Tables
-Three collapsible assignment tables appear above the epic cards, controlled by the **Expand/Collapse Assignments** button. All start collapsed by default and are split into two side-by-side sub-tables for wide-screen readability.
+Three assignment tables appear above the epic cards, each split into two side-by-side sub-tables for wide-screen readability. Visibility is controlled by an **"Assignments Views:"** peek-icon row at the top of the section — one peek icon per table (Epic Owner / Team Member Epic / Team Member Ticket Assignments). All three tables are **hidden by default**; click a peek icon to reveal a table (the change applies globally to the dashboard).
 
 #### Epic Owner Assignments
 - Lists each tracked epic alongside its assigned team members (filtered to the selected team)
@@ -74,32 +73,33 @@ Each tracked epic renders as a card with a collapsible body.
 - **Collapse/Expand** — Click the **▶/▼** chevron beside the epic name to toggle the card body. Epics in the "Done" state start collapsed by default.
 - **Meta area** — Shows the epic's Objective(s), Owner(s), story count, and status as styled pills below the title.
 - **Objectives** — Displayed before Owners when one or more Shortcut Objectives are linked to the epic.
-- **View Settings** (see Settings Menu) — any hidden field shows a small icon in its place (target for Objective, person for Owners, hash for Story Count, kanban for User Story Board); click the icon to reveal the field globally, click the field itself to hide it again.
+- **Meta field peek icons** — When Objective, Owners, or Story Count are hidden, a small icon (target / person / hash) appears in their place; click to reveal the field globally, or click the field itself to hide it again.
+- **"Additional Views:" peek row** — Sits just under the epic title; a labelled row of peek icons toggles the per-card sections (Ticket Status Breakdown, Story Owners, Team Open Tickets, Workflow Status Pie Chart, Story Type Breakdown, Pull Requests, User Story Board). Toggles apply globally to every epic card. Strikethrough label = currently hidden.
 
 ### Interactive Visualizations
 
-Per epic, three visualizations are available. Each has a **▶/▼ toggle** in its heading. The **Collapse/Expand Charts** button controls the Workflow Status Pie Chart and Story Type Breakdown across all epics simultaneously.
+Per epic, three visualizations are available. Visibility is controlled by the "Additional Views:" peek row at the top of each card (toggles apply globally to every card).
 
 #### Ticket Status Breakdown (Column Chart)
 - Workflow status breakdown showing story distribution across workflow states
 - Visual bars for: Backlog, Ready for Development, In Development, In Review, Complete
 - Story counts displayed above each column
 - Clicking any bar (including **Complete**) opens a scrollable popover listing all tickets in that state (name link, owner, age); click the same bar or outside to dismiss
-- Always visible (no collapse toggle)
+- Visible by default; toggle via the BarChart peek icon
 
 #### Workflow Status Pie Chart
 - Visual representation of stories by workflow state with gradient colour scale
 - Colour progression: Gray (Backlog) → Light Green → Green → Dark Green (Complete)
 - Interactive hover tooltips showing count and percentage
 - **Clickable legend items** that link directly to filtered Shortcut epic views
-- Starts **collapsed** by default
+- Visible by default; toggle via the Pie peek icon
 
 #### Story Type Breakdown Pie Chart
 - Distribution of stories by type (Feature, Bug, Chore)
 - Colour-coded: Light Green (Feature), Light Yellow (Chore), Light Red (Bug)
 - Interactive hover tooltips
 - **Clickable legend items** that link to Shortcut backlog filtered by epic and story type
-- Starts **collapsed** by default
+- Visible by default; toggle via the Chart peek icon
 
 ### Analytics Tables
 
@@ -116,18 +116,18 @@ Per epic, three visualizations are available. Each has a **▶/▼ toggle** in i
 - Highlights team members with zero open tickets
 
 ### Pull Requests
-- Collapsible per-epic table linking each story to its associated GitHub Pull Requests
+- Per-epic table linking each story to its associated GitHub Pull Requests
 - Columns: **Ticket** (story name → Shortcut) and **Pull Requests** (`#<number>` links with merged ✓ / closed ✕ / draft markers)
 - Sortable headers: **Ticket** (A→Z / Z→A) and **Pull Requests** (numeric, by PR count)
 - Footer row in light blue showing **Ticket Count** and **Pull Request Count** for the epic
-- **▶/▼ toggle** in the heading — starts **collapsed** by default
-- PR data is fetched lazily on first expand via `GET /api/stories/:id` (one call per story); results are cached on the card and the load is reflected in the **API calls** footer counter
+- Visible by default; toggle via the Pull Request peek icon
+- PR data is fetched lazily on first display via `GET /api/stories/:id` (one call per story); results are cached on the card and the load is reflected in the **API calls** footer counter
 
 ### User Story Board
 - Five-column kanban display: Backlog → Ready for Development → In Development → In Review → Complete
 - Story cards with clickable links to Shortcut
 - Story count badges on each column header
-- **▶/▼ toggle** in the "User Story Board" heading — starts **collapsed** by default
+- Visible by default; toggle via the Kanban peek icon
 
 ### Header Actions
 Three icon buttons in the top-right of the header (all with hover tooltips):
@@ -137,8 +137,6 @@ Three icon buttons in the top-right of the header (all with hover tooltips):
 
 ### Toolbar Controls
 Displayed in the header when epics are loaded:
-- **Expand Assignments / Collapse Assignments** — Toggle all three assignment tables (hidden by default; enable under Settings → View Settings)
-- **Expand Charts / Collapse Charts** — Toggle the Workflow Status Pie Chart and Story Type Breakdown across all epics (hidden by default; enable under Settings → View Settings)
 - **Show [Team Names] Only / Show All Teams** — Toggle filtering tickets to only the selected teams (shown when one or more teams are configured). The button label and header subtitle both reflect the currently selected team names (e.g. **Show Engineering & Design Only**)
 
 ### Load Stats Bar
@@ -152,7 +150,7 @@ Appears below all content after a successful data load. Shows five stats in a li
 ### Settings Menu
 - **Setup Wizard** — Re-run the setup wizard
 - **README.md** — View this documentation in-app
-- **View Settings** — Toggle visibility of per-epic card fields (Objective, Owners, Story Count, User Story Board), the per-card "↑ Top of Page" link, Epic Status table filters (Filter Epics, Objectives filter), Done epic visibility, and the header **Expand Assignments** / **Expand Charts** buttons; preferences saved to localStorage
+- **View Settings** — Toggle visibility of the per-card "↑ Top of Page" link; preferences saved to localStorage. (Most other visibility toggles are now exposed directly as peek icons on the Epic Status header, the per-card "Additional Views:" row, and the "Assignments Views:" row.)
 - **Theme** — Open the Theme Selector to choose a display theme (see below); preference is saved to localStorage
 - **Export/Import** — Backup and restore configuration as JSON
 - **Wipe Settings** — Clear all localStorage data to start fresh

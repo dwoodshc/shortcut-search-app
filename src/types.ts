@@ -109,12 +109,14 @@ export interface EpicRef {
 }
 
 export interface ViewSettings {
-  showEpicFilter: boolean;
   showObjectivesFilter: boolean;
   showDoneEpics: boolean;
   showEpicObjective: boolean;
   showEpicOwners: boolean;
   showEpicStoryCount: boolean;
+  showEpicOwnerAssignments: boolean;
+  showTeamMemberEpicAssignments: boolean;
+  showTeamMemberTicketAssignments: boolean;
   showTicketStatusBreakdown: boolean;
   showStoryOwners: boolean;
   showTeamOpenTickets: boolean;

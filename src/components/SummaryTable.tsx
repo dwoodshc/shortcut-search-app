@@ -8,7 +8,7 @@
 import React, { useState, useEffect } from 'react';
 import { useDashboard } from '../context/DashboardContext';
 import { Epic, Story, ViewSettings } from '../types';
-import { ResetIcon, FilterIcon, TargetActiveIcon, CheckCircleIcon } from './icons';
+import { ResetIcon, TargetActiveIcon, CheckCircleIcon } from './icons';
 import { COMPLETE_STATE_NAMES, daysAgo, formatDaysAgo } from '../utils';
 import SortIcon from './SortIcon';
 import PeekButton from './PeekButton';
@@ -389,16 +389,8 @@ function EpicStatusTable(): React.JSX.Element | null {
   return (
     <div id="summary-table" className="mb-4">
       <div className="flex flex-col gap-2 mb-3">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <h2 className="m-0 text-[1.1rem] font-semibold text-[#1a202c]">Epic Status</h2>
-          <PeekButton
-            icon={FilterIcon}
-            label="Filter Epics"
-            tooltip={viewSettings.showEpicFilter ? 'Hide Epics Filter' : 'Show Epics Filter'}
-            onClick={() => updateViewSetting('showEpicFilter', !viewSettings.showEpicFilter)}
-            hidden={!viewSettings.showEpicFilter}
-            activeColor={epicSearchQuery.trim() ? '#2563eb' : undefined}
-          />
           {showObjectiveFilter && (
             <PeekButton
               icon={TargetActiveIcon}
@@ -416,32 +408,22 @@ function EpicStatusTable(): React.JSX.Element | null {
             onClick={() => updateViewSetting('showDoneEpics', !viewSettings.showDoneEpics)}
             activeColor={viewSettings.showDoneEpics ? undefined : '#16a34a'}
           />
-        </div>
-        {viewSettings.showEpicFilter && (
-          <div className="flex items-center gap-3">
-            <span className="text-xs font-semibold text-[#64748b] uppercase tracking-wide whitespace-nowrap">Epics:</span>
-            <input
-              type="text"
-              placeholder="Filter epics…"
-              value={epicSearchQuery}
-              onChange={e => setEpicSearchQuery(e.target.value)}
-              className="border border-[#E2E8F0] rounded px-2 py-[0.2rem] text-sm text-[#1a202c] bg-white focus:outline-none focus:border-[#494BCB]"
-              style={{ width: '200px' }}
-            />
-            {epicSearchQuery && (
-              <button
-                onClick={() => setEpicSearchQuery('')}
-                className="text-[0.75rem] text-[#94a3b8] bg-transparent border-0 cursor-pointer p-0 hover:text-[#475569]"
-                title="Clear filter"
-              >✕ clear</button>
-            )}
+          <input
+            type="text"
+            placeholder="Filter epics…"
+            value={epicSearchQuery}
+            onChange={e => setEpicSearchQuery(e.target.value)}
+            className="border border-[#E2E8F0] rounded px-2 py-[0.2rem] text-sm text-[#1a202c] bg-white focus:outline-none focus:border-[#494BCB]"
+            style={{ width: '200px' }}
+          />
+          {epicSearchQuery && (
             <button
-              onClick={() => { updateViewSetting('showEpicFilter', false); setEpicSearchQuery(''); }}
+              onClick={() => setEpicSearchQuery('')}
               className="text-[0.75rem] text-[#94a3b8] bg-transparent border-0 cursor-pointer p-0 hover:text-[#475569]"
-              title="Hide filter"
-            >✕ hide</button>
-          </div>
-        )}
+              title="Clear filter"
+            >✕ clear</button>
+          )}
+        </div>
       </div>
       {viewSettings.showObjectivesFilter && showObjectiveFilter && (() => {
         const trimmed = objectiveSearchQuery.trim().toLowerCase();
