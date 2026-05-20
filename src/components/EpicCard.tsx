@@ -76,12 +76,14 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
   }, [clickedBarStateId]);
 
   const [cardCollapsed, setCardCollapsed] = useState(() => getEpicStateInfo(epic).type.toLowerCase() === 'done');
+  const [showPRs, setShowPRs] = useState(false);
+  const [showUserStoryBoard, setShowUserStoryBoard] = useState(false);
   const [storyPrs, setStoryPrs] = useState<Record<number, PullRequest[]>>({});
   const [prsLoading, setPrsLoading] = useState(false);
   const [prsLoaded, setPrsLoaded] = useState(false);
 
   useEffect(() => {
-    if (!viewSettings.showPullRequests || prsLoaded || !epic.stories || epic.stories.length === 0) return;
+    if (!showPRs || prsLoaded || !epic.stories || epic.stories.length === 0) return;
     const token = storage.getApiToken();
     if (!token) return;
     let cancelled = false;
@@ -107,7 +109,7 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
       incrementApiCalls('GET /api/stories/:id', successful);
     });
     return () => { cancelled = true; };
-  }, [viewSettings.showPullRequests, prsLoaded, epic.stories?.length, incrementApiCalls]);
+  }, [showPRs, prsLoaded, epic.stories?.length, incrementApiCalls]);
 
   if (epic.notFound) {
     return (
@@ -269,7 +271,7 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
 
       {/* Peek-icon row: toggles for the per-epic sections (global, affects all cards) */}
       <div className="mt-2 mb-1 flex flex-wrap items-center gap-2">
-        <span className="text-[0.8rem] font-semibold text-[#64748b]">Additional Views:</span>
+        <span className="text-[0.8rem] font-semibold text-[#64748b]">Global Additional Views:</span>
         <PeekButton
           icon={BarChartIcon}
           label="Ticket Status Breakdown"
@@ -305,19 +307,20 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
           onClick={() => updateViewSetting('showStoryTypeBreakdown', !viewSettings.showStoryTypeBreakdown)}
           hidden={!viewSettings.showStoryTypeBreakdown}
         />
+        <span className="text-[0.8rem] font-semibold text-[#64748b] ml-2">Local Additional Views:</span>
         <PeekButton
           icon={PullRequestIcon}
           label="Pull Requests"
-          tooltip={viewSettings.showPullRequests ? 'Hide Pull Requests' : 'Show Pull Requests'}
-          onClick={() => updateViewSetting('showPullRequests', !viewSettings.showPullRequests)}
-          hidden={!viewSettings.showPullRequests}
+          tooltip={showPRs ? 'Hide Pull Requests (this epic only)' : 'Show Pull Requests (this epic only)'}
+          onClick={() => setShowPRs(prev => !prev)}
+          hidden={!showPRs}
         />
         <PeekButton
           icon={KanbanIcon}
           label="User Story Board"
-          tooltip={viewSettings.showUserStoryBoard ? 'Hide User Story Board' : 'Show User Story Board'}
-          onClick={() => updateViewSetting('showUserStoryBoard', !viewSettings.showUserStoryBoard)}
-          hidden={!viewSettings.showUserStoryBoard}
+          tooltip={showUserStoryBoard ? 'Hide User Story Board (this epic only)' : 'Show User Story Board (this epic only)'}
+          onClick={() => setShowUserStoryBoard(prev => !prev)}
+          hidden={!showUserStoryBoard}
         />
       </div>
 
@@ -326,7 +329,8 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
           <div className="workflow-status-chart-container">
             {viewSettings.showTicketStatusBreakdown && (<>
             <h4>Ticket Status Breakdown</h4>
-            <div className="workflow-status-chart mt-2" style={{ position: 'relative' }}>
+            <div className="relative">
+            <div className="workflow-status-chart mt-2">
               {filteredStateIds.map(stateId => {
                 const count = workflowStateCounts[stateId] || 0;
                 const percentage = workflowTotal > 0 ? (count / workflowTotal) * 100 : 0;
@@ -356,6 +360,7 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
                   </div>
                 );
               })}
+            </div>
               {clickedBarStateId !== null && (
                 <div
                   onClick={(e) => e.stopPropagation()}
@@ -605,7 +610,7 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
       )}
 
       {/* Pull Requests */}
-      {viewSettings.showPullRequests && epic.stories && (
+      {showPRs && epic.stories && (
         <div className="pull-requests-section mt-3">
           <h4>Pull Requests</h4>
           <div className="border-t-2 border-slate-200 pt-3">
@@ -687,7 +692,7 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
       )}
 
       {/* User Story Board */}
-      {viewSettings.showUserStoryBoard && epic.stories && (
+      {showUserStoryBoard && epic.stories && (
         <div className="stories-section">
           <h4>User Story Board</h4>
           <div className="border-t-2 border-slate-200 pt-3">

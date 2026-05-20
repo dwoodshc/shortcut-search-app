@@ -121,10 +121,8 @@ export interface ViewSettings {
   showTicketStatusBreakdown: boolean;
   showStoryOwners: boolean;
   showTeamOpenTickets: boolean;
-  showUserStoryBoard: boolean;
   showWorkflowStatusPieChart: boolean;
   showStoryTypeBreakdown: boolean;
-  showPullRequests: boolean;
   showTopOfPageLink: boolean;
 }
 

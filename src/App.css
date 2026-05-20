@@ -317,7 +317,7 @@ textarea.input-field {
 /* .filter-checkbox-container, .filter-checkbox-label removed — not used */
 
 .epic-card {
-  scroll-margin-top: 150px; /* Clears the sticky header plus comfortable breathing room */
+  scroll-margin-top: 170px; /* Clears the sticky header (logo + title + team subtitle + actions row) plus comfortable breathing room */
   background: white;
   border-radius: 8px;
   padding: 1rem;
@@ -430,6 +430,11 @@ textarea.input-field {
 .epic-state-blocked {
   background-color: #fca5a5;
   color: #7f1d1d;
+}
+
+.epic-state-ready-for-release {
+  background-color: #bbf7d0;
+  color: #14532d;
 }
 
 .story-count {
@@ -1171,6 +1176,7 @@ textarea.input-field {
 
   .epic-card {
     padding: 0.75rem;
+    scroll-margin-top: 320px; /* Mobile/stacked header is taller */
   }
 
   .settings-icon {
