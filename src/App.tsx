@@ -491,7 +491,7 @@ function App(): React.JSX.Element {
               <li><strong>Ignored Users:</strong> Users excluded from assignment and ticket tables</li>
               <li><strong>Setup Wizard:</strong> 7-step setup: token, URL, workflow, teams, name, epic list</li>
               <li><strong>Configuration Management:</strong> Export / Import all settings as JSON</li>
-              <li><strong>View Settings:</strong> Show/hide card fields and table filters globally</li>
+              <li><strong>View Settings:</strong> Show/hide card fields, page link, and toolbar buttons</li>
               <li><strong>Load Stats Bar:</strong> Load time, API call breakdown, page size, and download</li>
               <li><strong>Themes:</strong> Normal, Dark Mode, Star Trek (LCARS), and Matrix</li>
             </ul>
@@ -657,6 +657,39 @@ function App(): React.JSX.Element {
                   className="w-4 h-4"
                 />
                 <span className="text-sm">Show User Story Board</span>
+              </label>
+            </div>
+            <div className="mb-6">
+              <h3 className="text-sm font-semibold text-[#374151] mb-3">Top of Page Link</h3>
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={viewSettings.showTopOfPageLink}
+                  onChange={(e) => updateViewSetting('showTopOfPageLink', e.target.checked)}
+                  className="w-4 h-4"
+                />
+                <span className="text-sm">Show ↑ Top of Page link on each epic card</span>
+              </label>
+            </div>
+            <div className="mb-6">
+              <h3 className="text-sm font-semibold text-[#374151] mb-3">Header Buttons</h3>
+              <label className="flex items-center gap-3 cursor-pointer mb-2">
+                <input
+                  type="checkbox"
+                  checked={viewSettings.showExpandAssignmentsButton}
+                  onChange={(e) => updateViewSetting('showExpandAssignmentsButton', e.target.checked)}
+                  className="w-4 h-4"
+                />
+                <span className="text-sm">Show Expand/Collapse Assignments button</span>
+              </label>
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={viewSettings.showExpandChartsButton}
+                  onChange={(e) => updateViewSetting('showExpandChartsButton', e.target.checked)}
+                  className="w-4 h-4"
+                />
+                <span className="text-sm">Show Expand/Collapse Charts button</span>
               </label>
             </div>
             <div className="modal-buttons">

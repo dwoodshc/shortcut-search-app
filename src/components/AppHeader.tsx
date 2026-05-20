@@ -21,6 +21,7 @@ export default function AppHeader(): React.JSX.Element {
     toggleAllCharts,
     handleOpenReadme,
     setSetupWizardStep,
+    viewSettings,
   } = useDashboard();
 
   const handleHeaderClick = (e: React.MouseEvent) => {
@@ -110,7 +111,7 @@ export default function AppHeader(): React.JSX.Element {
                   setModal('viewSettings', true);
                 }}
               >
-                View
+                View Settings
               </button>
               <button
                 className="settings-menu-item"
@@ -154,16 +155,18 @@ export default function AppHeader(): React.JSX.Element {
       </div>
       {epics.length > 0 && (
         <div className="header-actions-row">
-          <button
-            onClick={() => {
-              const allCollapsed = collapsedCharts['assignment-epic'] && collapsedCharts['assignment-member'] && collapsedCharts['assignment-ticket'];
-              setCollapsedCharts(prev => ({ ...prev, 'assignment-epic': !allCollapsed, 'assignment-member': !allCollapsed, 'assignment-ticket': !allCollapsed }));
-            }}
-            className={`header-action-btn${!(collapsedCharts['assignment-epic'] && collapsedCharts['assignment-member'] && collapsedCharts['assignment-ticket']) ? ' active' : ''}`}
-            title="Show or hide the Epic Owner Assignments, Team Member Epic Assignments, and Team Member Ticket Assignments tables"
-          >
-            {collapsedCharts['assignment-epic'] && collapsedCharts['assignment-member'] && collapsedCharts['assignment-ticket'] ? 'Expand Assignments' : 'Collapse Assignments'}
-          </button>
+          {viewSettings.showExpandAssignmentsButton && (
+            <button
+              onClick={() => {
+                const allCollapsed = collapsedCharts['assignment-epic'] && collapsedCharts['assignment-member'] && collapsedCharts['assignment-ticket'];
+                setCollapsedCharts(prev => ({ ...prev, 'assignment-epic': !allCollapsed, 'assignment-member': !allCollapsed, 'assignment-ticket': !allCollapsed }));
+              }}
+              className={`header-action-btn${!(collapsedCharts['assignment-epic'] && collapsedCharts['assignment-member'] && collapsedCharts['assignment-ticket']) ? ' active' : ''}`}
+              title="Show or hide the Epic Owner Assignments, Team Member Epic Assignments, and Team Member Ticket Assignments tables"
+            >
+              {collapsedCharts['assignment-epic'] && collapsedCharts['assignment-member'] && collapsedCharts['assignment-ticket'] ? 'Expand Assignments' : 'Collapse Assignments'}
+            </button>
+          )}
           <button
             onClick={() => setFilterIgnoredInTickets(prev => !prev)}
             className={`header-action-btn${!filterIgnoredInTickets ? ' active' : ''}`}
@@ -171,16 +174,18 @@ export default function AppHeader(): React.JSX.Element {
           >
             {filterIgnoredInTickets ? 'Show Ignored Users' : 'Hide Ignored Users'}
           </button>
-          <button
-            onClick={toggleAllCharts}
-            className={`header-action-btn${(() => { const keys = epics.filter(e => !e.notFound).flatMap(e => ['workflow-pie','type-pie'].map(t => `${e.id}-${t}`)); return !keys.every(k => collapsedCharts[k]); })() ? ' active' : ''}`}
-            title="Show or hide the Workflow Status Pie Chart and Story Type Breakdown across all epics"
-          >
-            {(() => {
-              const allChartKeys = epics.filter(e => !e.notFound).flatMap(e => ['workflow-pie','type-pie'].map(t => `${e.id}-${t}`));
-              return allChartKeys.every(key => collapsedCharts[key]) ? 'Expand Charts' : 'Collapse Charts';
-            })()}
-          </button>
+          {viewSettings.showExpandChartsButton && (
+            <button
+              onClick={toggleAllCharts}
+              className={`header-action-btn${(() => { const keys = epics.filter(e => !e.notFound).flatMap(e => ['workflow-pie','type-pie'].map(t => `${e.id}-${t}`)); return !keys.every(k => collapsedCharts[k]); })() ? ' active' : ''}`}
+              title="Show or hide the Workflow Status Pie Chart and Story Type Breakdown across all epics"
+            >
+              {(() => {
+                const allChartKeys = epics.filter(e => !e.notFound).flatMap(e => ['workflow-pie','type-pie'].map(t => `${e.id}-${t}`));
+                return allChartKeys.every(key => collapsedCharts[key]) ? 'Expand Charts' : 'Collapse Charts';
+              })()}
+            </button>
+          )}
           {selectedTeamIds.length > 0 && (
             <button
               onClick={() => setFilterByTeam(prev => !prev)}

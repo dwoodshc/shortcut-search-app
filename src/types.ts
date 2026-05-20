@@ -116,6 +116,9 @@ export interface ViewSettings {
   showEpicOwners: boolean;
   showEpicStoryCount: boolean;
   showUserStoryBoard: boolean;
+  showTopOfPageLink: boolean;
+  showExpandAssignmentsButton: boolean;
+  showExpandChartsButton: boolean;
 }
 
 export interface ModalState {

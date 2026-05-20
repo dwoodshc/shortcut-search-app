@@ -684,11 +684,13 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
 
       </>)}
 
-      <div className="text-left mt-2">
-        <a href="#top" className="text-[#494BCB] text-[0.8rem] no-underline font-medium">
-          ↑ Top of Page
-        </a>
-      </div>
+      {viewSettings.showTopOfPageLink && (
+        <div className="text-left mt-2">
+          <a href="#top" className="text-[#494BCB] text-[0.8rem] no-underline font-medium">
+            ↑ Top of Page
+          </a>
+        </div>
+      )}
     </div>
   );
 }

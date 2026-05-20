@@ -90,7 +90,7 @@ Per epic, three visualizations are available. Each has a **▶/▼ toggle** in i
 - Workflow status breakdown showing story distribution across workflow states
 - Visual bars for: Backlog, Ready for Development, In Development, In Review, Complete
 - Story counts displayed above each column
-- Clicking any bar except **Complete** opens a scrollable popover listing all tickets in that state (name link, owner, age); click the same bar or outside to dismiss
+- Clicking any bar (including **Complete**) opens a scrollable popover listing all tickets in that state (name link, owner, age); click the same bar or outside to dismiss
 - Always visible (no collapse toggle)
 
 #### Workflow Status Pie Chart
@@ -144,9 +144,9 @@ Three icon buttons in the top-right of the header (all with hover tooltips):
 
 ### Toolbar Controls
 Displayed in the header when epics are loaded:
-- **Expand Assignments / Collapse Assignments** — Toggle all three assignment tables
+- **Expand Assignments / Collapse Assignments** — Toggle all three assignment tables (hidden by default; enable under Settings → View Settings)
 - **Show Ignored Users / Hide Ignored Users** — Toggle visibility of ignored users across assignment tables and Team Open Tickets
-- **Expand Charts / Collapse Charts** — Toggle the Workflow Status Pie Chart and Story Type Breakdown across all epics
+- **Expand Charts / Collapse Charts** — Toggle the Workflow Status Pie Chart and Story Type Breakdown across all epics (hidden by default; enable under Settings → View Settings)
 - **Show [Team Names] Only / Show All Teams** — Toggle filtering tickets to only the selected teams (shown when one or more teams are configured). The button label and header subtitle both reflect the currently selected team names (e.g. **Show Engineering & Design Only**)
 
 ### Load Stats Bar
@@ -160,7 +160,7 @@ Appears below all content after a successful data load. Shows five stats in a li
 ### Settings Menu
 - **Setup Wizard** — Re-run the setup wizard
 - **README.md** — View this documentation in-app
-- **View** — Toggle visibility of per-epic card fields (Objective, Owners, Story Count, User Story Board), Epic Status table filters (Filter Epics, Objectives filter), and Done epic visibility; preferences saved to localStorage
+- **View Settings** — Toggle visibility of per-epic card fields (Objective, Owners, Story Count, User Story Board), the per-card "↑ Top of Page" link, Epic Status table filters (Filter Epics, Objectives filter), Done epic visibility, and the header **Expand Assignments** / **Expand Charts** buttons; preferences saved to localStorage
 - **Theme** — Open the Theme Selector to choose a display theme (see below); preference is saved to localStorage
 - **Export/Import** — Backup and restore configuration as JSON
 - **Wipe Settings** — Clear all localStorage data to start fresh
