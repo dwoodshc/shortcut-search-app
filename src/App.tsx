@@ -326,7 +326,9 @@ function App(): React.JSX.Element {
     for (const epic of epics) {
       if (epic.notFound) continue;
       if (trimmed && !epic.name.toLowerCase().includes(trimmed)) continue;
-      if (!viewSettings.showDoneEpics && getEpicStateInfo(epic).type.toLowerCase() === 'done') continue;
+      const info = getEpicStateInfo(epic);
+      if (viewSettings.showBlockedOnly && info.name.toLowerCase().trim() !== 'blocked') continue;
+      if (!viewSettings.showDoneEpics && info.type.toLowerCase() === 'done') continue;
       if (deselectedObjectiveIds.size > 0) {
         const objIds = epic.objective_ids || [];
         if (objIds.length === 0) {
@@ -338,7 +340,7 @@ function App(): React.JSX.Element {
       ids.add(epic.id);
     }
     return ids;
-  }, [epics, epicSearchQuery, deselectedObjectiveIds, viewSettings.showDoneEpics, getEpicStateInfo]);
+  }, [epics, epicSearchQuery, deselectedObjectiveIds, viewSettings.showDoneEpics, viewSettings.showBlockedOnly, getEpicStateInfo]);
 
   const allDisplayStories = useMemo(() => {
     const result: Story[] = [];

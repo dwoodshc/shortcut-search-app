@@ -111,6 +111,7 @@ export interface EpicRef {
 export interface ViewSettings {
   showObjectivesFilter: boolean;
   showDoneEpics: boolean;
+  showBlockedOnly: boolean;
   showEpicObjective: boolean;
   showEpicOwners: boolean;
   showEpicStoryCount: boolean;

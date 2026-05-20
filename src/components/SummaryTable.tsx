@@ -8,7 +8,7 @@
 import React, { useState, useEffect } from 'react';
 import { useDashboard } from '../context/DashboardContext';
 import { Epic, Story, ViewSettings } from '../types';
-import { ResetIcon, TargetActiveIcon, CheckCircleIcon } from './icons';
+import { ResetIcon, TargetActiveIcon, CheckCircleIcon, BlockedIcon } from './icons';
 import { COMPLETE_STATE_NAMES, daysAgo, formatDaysAgo } from '../utils';
 import SortIcon from './SortIcon';
 import PeekButton from './PeekButton';
@@ -402,10 +402,33 @@ function EpicStatusTable(): React.JSX.Element | null {
             />
           )}
           <PeekButton
+            icon={BlockedIcon}
+            label={viewSettings.showBlockedOnly ? 'Hide Blocked' : 'Show Blocked'}
+            tooltip={viewSettings.showBlockedOnly ? 'Show all epics' : 'Show only blocked epics'}
+            onClick={() => {
+              const next = !viewSettings.showBlockedOnly;
+              setViewSettings({
+                ...viewSettings,
+                showBlockedOnly: next,
+                // Mutually exclusive with "Hide Done": turning Show Blocked on restores Done visibility
+                showDoneEpics: next ? true : viewSettings.showDoneEpics,
+              });
+            }}
+            activeColor={viewSettings.showBlockedOnly ? '#dc2626' : undefined}
+          />
+          <PeekButton
             icon={CheckCircleIcon}
             label={viewSettings.showDoneEpics ? 'Hide Done' : 'Show Done'}
             tooltip={viewSettings.showDoneEpics ? 'Hide Done epics' : 'Show Done epics'}
-            onClick={() => updateViewSetting('showDoneEpics', !viewSettings.showDoneEpics)}
+            onClick={() => {
+              const nextShowDone = !viewSettings.showDoneEpics;
+              setViewSettings({
+                ...viewSettings,
+                showDoneEpics: nextShowDone,
+                // Mutually exclusive with "Show Blocked": enabling Hide Done disables Show Blocked
+                showBlockedOnly: !nextShowDone ? false : viewSettings.showBlockedOnly,
+              });
+            }}
             activeColor={viewSettings.showDoneEpics ? undefined : '#16a34a'}
           />
           <input
@@ -503,7 +526,7 @@ function EpicStatusTable(): React.JSX.Element | null {
         </div>
         );
       })()}
-      {epicSearchQuery.trim() || deselectedObjectiveIds.size > 0 ? (
+      {epicSearchQuery.trim() || deselectedObjectiveIds.size > 0 || !viewSettings.showDoneEpics || viewSettings.showBlockedOnly ? (
         <table className={tableClass} style={{ borderCollapse: 'separate', borderSpacing: 0, width: '100%' }}>
           <thead>{theadRow}</thead>
           <tbody>
@@ -525,6 +548,24 @@ function EpicStatusTable(): React.JSX.Element | null {
                     ? <span className="ml-3 text-[#3b82f6]">Objectives: <span className="italic">{selectedNames.join(', ')}</span></span>
                     : null;
                 })()}
+                {viewSettings.showBlockedOnly && (
+                  <span className="ml-3 text-[#3b82f6]">Showing <span className="italic">Blocked</span> epics only</span>
+                )}
+                {!viewSettings.showDoneEpics && (
+                  <span className="ml-3 text-[#3b82f6]">Hiding <span className="italic">Done</span> epics</span>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEpicSearchQuery('');
+                    setDeselectedObjectiveIds(new Set());
+                    setViewSettings({ ...viewSettings, showDoneEpics: true, showBlockedOnly: false });
+                  }}
+                  className="ml-3 text-[#1e40af] underline decoration-dotted bg-transparent border-0 cursor-pointer p-0 font-semibold"
+                  title="Clear all filters and show all epics"
+                >
+                  ✕ Clear all filters
+                </button>
               </td>
             </tr>
           </tbody>
