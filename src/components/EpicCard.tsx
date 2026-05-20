@@ -56,7 +56,6 @@ interface TypeSegment {
 export default function EpicCard({ epic }: Props): React.JSX.Element {
   const {
     members, objectives, workflowConfig, filteredStateIds,
-    collapsedCharts, toggleChart,
     generateShortcutUrl, shortcutWebUrl,
     getDisplayStories, getEpicStateInfo, getEpicStateClass,
     selectedTeamIds, selectedTeamLabel, teamMemberIds, teamNameMap, filterByTeam,
@@ -195,7 +194,14 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
       unassignedCount++;
     }
   });
-  const sortedOwners = Object.entries(ownerCounts).sort((a, b) => b[1] - a[1]);
+  const sortedOwners = (() => {
+    const sort = sortState.storyOwners;
+    const dir = sort.dir === 'asc' ? 1 : -1;
+    const arr = Object.entries(ownerCounts);
+    if (sort.col === 'owner') arr.sort((a, b) => dir * a[0].localeCompare(b[0]));
+    else arr.sort((a, b) => dir * (a[1] - b[1]));
+    return arr;
+  })();
 
   // --- Team open tickets table ---
   const nameList = (epic.owner_ids || [])
@@ -215,7 +221,14 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
       });
     }
   });
-  const sortedNames = Object.entries(nameCounts).sort((a, b) => b[1] - a[1]);
+  const sortedNames = (() => {
+    const sort = sortState.teamOpenTickets;
+    const dir = sort.dir === 'asc' ? 1 : -1;
+    const arr = Object.entries(nameCounts);
+    if (sort.col === 'owner') arr.sort((a, b) => dir * a[0].localeCompare(b[0]));
+    else arr.sort((a, b) => dir * (a[1] - b[1]));
+    return arr;
+  })();
   const teamConfigName = selectedTeamIds.length > 0 ? (filterByTeam ? selectedTeamLabel : 'All Teams') : null;
 
   return (
@@ -526,23 +539,23 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
               <h4>Story Owners</h4>
               {sortedOwners.length > 0 || unassignedCount > 0 ? (
                 <>
-                  <table className="mt-2">
-                    <thead>
+                  <table className="w-full mt-2 bg-white rounded-lg shadow-[0_2px_4px_rgba(0,0,0,0.08)] border border-[#F0F0F7]" style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
+                    <thead className="bg-[#494BCB] text-white">
                       <tr>
-                        <th>Owner</th>
-                        <th>Count</th>
+                        <th onClick={() => toggleSortState('storyOwners', 'owner')} className="cursor-pointer select-none px-3 py-2 text-left font-semibold text-sm rounded-tl-lg">Owner<SortIcon sort={sortState.storyOwners} col="owner" /></th>
+                        <th onClick={() => toggleSortState('storyOwners', 'count')} className="cursor-pointer select-none px-3 py-2 text-right font-semibold text-sm rounded-tr-lg">Count<SortIcon sort={sortState.storyOwners} col="count" isNumeric /></th>
                       </tr>
                     </thead>
                     <tbody>
                       {sortedOwners.map(([owner, count]) => (
                         <tr key={owner}>
-                          <td>{owner}</td>
-                          <td>{count}</td>
+                          <td className="px-3 py-2 text-sm border-b border-[#F0F0F7]">{owner}</td>
+                          <td className="px-3 py-2 text-sm text-right font-semibold text-[#494BCB] border-b border-[#F0F0F7]">{count}</td>
                         </tr>
                       ))}
                       <tr>
-                        <td>Unassigned</td>
-                        <td>{unassignedCount}</td>
+                        <td className="px-3 py-2 text-sm">Unassigned</td>
+                        <td className="px-3 py-2 text-sm text-right font-semibold text-[#494BCB]">{unassignedCount}</td>
                       </tr>
                     </tbody>
                   </table>
@@ -564,18 +577,18 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
                 <p className="text-[#718096] text-sm italic">No epic owners assigned</p>
               ) : (
                 <>
-                  <table className="mt-2">
-                    <thead>
+                  <table className="w-full mt-2 bg-white rounded-lg shadow-[0_2px_4px_rgba(0,0,0,0.08)] border border-[#F0F0F7]" style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
+                    <thead className="bg-[#494BCB] text-white">
                       <tr>
-                        <th>Owner</th>
-                        <th>Count</th>
+                        <th onClick={() => toggleSortState('teamOpenTickets', 'owner')} className="cursor-pointer select-none px-3 py-2 text-left font-semibold text-sm rounded-tl-lg">Owner<SortIcon sort={sortState.teamOpenTickets} col="owner" /></th>
+                        <th onClick={() => toggleSortState('teamOpenTickets', 'count')} className="cursor-pointer select-none px-3 py-2 text-right font-semibold text-sm rounded-tr-lg">Count<SortIcon sort={sortState.teamOpenTickets} col="count" isNumeric /></th>
                       </tr>
                     </thead>
                     <tbody>
                       {sortedNames.map(([name, count]) => (
                         <tr key={name} className={count === 0 ? 'zero-count-row' : ''}>
-                          <td>{name}</td>
-                          <td>{count}</td>
+                          <td className="px-3 py-2 text-sm border-b border-[#F0F0F7]">{name}</td>
+                          <td className="px-3 py-2 text-sm text-right font-semibold text-[#494BCB] border-b border-[#F0F0F7]">{count}</td>
                         </tr>
                       ))}
                     </tbody>

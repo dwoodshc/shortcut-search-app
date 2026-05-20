@@ -13,12 +13,11 @@ import { Epic, EpicState, LoadProgress, LoadStats, Objective } from '../types';
 interface UseEpicsDataParams {
   epicNames: string[];
   loadSelectedWorkflow: () => void;
-  setCollapsedCharts: Dispatch<SetStateAction<Record<string, boolean>>>;
   onRateLimit: () => void;
   setFilteredEpicNames: Dispatch<SetStateAction<string[]>>;
 }
 
-export function useEpicsData({ epicNames, loadSelectedWorkflow, setCollapsedCharts, onRateLimit, setFilteredEpicNames }: UseEpicsDataParams) {
+export function useEpicsData({ epicNames, loadSelectedWorkflow, onRateLimit, setFilteredEpicNames }: UseEpicsDataParams) {
   const [epics, setEpics] = useState<Epic[]>([]);
   const [members, setMembers] = useState<Record<string, string>>(() => storage.getMembersCache());
   const membersRef = useRef<Record<string, string>>(members);
@@ -305,7 +304,7 @@ export function useEpicsData({ epicNames, loadSelectedWorkflow, setCollapsedChar
       setLoading(false);
       abortControllerRef.current = null;
     }
-  }, [epicNames, loadSelectedWorkflow, setCollapsedCharts, setFilteredEpicNames, handleApiError]);
+  }, [epicNames, loadSelectedWorkflow, setFilteredEpicNames, handleApiError]);
 
   const incrementApiCalls = useCallback((endpoint: string, count: number) => {
     if (count <= 0) return;

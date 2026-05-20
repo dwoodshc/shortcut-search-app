@@ -58,7 +58,7 @@ export function useWorkflowConfig() {
           }));
         }
       }
-    } catch (err) {}
+    } catch (err) { console.warn('Failed to load workflow config from storage:', err); }
   }, []);
 
   const handleSelectWorkflow = useCallback((workflow: Workflow) => {
@@ -79,7 +79,7 @@ export function useWorkflowConfig() {
         stateOrder,
         states: stateNames,
       }));
-    } catch (err) {}
+    } catch (err) { console.warn('Failed to persist selected workflow:', err); }
   }, [shortcutWebUrl]);
 
   const filteredStateIds = useMemo(() =>

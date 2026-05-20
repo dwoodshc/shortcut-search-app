@@ -137,7 +137,6 @@ function App(): React.JSX.Element {
     filterByTeam, setFilterByTeam,
     selectedTeams, setSelectedTeams, selectedTeamIds, selectedTeamLabel,
     sortState, toggleSortState, resetSortState,
-    collapsedCharts, setCollapsedCharts, toggleChart,
     epicSearchQuery, setEpicSearchQuery,
     deselectedObjectiveIds, setDeselectedObjectiveIds,
     getDisplayStories,
@@ -166,7 +165,6 @@ function App(): React.JSX.Element {
   } = useEpicsData({
     epicNames: filteredEpicNames,
     loadSelectedWorkflow,
-    setCollapsedCharts,
     onRateLimit,
     setFilteredEpicNames,
   });
@@ -201,28 +199,6 @@ function App(): React.JSX.Element {
     }
     return true;
   }, [shortcutWebUrl, setShortcutWebUrl, workflowConfig.selectedId, setError]);
-
-  // Toggles all per-epic peek-controlled sections in lockstep
-  const toggleAllCharts = useCallback(() => {
-    const allOn = viewSettings.showTicketStatusBreakdown
-      && viewSettings.showStoryOwners
-      && viewSettings.showTeamOpenTickets
-      && viewSettings.showWorkflowStatusPieChart
-      && viewSettings.showStoryTypeBreakdown
-      && viewSettings.showPullRequests
-      && viewSettings.showUserStoryBoard;
-    const next = !allOn;
-    setViewSettings({
-      ...viewSettings,
-      showTicketStatusBreakdown: next,
-      showStoryOwners: next,
-      showTeamOpenTickets: next,
-      showWorkflowStatusPieChart: next,
-      showStoryTypeBreakdown: next,
-      showPullRequests: next,
-      showUserStoryBoard: next,
-    });
-  }, [viewSettings, setViewSettings]);
 
   const wipeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => { return () => { if (wipeTimerRef.current) clearTimeout(wipeTimerRef.current); }; }, []);
@@ -262,7 +238,7 @@ function App(): React.JSX.Element {
               if (migrationData.workflowConfig && !storage.getWorkflowConfig()) storage.setWorkflowConfig(migrationData.workflowConfig);
               if (migrationData.epicsConfig && !storage.getEpicsConfig()) storage.setEpicsConfig(migrationData.epicsConfig);
             }
-          } catch (migrationErr) {}
+          } catch (migrationErr) { console.warn('Migration fetch failed:', migrationErr); }
           localStorage.setItem(STORAGE_KEYS.MIGRATION_COMPLETED, 'true');
         }
 
@@ -300,7 +276,7 @@ function App(): React.JSX.Element {
       if (epicsConfig && epicsConfig.epics) {
         setFilteredEpicNames(epicsConfig.epics.map(e => e.name));
       }
-    } catch (err) {}
+    } catch (err) { console.warn('Failed to load epics config after wizard close:', err); }
     loadSelectedWorkflow();
   }, [modals.setupWizard, loadSelectedWorkflow, setFilteredEpicNames]);
 
@@ -323,11 +299,15 @@ function App(): React.JSX.Element {
   const visibleEpicIds = useMemo(() => {
     const trimmed = epicSearchQuery.trim().toLowerCase();
     const ids = new Set<number | string>();
+    // "Blocked" lives in the workspace's custom epic-workflow names, not in Shortcut's
+    // coarse epic.state grouping. If the epic-workflow cache hasn't populated yet,
+    // skip the blocked filter rather than hiding every epic.
+    const hasEpicStateInfo = Object.keys(epicStates).length > 0;
     for (const epic of epics) {
       if (epic.notFound) continue;
       if (trimmed && !epic.name.toLowerCase().includes(trimmed)) continue;
       const info = getEpicStateInfo(epic);
-      if (viewSettings.showBlockedOnly && info.name.toLowerCase().trim() !== 'blocked') continue;
+      if (viewSettings.showBlockedOnly && hasEpicStateInfo && info.name.toLowerCase().trim() !== 'blocked') continue;
       if (!viewSettings.showDoneEpics && info.type.toLowerCase() === 'done') continue;
       if (deselectedObjectiveIds.size > 0) {
         const objIds = epic.objective_ids || [];
@@ -340,7 +320,7 @@ function App(): React.JSX.Element {
       ids.add(epic.id);
     }
     return ids;
-  }, [epics, epicSearchQuery, deselectedObjectiveIds, viewSettings.showDoneEpics, viewSettings.showBlockedOnly, getEpicStateInfo]);
+  }, [epics, epicStates, epicSearchQuery, deselectedObjectiveIds, viewSettings.showDoneEpics, viewSettings.showBlockedOnly, getEpicStateInfo]);
 
   const allDisplayStories = useMemo(() => {
     const result: Story[] = [];
@@ -390,7 +370,6 @@ function App(): React.JSX.Element {
     // UI state
     modals, setModal,
     sortState, toggleSortState, resetSortState,
-    collapsedCharts, setCollapsedCharts, toggleChart,
     filterByTeam, setFilterByTeam,
     selectedTeams, setSelectedTeams, selectedTeamIds, selectedTeamLabel, teamNameMap,
     shortcutWebUrl, setShortcutWebUrl,
@@ -404,13 +383,13 @@ function App(): React.JSX.Element {
     epicTeamData, memberEpicMap, allDisplayStories,
     searchEpics,
     handleSaveShortcutUrl, handleSelectWorkflow,
-    toggleAllCharts, handleOpenReadme,
+    handleOpenReadme,
     displayTheme: theme, selectTheme,
     viewSettings, setViewSettings,
     epicSearchQuery, setEpicSearchQuery,
     deselectedObjectiveIds, setDeselectedObjectiveIds,
     visibleEpicIds,
-  }), [epics, objectives, members, epicStates, teamMemberIds, loadStats, incrementApiCalls, workflowConfig, setWorkflowField, modals, setModal, sortState, toggleSortState, resetSortState, collapsedCharts, setCollapsedCharts, toggleChart, filterByTeam, setFilterByTeam, selectedTeams, setSelectedTeams, selectedTeamIds, selectedTeamLabel, teamNameMap, shortcutWebUrl, setShortcutWebUrl, error, setError, loading, successMessage, filteredEpicNames, setFilteredEpicNames, setupWizardStep, setSetupWizardStep, getDisplayStories, generateShortcutUrl, getEpicStateInfo, getEpicStateClass, filteredStateIds, epicTeamData, memberEpicMap, allDisplayStories, searchEpics, handleSaveShortcutUrl, handleSelectWorkflow, toggleAllCharts, handleOpenReadme, theme, selectTheme, viewSettings, setViewSettings, epicSearchQuery, setEpicSearchQuery, deselectedObjectiveIds, setDeselectedObjectiveIds, visibleEpicIds]);
+  }), [epics, objectives, members, epicStates, teamMemberIds, loadStats, incrementApiCalls, workflowConfig, setWorkflowField, modals, setModal, sortState, toggleSortState, resetSortState, filterByTeam, setFilterByTeam, selectedTeams, setSelectedTeams, selectedTeamIds, selectedTeamLabel, teamNameMap, shortcutWebUrl, setShortcutWebUrl, error, setError, loading, successMessage, filteredEpicNames, setFilteredEpicNames, setupWizardStep, setSetupWizardStep, getDisplayStories, generateShortcutUrl, getEpicStateInfo, getEpicStateClass, filteredStateIds, epicTeamData, memberEpicMap, allDisplayStories, searchEpics, handleSaveShortcutUrl, handleSelectWorkflow, handleOpenReadme, theme, selectTheme, viewSettings, setViewSettings, epicSearchQuery, setEpicSearchQuery, deselectedObjectiveIds, setDeselectedObjectiveIds, visibleEpicIds]);
 
   return (
     <DashboardContext.Provider value={dashboardContext}>
@@ -481,7 +460,7 @@ function App(): React.JSX.Element {
             <ul>
               <li><strong>Story Summary:</strong> Overall story counts across all epics by workflow state</li>
               <li><strong>Epic Status Table:</strong> Progress bars, Last Changed; search and objective filters</li>
-              <li><strong>Global Filters:</strong> Search/objective/Done filters apply across all sections</li>
+              <li><strong>Global Filters:</strong> Search/Done/Blocked filters apply across all sections</li>
               <li><strong>Unwatched Tickets:</strong> Open tickets in your selected teams you are not watching</li>
               <li><strong>Epic Owner Assignments:</strong> Maps each epic to its assigned team members</li>
               <li><strong>Team Member Epic Assignments:</strong> Inverted view — each member and their epics</li>
@@ -491,8 +470,8 @@ function App(): React.JSX.Element {
               <li><strong>Ticket Status Breakdown:</strong> 3D column chart; click a bar to view tickets in that state</li>
               <li><strong>Workflow Status Pie Chart:</strong> Stories by workflow state with clickable Shortcut links</li>
               <li><strong>Story Type Breakdown:</strong> Feature / Bug / Chore pie chart per epic</li>
-              <li><strong>Story Owners Table:</strong> Per-epic story owner counts including unassigned</li>
-              <li><strong>Team Open Tickets:</strong> Open ticket counts per team member, excluding completed</li>
+              <li><strong>Story Owners Table:</strong> Sortable per-epic owner counts, plus unassigned</li>
+              <li><strong>Team Open Tickets:</strong> Sortable open counts per team member, non-complete</li>
               <li><strong>Pull Requests:</strong> Sortable table linking each story to its GitHub PRs</li>
               <li><strong>User Story Board:</strong> Kanban board (Backlog → Complete) per epic</li>
               <li><strong>Setup Wizard:</strong> 6-step setup: token, URL, workflow, teams, name, epic list</li>

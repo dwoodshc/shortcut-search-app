@@ -16,10 +16,8 @@ export default function AppHeader(): React.JSX.Element {
     filterByTeam, setFilterByTeam,
     selectedTeamIds, selectedTeamLabel,
     searchEpics,
-    toggleAllCharts,
     handleOpenReadme,
     setSetupWizardStep,
-    viewSettings, setViewSettings,
   } = useDashboard();
 
   const handleHeaderClick = (e: React.MouseEvent) => {
@@ -151,59 +149,17 @@ export default function AppHeader(): React.JSX.Element {
           )}
         </div>
       </div>
-      {epics.length > 0 && (
+      {epics.length > 0 && selectedTeamIds.length > 0 && (
         <div className="header-actions-row">
-          {viewSettings.showExpandAssignmentsButton && (() => {
-            const allOn = viewSettings.showEpicOwnerAssignments
-              && viewSettings.showTeamMemberEpicAssignments
-              && viewSettings.showTeamMemberTicketAssignments;
-            return (
-              <button
-                onClick={() => {
-                  const next = !allOn;
-                  setViewSettings({
-                    ...viewSettings,
-                    showEpicOwnerAssignments: next,
-                    showTeamMemberEpicAssignments: next,
-                    showTeamMemberTicketAssignments: next,
-                  });
-                }}
-                className={`header-action-btn${allOn ? ' active' : ''}`}
-                title="Show or hide the Epic Owner Assignments, Team Member Epic Assignments, and Team Member Ticket Assignments tables"
-              >
-                {allOn ? 'Hide Assignments' : 'Show Assignments'}
-              </button>
-            );
-          })()}
-          {viewSettings.showExpandChartsButton && (() => {
-            const allOn = viewSettings.showTicketStatusBreakdown
-              && viewSettings.showStoryOwners
-              && viewSettings.showTeamOpenTickets
-              && viewSettings.showWorkflowStatusPieChart
-              && viewSettings.showStoryTypeBreakdown
-              && viewSettings.showPullRequests
-              && viewSettings.showUserStoryBoard;
-            return (
-              <button
-                onClick={toggleAllCharts}
-                className={`header-action-btn${allOn ? ' active' : ''}`}
-                title="Show or hide the Workflow Status Pie Chart, Story Type Breakdown, Pull Requests, and User Story Board across all epics"
-              >
-                {allOn ? 'Hide Charts' : 'Show Charts'}
-              </button>
-            );
-          })()}
-          {selectedTeamIds.length > 0 && (
-            <button
-              onClick={() => setFilterByTeam(prev => !prev)}
-              className={`header-action-btn${filterByTeam ? ' active' : ''}`}
-              title={filterByTeam
-                ? `Currently showing only ${selectedTeamLabel || 'team'} tickets — click to show all tickets`
-                : `Currently showing all tickets — click to show only tickets assigned to ${selectedTeamLabel || 'team'}`}
-            >
-              {filterByTeam ? 'Show All Teams' : `Show ${selectedTeamLabel || 'Team'} Only`}
-            </button>
-          )}
+          <button
+            onClick={() => setFilterByTeam(prev => !prev)}
+            className={`header-action-btn${filterByTeam ? ' active' : ''}`}
+            title={filterByTeam
+              ? `Currently showing only ${selectedTeamLabel || 'team'} tickets — click to show all tickets`
+              : `Currently showing all tickets — click to show only tickets assigned to ${selectedTeamLabel || 'team'}`}
+          >
+            {filterByTeam ? 'Show All Teams' : `Show ${selectedTeamLabel || 'Team'} Only`}
+          </button>
         </div>
       )}
     </header>

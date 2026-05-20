@@ -126,8 +126,6 @@ export interface ViewSettings {
   showStoryTypeBreakdown: boolean;
   showPullRequests: boolean;
   showTopOfPageLink: boolean;
-  showExpandAssignmentsButton: boolean;
-  showExpandChartsButton: boolean;
 }
 
 export interface ModalState {
@@ -157,6 +155,8 @@ export interface SortState {
   memberTicket: SortEntry;
   storyDetail: SortEntry;
   epicPrs: SortEntry;
+  storyOwners: SortEntry;
+  teamOpenTickets: SortEntry;
 }
 
 export type SortStateKey = keyof SortState;
@@ -201,9 +201,6 @@ export interface DashboardContextValue {
   sortState: SortState;
   toggleSortState: (key: SortStateKey, col: string) => void;
   resetSortState: (key: SortStateKey) => void;
-  collapsedCharts: Record<string, boolean>;
-  setCollapsedCharts: Dispatch<SetStateAction<Record<string, boolean>>>;
-  toggleChart: (epicId: number | string, chartType: string) => void;
   filterByTeam: boolean;
   setFilterByTeam: Dispatch<SetStateAction<boolean>>;
   selectedTeams: TeamConfig[];
@@ -238,7 +235,6 @@ export interface DashboardContextValue {
   searchEpics: () => void;
   handleSaveShortcutUrl: () => boolean | void;
   handleSelectWorkflow: (workflow: Workflow) => void;
-  toggleAllCharts: () => void;
   handleOpenReadme: () => Promise<void>;
   displayTheme: 'normal' | 'dark' | 'star-trek' | 'matrix';
   selectTheme: (theme: 'normal' | 'dark' | 'star-trek' | 'matrix') => void;

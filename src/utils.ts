@@ -86,7 +86,7 @@ export const storage = {
       try {
         const parsed = JSON.parse(data);
         if (!('memberIds' in parsed)) cache = parsed;
-      } catch {}
+      } catch (err) { console.warn('Failed to parse team members cache; resetting:', err); }
     }
     cache[teamId] = memberIds;
     localStorage.setItem(STORAGE_KEYS.TEAM_MEMBERS_CACHE, JSON.stringify(cache));
@@ -113,7 +113,7 @@ export const storage = {
 
   getViewSettings: (): ViewSettings => {
     const data = localStorage.getItem(STORAGE_KEYS.VIEW_SETTINGS);
-    const defaults: ViewSettings = { showObjectivesFilter: true, showDoneEpics: true, showBlockedOnly: false, showEpicObjective: true, showEpicOwners: true, showEpicStoryCount: true, showEpicOwnerAssignments: false, showTeamMemberEpicAssignments: false, showTeamMemberTicketAssignments: false, showTicketStatusBreakdown: true, showStoryOwners: true, showTeamOpenTickets: true, showUserStoryBoard: true, showWorkflowStatusPieChart: true, showStoryTypeBreakdown: true, showPullRequests: true, showTopOfPageLink: false, showExpandAssignmentsButton: false, showExpandChartsButton: false };
+    const defaults: ViewSettings = { showObjectivesFilter: true, showDoneEpics: true, showBlockedOnly: false, showEpicObjective: true, showEpicOwners: true, showEpicStoryCount: true, showEpicOwnerAssignments: false, showTeamMemberEpicAssignments: false, showTeamMemberTicketAssignments: false, showTicketStatusBreakdown: true, showStoryOwners: true, showTeamOpenTickets: true, showUserStoryBoard: true, showWorkflowStatusPieChart: true, showStoryTypeBreakdown: true, showPullRequests: true, showTopOfPageLink: false };
     if (!data) return defaults;
     try { return { ...defaults, ...JSON.parse(data) }; } catch { return defaults; }
   },

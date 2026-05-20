@@ -67,8 +67,7 @@ export default function UnwatchedTickets(): React.JSX.Element | null {
   const { epics, members, selectedTeamIds, workflowConfig, getEpicStateInfo, visibleEpicIds, incrementApiCalls } = useDashboard();
   const [myMemberId, setMyMemberId] = useState<string | null>(null);
   const [nameNotFound, setNameNotFound] = useState(false);
-
-  const myName = storage.getMyName();
+  const [myName] = useState<string>(() => storage.getMyName());
 
   useEffect(() => {
     if (!myName || myMemberId) return;

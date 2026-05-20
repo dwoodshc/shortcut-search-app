@@ -27,10 +27,12 @@ Two tables appear at the top of the dashboard, above the epic cards.
 - **Last Changed** column — days since any story was last updated (respects the active team filter); clicking the value opens a popover listing the 5 most recently changed stories with columns: Ticket, Owner, Status, Changed
 - Restore icon to return epics to their configured list order
 - Epic name links scroll to the epic's detail section on the page
-- Two peek toggles (**Filter Objectives**, **Hide/Show Done**) and a **Filter Epics** input sit on the "Epic Status" heading row; the input is always visible and filters the table in real time (collapses to a single-column view with a result count row when active); the peek toggles use a strikethrough label when the corresponding filter UI is hidden, and turn red/green when actively filtering
+- Three peek toggles (**Filter Objectives**, **Show/Hide Blocked**, **Hide/Show Done**) and a **Filter Epics** input sit on the "Epic Status" heading row; the input is always visible and filters the table in real time; the peek toggles use a strikethrough label when the corresponding filter UI is hidden, and turn red/green when actively filtering
 - **Objectives filter** — checkbox row above the table (prefixed with **OBJECTIVES:**); one checkbox per Shortcut Objective associated with the loaded epics; filters the table to matching epics; includes a **Filter objectives…** text input that narrows the displayed checkboxes and auto-deselects non-matching objectives; **Select All** / **Clear All** controls; active filter details shown in the result count row
-- **Done epics toggle** — check-circle button on the heading row; label toggles between **Hide Done** and **Show Done** depending on state; turns green when Done epics are currently hidden
-- All three filters apply **globally** — when active, the same epics are also hidden from the Epic Cards, Assignment Tables, and Unwatched Tickets, and the Story Summary counts are recalculated from the visible epics only
+- **Show Blocked toggle** — block-circle button on the heading row; when active, only epics in the **Blocked** state are shown; turns red when active. Mutually exclusive with **Hide Done** — enabling one disables the other
+- **Done epics toggle** — check-circle button on the heading row; label toggles between **Hide Done** and **Show Done** depending on state; turns green when Done epics are currently hidden. Mutually exclusive with **Show Blocked**
+- When any filter is active (search, objectives, Hide Done, or Show Blocked), the table collapses to a single-column view with a light-blue status row at the bottom summarising the active filters and the resulting count. The status row includes a **✕ Clear all filters** link that resets every filter at once
+- All filters apply **globally** — when active, the same epics are hidden from the Epic Cards, Assignment Tables, and Unwatched Tickets, and the Story Summary counts are recalculated from the visible epics only
 
 ### Epic Management
 - Epics loaded automatically on page load (no manual search required)
@@ -105,14 +107,14 @@ Per epic, three visualizations are available. Visibility is controlled by the "A
 
 #### Story Owners Table
 - Lists all story owners with their ticket counts per epic
-- Sorted by count (descending)
+- Sortable headers: **Owner** (A→Z / Z→A) and **Count** (low→high / high→low); defaults to Count desc
 - Shows unassigned tickets separately
 
 #### Team Open Tickets Table
 - Shows open ticket counts for configured team members within the epic
 - Header label reflects the active filter state — matches the header subtitle (e.g. **Team Open Tickets — Engineering & Design** or **Team Open Tickets — All Teams**)
+- Sortable headers: **Owner** (A→Z / Z→A) and **Count** (low→high / high→low); defaults to Count desc
 - Excludes completed tickets from the count
-- Sorted by workload (descending)
 - Highlights team members with zero open tickets
 
 ### Pull Requests
