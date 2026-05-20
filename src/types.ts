@@ -115,7 +115,13 @@ export interface ViewSettings {
   showEpicObjective: boolean;
   showEpicOwners: boolean;
   showEpicStoryCount: boolean;
+  showTicketStatusBreakdown: boolean;
+  showStoryOwners: boolean;
+  showTeamOpenTickets: boolean;
   showUserStoryBoard: boolean;
+  showWorkflowStatusPieChart: boolean;
+  showStoryTypeBreakdown: boolean;
+  showPullRequests: boolean;
   showTopOfPageLink: boolean;
   showExpandAssignmentsButton: boolean;
   showExpandChartsButton: boolean;

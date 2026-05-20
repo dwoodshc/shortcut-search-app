@@ -166,18 +166,24 @@ export default function AppHeader(): React.JSX.Element {
               {collapsedCharts['assignment-epic'] && collapsedCharts['assignment-member'] && collapsedCharts['assignment-ticket'] ? 'Expand Assignments' : 'Collapse Assignments'}
             </button>
           )}
-          {viewSettings.showExpandChartsButton && (
-            <button
-              onClick={toggleAllCharts}
-              className={`header-action-btn${(() => { const keys = epics.filter(e => !e.notFound).flatMap(e => ['workflow-pie','type-pie'].map(t => `${e.id}-${t}`)); return !keys.every(k => collapsedCharts[k]); })() ? ' active' : ''}`}
-              title="Show or hide the Workflow Status Pie Chart and Story Type Breakdown across all epics"
-            >
-              {(() => {
-                const allChartKeys = epics.filter(e => !e.notFound).flatMap(e => ['workflow-pie','type-pie'].map(t => `${e.id}-${t}`));
-                return allChartKeys.every(key => collapsedCharts[key]) ? 'Expand Charts' : 'Collapse Charts';
-              })()}
-            </button>
-          )}
+          {viewSettings.showExpandChartsButton && (() => {
+            const allOn = viewSettings.showTicketStatusBreakdown
+              && viewSettings.showStoryOwners
+              && viewSettings.showTeamOpenTickets
+              && viewSettings.showWorkflowStatusPieChart
+              && viewSettings.showStoryTypeBreakdown
+              && viewSettings.showPullRequests
+              && viewSettings.showUserStoryBoard;
+            return (
+              <button
+                onClick={toggleAllCharts}
+                className={`header-action-btn${allOn ? ' active' : ''}`}
+                title="Show or hide the Workflow Status Pie Chart, Story Type Breakdown, Pull Requests, and User Story Board across all epics"
+              >
+                {allOn ? 'Hide Charts' : 'Show Charts'}
+              </button>
+            );
+          })()}
           {selectedTeamIds.length > 0 && (
             <button
               onClick={() => setFilterByTeam(prev => !prev)}

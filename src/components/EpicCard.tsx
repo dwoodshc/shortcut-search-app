@@ -10,7 +10,7 @@ import React, { useState, useEffect } from 'react';
 import { useDashboard } from '../context/DashboardContext';
 import { createPieSlice, COMPLETE_STATE_NAMES, daysAgo, formatDaysAgo, storage, getApiBaseUrl } from '../utils';
 import { Epic, ViewSettings, PullRequest } from '../types';
-import { TargetIcon, UserIcon, HashIcon, KanbanIcon } from './icons';
+import { TargetIcon, UserIcon, HashIcon, KanbanIcon, PieIcon, ChartIcon, PullRequestIcon, BarChartIcon, UsersIcon, TicketIcon } from './icons';
 import PeekButton from './PeekButton';
 import SortIcon from './SortIcon';
 
@@ -77,13 +77,12 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
   }, [clickedBarStateId]);
 
   const [cardCollapsed, setCardCollapsed] = useState(() => getEpicStateInfo(epic).type.toLowerCase() === 'done');
-  const [prsCollapsed, setPrsCollapsed] = useState(true);
   const [storyPrs, setStoryPrs] = useState<Record<number, PullRequest[]>>({});
   const [prsLoading, setPrsLoading] = useState(false);
   const [prsLoaded, setPrsLoaded] = useState(false);
 
   useEffect(() => {
-    if (prsCollapsed || prsLoaded || !epic.stories || epic.stories.length === 0) return;
+    if (!viewSettings.showPullRequests || prsLoaded || !epic.stories || epic.stories.length === 0) return;
     const token = storage.getApiToken();
     if (!token) return;
     let cancelled = false;
@@ -109,7 +108,7 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
       incrementApiCalls('GET /api/stories/:id', successful);
     });
     return () => { cancelled = true; };
-  }, [prsCollapsed, prsLoaded, epic.stories?.length, incrementApiCalls]);
+  }, [viewSettings.showPullRequests, prsLoaded, epic.stories?.length, incrementApiCalls]);
 
   if (epic.notFound) {
     return (
@@ -255,9 +254,64 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
 
       {!cardCollapsed && (<>
 
+      {/* Peek-icon row: toggles for the per-epic sections (global, affects all cards) */}
+      <div className="mt-2 mb-1 flex flex-wrap items-center gap-2">
+        <span className="text-[0.8rem] font-semibold text-[#64748b]">Additional Views:</span>
+        <PeekButton
+          icon={BarChartIcon}
+          label="Ticket Status Breakdown"
+          tooltip={viewSettings.showTicketStatusBreakdown ? 'Hide Ticket Status Breakdown' : 'Show Ticket Status Breakdown'}
+          onClick={() => updateViewSetting('showTicketStatusBreakdown', !viewSettings.showTicketStatusBreakdown)}
+          hidden={!viewSettings.showTicketStatusBreakdown}
+        />
+        <PeekButton
+          icon={UsersIcon}
+          label="Story Owners"
+          tooltip={viewSettings.showStoryOwners ? 'Hide Story Owners' : 'Show Story Owners'}
+          onClick={() => updateViewSetting('showStoryOwners', !viewSettings.showStoryOwners)}
+          hidden={!viewSettings.showStoryOwners}
+        />
+        <PeekButton
+          icon={TicketIcon}
+          label="Team Open Tickets"
+          tooltip={viewSettings.showTeamOpenTickets ? 'Hide Team Open Tickets' : 'Show Team Open Tickets'}
+          onClick={() => updateViewSetting('showTeamOpenTickets', !viewSettings.showTeamOpenTickets)}
+          hidden={!viewSettings.showTeamOpenTickets}
+        />
+        <PeekButton
+          icon={PieIcon}
+          label="Workflow Status Pie Chart"
+          tooltip={viewSettings.showWorkflowStatusPieChart ? 'Hide Workflow Status Pie Chart' : 'Show Workflow Status Pie Chart'}
+          onClick={() => updateViewSetting('showWorkflowStatusPieChart', !viewSettings.showWorkflowStatusPieChart)}
+          hidden={!viewSettings.showWorkflowStatusPieChart}
+        />
+        <PeekButton
+          icon={ChartIcon}
+          label="Story Type Breakdown"
+          tooltip={viewSettings.showStoryTypeBreakdown ? 'Hide Story Type Breakdown' : 'Show Story Type Breakdown'}
+          onClick={() => updateViewSetting('showStoryTypeBreakdown', !viewSettings.showStoryTypeBreakdown)}
+          hidden={!viewSettings.showStoryTypeBreakdown}
+        />
+        <PeekButton
+          icon={PullRequestIcon}
+          label="Pull Requests"
+          tooltip={viewSettings.showPullRequests ? 'Hide Pull Requests' : 'Show Pull Requests'}
+          onClick={() => updateViewSetting('showPullRequests', !viewSettings.showPullRequests)}
+          hidden={!viewSettings.showPullRequests}
+        />
+        <PeekButton
+          icon={KanbanIcon}
+          label="User Story Board"
+          tooltip={viewSettings.showUserStoryBoard ? 'Hide User Story Board' : 'Show User Story Board'}
+          onClick={() => updateViewSetting('showUserStoryBoard', !viewSettings.showUserStoryBoard)}
+          hidden={!viewSettings.showUserStoryBoard}
+        />
+      </div>
+
       {epic.stories && workflowConfig.stateOrder.length > 0 && (
         <div className="epic-stats-container">
           <div className="workflow-status-chart-container">
+            {viewSettings.showTicketStatusBreakdown && (<>
             <h4>Ticket Status Breakdown</h4>
             <div className="workflow-status-chart mt-2" style={{ position: 'relative' }}>
               {filteredStateIds.map(stateId => {
@@ -342,13 +396,13 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
                 </div>
               )}
             </div>
+            </>)}
 
             {/* Workflow Pie Chart */}
+            {viewSettings.showWorkflowStatusPieChart && (
             <div className="mt-[0.8rem]">
-              <h4 className="cursor-pointer select-none flex items-center gap-[0.4rem]" onClick={() => toggleChart(epic.id, 'workflow-pie')} title="Show or hide the Workflow Status Pie Chart for this epic">
-                <span>{collapsedCharts[`${epic.id}-workflow-pie`] ? '▶' : '▼'}</span> Workflow Status Pie Chart
-              </h4>
-              {!collapsedCharts[`${epic.id}-workflow-pie`] && workflowTotal > 0 && (
+              <h4>Workflow Status Pie Chart</h4>
+              {workflowTotal > 0 && (
                 <div className="workflow-status-pie-chart mt-2">
                   <div className="pie-chart-wrapper">
                     <div className="relative">
@@ -401,13 +455,13 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
                 </div>
               )}
             </div>
+            )}
 
             {/* Story Type Pie Chart */}
+            {viewSettings.showStoryTypeBreakdown && (
             <div className="mt-[0.8rem]">
-              <h4 className="cursor-pointer select-none flex items-center gap-[0.4rem]" onClick={() => toggleChart(epic.id, 'type-pie')} title="Show or hide the Story Type Breakdown chart for this epic">
-                <span>{collapsedCharts[`${epic.id}-type-pie`] ? '▶' : '▼'}</span> Story Type Breakdown
-              </h4>
-              {!collapsedCharts[`${epic.id}-type-pie`] && typeTotal > 0 && (
+              <h4>Story Type Breakdown</h4>
+              {typeTotal > 0 && (
                 <div>
                   <div className="workflow-status-pie-chart">
                     <div className="pie-chart-wrapper">
@@ -462,10 +516,12 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
                 </div>
               )}
             </div>
+            )}
           </div>
 
           <div className="tables-container">
             {/* Story Owners */}
+            {viewSettings.showStoryOwners && (
             <div className="story-owners-table">
               <h4>Story Owners</h4>
               {sortedOwners.length > 0 || unassignedCount > 0 ? (
@@ -498,8 +554,10 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
                 <p className="text-[#718096] text-sm italic">No assigned owners</p>
               )}
             </div>
+            )}
 
             {/* Team Open Tickets */}
+            {viewSettings.showTeamOpenTickets && (
             <div className="email-ticket-counts-table">
               <h4>Team Open Tickets{teamConfigName ? ` — ${teamConfigName}` : ''}</h4>
               {nameList.length === 0 ? (
@@ -528,18 +586,16 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
                 </>
               )}
             </div>
+            )}
           </div>
         </div>
       )}
 
       {/* Pull Requests */}
-      {epic.stories && (
+      {viewSettings.showPullRequests && epic.stories && (
         <div className="pull-requests-section mt-3">
-          <h4 className="cursor-pointer select-none flex items-center gap-[0.4rem]" onClick={() => setPrsCollapsed(prev => !prev)} title="Show or hide pull requests for this epic">
-            <span>{prsCollapsed ? '▶' : '▼'}</span> Pull Requests
-          </h4>
-          {!prsCollapsed && (
-            <div className="border-t-2 border-slate-200 pt-3">
+          <h4>Pull Requests</h4>
+          <div className="border-t-2 border-slate-200 pt-3">
               {epic.stories.length === 0 ? (
                 <p className="text-[#718096] text-sm italic">No stories</p>
               ) : (
@@ -613,23 +669,15 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
                   );
                 })()
               )}
-            </div>
-          )}
+          </div>
         </div>
       )}
 
       {/* User Story Board */}
-      {!viewSettings.showUserStoryBoard && epic.stories && (
-        <PeekButton icon={KanbanIcon} label="User Story Board" tooltip="Show User Story Board" onClick={() => updateViewSetting('showUserStoryBoard', true)} board />
-      )}
       {viewSettings.showUserStoryBoard && epic.stories && (
         <div className="stories-section">
-          <h4 className="cursor-pointer select-none flex items-center gap-[0.4rem]" onClick={() => toggleChart(epic.id, 'stories')} title="Show or hide the User Story Board for this epic">
-            <span>{collapsedCharts[`${epic.id}-stories`] ? '▶' : '▼'}</span> User Story Board
-            <button className="view-peek-close" onClick={(e) => { e.stopPropagation(); updateViewSetting('showUserStoryBoard', false); }} title="Hide">✕</button>
-          </h4>
-          {!collapsedCharts[`${epic.id}-stories`] && (
-            <div className="border-t-2 border-slate-200 pt-3">
+          <h4>User Story Board</h4>
+          <div className="border-t-2 border-slate-200 pt-3">
               {displayStories.length === 0 ? (
                 <p className="no-stories">No stories found for this epic</p>
               ) : (
@@ -672,8 +720,7 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
                   })}
                 </div>
               )}
-            </div>
-          )}
+          </div>
         </div>
       )}
 

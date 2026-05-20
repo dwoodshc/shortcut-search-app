@@ -202,17 +202,27 @@ function App(): React.JSX.Element {
     return true;
   }, [shortcutWebUrl, setShortcutWebUrl, workflowConfig.selectedId, setError]);
 
-  // Needs epics from useEpicsData and collapsedCharts from useFilters
+  // Toggles all per-epic peek-controlled sections in lockstep
   const toggleAllCharts = useCallback(() => {
-    const chartTypes = ['workflow-pie', 'type-pie'];
-    const allChartKeys = epics
-      .filter(e => !e.notFound)
-      .flatMap(epic => chartTypes.map(type => `${epic.id}-${type}`));
-    const allCollapsed = allChartKeys.every(key => collapsedCharts[key]);
-    const newState = { ...collapsedCharts };
-    allChartKeys.forEach(key => { newState[key] = !allCollapsed; });
-    setCollapsedCharts(newState);
-  }, [epics, collapsedCharts, setCollapsedCharts]);
+    const allOn = viewSettings.showTicketStatusBreakdown
+      && viewSettings.showStoryOwners
+      && viewSettings.showTeamOpenTickets
+      && viewSettings.showWorkflowStatusPieChart
+      && viewSettings.showStoryTypeBreakdown
+      && viewSettings.showPullRequests
+      && viewSettings.showUserStoryBoard;
+    const next = !allOn;
+    setViewSettings({
+      ...viewSettings,
+      showTicketStatusBreakdown: next,
+      showStoryOwners: next,
+      showTeamOpenTickets: next,
+      showWorkflowStatusPieChart: next,
+      showStoryTypeBreakdown: next,
+      showPullRequests: next,
+      showUserStoryBoard: next,
+    });
+  }, [viewSettings, setViewSettings]);
 
   const wipeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => { return () => { if (wipeTimerRef.current) clearTimeout(wipeTimerRef.current); }; }, []);

@@ -299,13 +299,6 @@ export function useEpicsData({ epicNames, loadSelectedWorkflow, setCollapsedChar
       setLoadStats({ loadTime: Date.now() - searchStartTime, apiCallCount: totalApiCalls, apiCallBreakdown, loadedAt: new Date() });
 
       const newCollapsedState: Record<string, boolean> = { 'assignment-epic': true, 'assignment-member': true, 'assignment-ticket': true };
-      allEpics.forEach(epic => {
-        if (!epic.notFound) {
-          newCollapsedState[`${epic.id}-stories`] = true;
-          newCollapsedState[`${epic.id}-workflow-pie`] = true;
-          newCollapsedState[`${epic.id}-type-pie`] = true;
-        }
-      });
       setCollapsedCharts(prev => ({ ...prev, ...newCollapsedState }));
 
     } catch (err: unknown) {
