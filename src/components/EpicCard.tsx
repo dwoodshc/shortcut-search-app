@@ -234,7 +234,7 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
   const teamConfigName = selectedTeamIds.length > 0 ? (filterByTeam ? selectedTeamLabel : 'All Teams') : null;
 
   return (
-    <div id={`epic-${epic.id}`} className="epic-card">
+    <div id={`epic-${epic.id}`} className={`epic-card${cardCollapsed ? ' epic-card-collapsed' : ''}`}>
       <div className="epic-header">
         <div className="epic-title">
           <span className="expand-icon cursor-pointer select-none" onClick={() => setCardCollapsed(prev => !prev)} title={cardCollapsed ? 'Expand' : 'Collapse'}>

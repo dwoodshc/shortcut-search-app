@@ -332,6 +332,10 @@ textarea.input-field {
   border-color: #494BCB;
 }
 
+.epic-card-collapsed .epic-header {
+  margin-bottom: 0;
+}
+
 .epic-not-found {
   background-color: #fee;
   border: 2px solid #fcc;
