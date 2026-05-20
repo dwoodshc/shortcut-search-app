@@ -13,6 +13,7 @@ import './App.css';
 import StoryDetailModal from './components/StoryDetailModal';
 import SummaryTable from './components/SummaryTable';
 import AssignmentTables from './components/AssignmentTables';
+import AssignmentViewsRow from './components/AssignmentViewsRow';
 import UnwatchedTickets from './components/UnwatchedTickets';
 import EpicCard from './components/EpicCard';
 import SetupWizard from './components/SetupWizard';
@@ -621,27 +622,13 @@ function App(): React.JSX.Element {
 
         {epics.length > 0 && (
           <div className="epics-list">
+            <AssignmentViewsRow />
+            <AssignmentTables />
             <SummaryTable />
 
-            <div className="mb-2 pb-3 border-b-2 border-slate-200">
-              <div className="flex items-center">
-                <h2 className="m-0 text-[1.0rem]">
-                  {epics.filter(e => !e.notFound).length === filteredEpicNames.length ? '✅ ' : '⚠️ '}
-                  Found {epics.filter(e => !e.notFound).length} of {filteredEpicNames.length} Epic{filteredEpicNames.length !== 1 ? 's' : ''}
-                </h2>
-              </div>
-              {epics.some(e => e.notFound) && (
-                <div className="mt-[0.4rem] text-[0.8rem] text-[#dc2626]">
-                  <span className="font-semibold">Not found: </span>
-                  {epics.filter(e => e.notFound).map(e => e.name).join(', ')}
-                </div>
-              )}
-            </div>
-
             <UnwatchedTickets />
-            <AssignmentTables />
 
-            {epics.filter(epic => epic.notFound || visibleEpicIds.has(epic.id)).map((epic) => (
+            {epics.filter(epic => !epic.notFound && visibleEpicIds.has(epic.id)).map((epic) => (
               <EpicCard key={epic.id as React.Key} epic={epic} />
             ))}
           </div>

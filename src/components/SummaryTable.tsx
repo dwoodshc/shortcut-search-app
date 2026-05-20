@@ -138,8 +138,8 @@ function StoryTotalsSummary(): React.JSX.Element | null {
   const backlogPct = total > 0 ? (backlogCount / total) * 100 : 0;
 
   return (
-    <div className="mb-6">
-      <h2 className="m-0 mb-3 text-[1.1rem] font-semibold text-[#1a202c]">Story Summary</h2>
+    <div className="mb-1">
+      <h2 className="m-0 mb-1 text-[1.1rem] font-semibold text-[#1a202c]">Story Summary</h2>
       <div className="overflow-x-auto">
       <table className="w-full border-separate border-spacing-0 bg-white rounded-lg shadow-[0_2px_4px_rgba(0,0,0,0.08)] border border-[#F0F0F7]" style={{ borderCollapse: 'separate' }}>
         <thead>
@@ -184,6 +184,7 @@ function StoryTotalsSummary(): React.JSX.Element | null {
         </tbody>
       </table>
       </div>
+      <hr className="border-0 border-t-2 border-slate-200 mt-4 mb-4" />
     </div>
   );
 }
@@ -201,7 +202,7 @@ function getEpicLastChanged(stories: Story[]): number | null {
 }
 
 function EpicStatusTable(): React.JSX.Element | null {
-  const { epics, objectives, members, workflowConfig, filteredStateIds, getDisplayStories, getEpicStateInfo, getEpicStateClass, sortState, toggleSortState, resetSortState, filterByTeam, selectedTeamIds, viewSettings, setViewSettings, epicSearchQuery, setEpicSearchQuery, deselectedObjectiveIds, setDeselectedObjectiveIds, visibleEpicIds } = useDashboard();
+  const { epics, objectives, members, workflowConfig, filteredStateIds, filteredEpicNames, getDisplayStories, getEpicStateInfo, getEpicStateClass, sortState, toggleSortState, resetSortState, filterByTeam, selectedTeamIds, viewSettings, setViewSettings, epicSearchQuery, setEpicSearchQuery, deselectedObjectiveIds, setDeselectedObjectiveIds, visibleEpicIds } = useDashboard();
   const updateViewSetting = (key: keyof ViewSettings, value: boolean) =>
     setViewSettings({ ...viewSettings, [key]: value });
   const [openPopover, setOpenPopover] = useState<number | string | null>(null);
@@ -586,7 +587,17 @@ function EpicStatusTable(): React.JSX.Element | null {
           </div>
         </div>
       )}
-      <hr className="border-0 border-t-2 border-slate-200 mt-4" />
+      <div className="mt-2 text-[0.78rem] text-[#475569]">
+        {epics.filter(e => !e.notFound).length === filteredEpicNames.length ? '✅ ' : '⚠️ '}
+        Found {epics.filter(e => !e.notFound).length} of {filteredEpicNames.length} Epic{filteredEpicNames.length !== 1 ? 's' : ''}
+      </div>
+      {epics.filter(e => e.notFound).map(e => (
+        <div key={e.id as React.Key} className="epic-not-found mt-2">
+          <h3>{e.name}</h3>
+          <p>Epic not found in Shortcut</p>
+        </div>
+      ))}
+      <hr className="border-0 border-t-2 border-slate-200 mt-1" />
     </div>
   );
 }

@@ -9,8 +9,7 @@
 import React, { useMemo } from 'react';
 import { useDashboard } from '../context/DashboardContext';
 import { EpicTeamEntry, EpicRef } from '../types';
-import { ResetIcon, TargetIcon, UsersIcon, TicketIcon } from './icons';
-import PeekButton from './PeekButton';
+import { ResetIcon } from './icons';
 import SortIcon from './SortIcon';
 import { COMPLETE_STATE_NAMES } from '../utils';
 
@@ -30,10 +29,8 @@ export default function AssignmentTables(): React.JSX.Element | null {
     filterByTeam, selectedTeamIds,
     getEpicStateClass,
     visibleEpicIds,
-    viewSettings, setViewSettings,
+    viewSettings,
   } = useDashboard();
-  const updateViewSetting = (key: keyof typeof viewSettings, value: boolean) =>
-    setViewSettings({ ...viewSettings, [key]: value });
 
   const memberTicketData = useMemo(() => {
     const map: Record<string, Array<{ id: number; name: string; app_url?: string; epicName: string; epicAppUrl?: string; stateName: string }>> = {};
@@ -205,33 +202,7 @@ export default function AssignmentTables(): React.JSX.Element | null {
 
   return (
     <>
-      <div className="flex flex-col gap-4 mb-4">
-        {/* Peek-icon row: toggles for the three assignment tables */}
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-[0.8rem] font-semibold text-[#64748b]">Assignments Views:</span>
-          <PeekButton
-            icon={TargetIcon}
-            label="Epic Owner Assignments"
-            tooltip={viewSettings.showEpicOwnerAssignments ? 'Hide Epic Owner Assignments' : 'Show Epic Owner Assignments'}
-            onClick={() => updateViewSetting('showEpicOwnerAssignments', !viewSettings.showEpicOwnerAssignments)}
-            hidden={!viewSettings.showEpicOwnerAssignments}
-          />
-          <PeekButton
-            icon={UsersIcon}
-            label="Team Member Epic Assignments"
-            tooltip={viewSettings.showTeamMemberEpicAssignments ? 'Hide Team Member Epic Assignments' : 'Show Team Member Epic Assignments'}
-            onClick={() => updateViewSetting('showTeamMemberEpicAssignments', !viewSettings.showTeamMemberEpicAssignments)}
-            hidden={!viewSettings.showTeamMemberEpicAssignments}
-          />
-          <PeekButton
-            icon={TicketIcon}
-            label="Team Member Ticket Assignments"
-            tooltip={viewSettings.showTeamMemberTicketAssignments ? 'Hide Team Member Ticket Assignments' : 'Show Team Member Ticket Assignments'}
-            onClick={() => updateViewSetting('showTeamMemberTicketAssignments', !viewSettings.showTeamMemberTicketAssignments)}
-            hidden={!viewSettings.showTeamMemberTicketAssignments}
-          />
-        </div>
-
+      <div className="flex flex-col gap-4 mb-1">
         {/* Epic Owner Assignments */}
         {viewSettings.showEpicOwnerAssignments && (
           <div>
@@ -295,7 +266,7 @@ export default function AssignmentTables(): React.JSX.Element | null {
           </div>
         )}
       </div>
-      <hr className="border-0 border-t-2 border-slate-200 mb-4" />
+      <hr className="border-0 border-t-2 border-slate-200 mb-2" />
     </>
   );
 }
