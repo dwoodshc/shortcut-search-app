@@ -1,9 +1,9 @@
 /**
  * Copyright (c) 2026 Dave Woods <dave.woods@slice.com>. All rights reserved.
  *
- * SetupWizard.tsx — 7-step guided setup modal. Steps: API token (verified against the
- * API), workspace URL, workflow selection, team selection, ignored users, my Shortcut
- * name (for unwatched ticket detection), and epic list.
+ * SetupWizard.tsx — 6-step guided setup modal. Steps: API token (verified against the
+ * API), workspace URL, workflow selection, team selection, my Shortcut name
+ * (for unwatched ticket detection), and epic list.
  * Local form state is initialised from storage on mount; each step persists to
  * localStorage before advancing.
  */
@@ -20,7 +20,6 @@ interface Props {
 
 export default function SetupWizard({ step, onStepChange, onClose }: Props): React.JSX.Element {
   const {
-    ignoredUsers, setIgnoredUsers,
     selectedTeams, setSelectedTeams, selectedTeamIds,
     shortcutWebUrl, setShortcutWebUrl,
     workflowConfig, setWorkflowField,
@@ -40,7 +39,6 @@ export default function SetupWizard({ step, onStepChange, onClose }: Props): Rea
   const [epicsText, setEpicsText] = useState(() => (storage.getEpicsConfig()?.epics || []).map(e => e.name).join('\n'));
   const [allTeams, setAllTeams] = useState<Team[]>([]);
   const [myName, setMyName] = useState(() => storage.getMyName());
-  const [ignoredUsersText, setIgnoredUsersText] = useState(() => ignoredUsers.join('\n'));
 
   const handleSaveEpicList = () => {
     setEpicListError('');
@@ -141,14 +139,8 @@ export default function SetupWizard({ step, onStepChange, onClose }: Props): Rea
     else if (step === 2) { await handleStep2Next(); }
     else if (step === 3) { await handleStep3Next(); }
     else if (step === 4) { storage.setTeamConfig(selectedTeams); onStepChange(5); }
-    else if (step === 5) {
-      const parsed = ignoredUsersText.split('\n').map(u => u.trim()).filter(Boolean);
-      setIgnoredUsers(parsed);
-      storage.setIgnoredUsers(parsed);
-      onStepChange(6);
-    }
-    else if (step === 6) { storage.setMyName(myName.trim()); onStepChange(7); }
-    else if (step === 7) { const saved = handleSaveEpicList(); if (saved) { onClose(); searchEpics(); } }
+    else if (step === 5) { storage.setMyName(myName.trim()); onStepChange(6); }
+    else if (step === 6) { const saved = handleSaveEpicList(); if (saved) { onClose(); searchEpics(); } }
   };
 
   return (
@@ -161,7 +153,7 @@ export default function SetupWizard({ step, onStepChange, onClose }: Props): Rea
 
         {/* Step Indicator */}
         <div className="flex justify-between mb-8 relative">
-          {[1, 2, 3, 4, 5, 6, 7].map((stepNum) => (
+          {[1, 2, 3, 4, 5, 6].map((stepNum) => (
             <div
               key={stepNum}
               className="flex-1 flex flex-col items-center relative cursor-pointer"
@@ -184,11 +176,10 @@ export default function SetupWizard({ step, onStepChange, onClose }: Props): Rea
                 {stepNum === 2 && 'Shortcut URL'}
                 {stepNum === 3 && 'Workflow'}
                 {stepNum === 4 && 'Select Team'}
-                {stepNum === 5 && 'Ignore Users'}
-                {stepNum === 6 && 'My Name'}
-                {stepNum === 7 && 'Epic List'}
+                {stepNum === 5 && 'My Name'}
+                {stepNum === 6 && 'Epic List'}
               </div>
-              {stepNum < 7 && (
+              {stepNum < 6 && (
                 <div
                   className="absolute top-4 left-[60%] h-[2px] transition-all duration-300 z-0"
                   style={{
@@ -419,26 +410,10 @@ export default function SetupWizard({ step, onStepChange, onClose }: Props): Rea
             </div>
           )}
 
-          {/* Step 5: Ignore Users */}
+          {/* Step 5: My Name */}
           {step === 5 && (
-            <div className="flex flex-col h-full">
-              <h3 className="text-[#1e293b] mb-[0.4rem]">Step 5: Ignore Users</h3>
-              <p className="mb-[0.15rem]">Enter the names of Shortcut users to exclude from the assignment tables (one per line).</p>
-              <div className="flex-1 flex flex-col min-h-0">
-                <textarea
-                  className="input-field flex-1 w-full resize-none font-inherit text-base px-3 py-2 box-border"
-                  value={ignoredUsersText}
-                  onChange={(e) => setIgnoredUsersText(e.target.value)}
-                  placeholder={"John Smith\nJane Doe"}
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Step 6: My Name */}
-          {step === 6 && (
             <div>
-              <h3 className="text-[#1e293b] mb-4">Step 6: Your Shortcut Name</h3>
+              <h3 className="text-[#1e293b] mb-4">Step 5: Your Shortcut Name</h3>
               <p className="mb-6">Enter your name exactly as it appears in Shortcut. This will be used to find open tickets in your selected teams that you are not watching.</p>
               <div className="form-group">
                 <label htmlFor="myName">Your name in Shortcut:</label>
@@ -457,10 +432,10 @@ export default function SetupWizard({ step, onStepChange, onClose }: Props): Rea
             </div>
           )}
 
-          {/* Step 7: Epic List */}
-          {step === 7 && (
+          {/* Step 6: Epic List */}
+          {step === 6 && (
             <div className="flex flex-col h-full">
-              <h3 className="text-[#1e293b] mb-[0.4rem]">Step 7: Epic List</h3>
+              <h3 className="text-[#1e293b] mb-[0.4rem]">Step 6: Epic List</h3>
               <p className="mb-[0.15rem]">Add the epics you want to track.</p>
 
               <div className="flex-1 flex flex-col min-h-0">

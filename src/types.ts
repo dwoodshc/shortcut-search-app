@@ -197,10 +197,6 @@ export interface DashboardContextValue {
   toggleChart: (epicId: number | string, chartType: string) => void;
   filterByTeam: boolean;
   setFilterByTeam: Dispatch<SetStateAction<boolean>>;
-  ignoredUsers: string[];
-  setIgnoredUsers: Dispatch<SetStateAction<string[]>>;
-  filterIgnoredInTickets: boolean;
-  setFilterIgnoredInTickets: Dispatch<SetStateAction<boolean>>;
   selectedTeams: TeamConfig[];
   teamNameMap: Record<string, string>;
   setSelectedTeams: Dispatch<SetStateAction<TeamConfig[]>>;

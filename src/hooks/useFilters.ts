@@ -12,8 +12,6 @@ import { Epic, Story, SortState, SortStateKey, TeamConfig } from '../types';
 
 export function useFilters() {
   const [filterByTeam, setFilterByTeam] = useState(false);
-  const [filterIgnoredInTickets, setFilterIgnoredInTickets] = useState(true);
-  const [ignoredUsers, setIgnoredUsers] = useState<string[]>(() => storage.getIgnoredUsers());
   const [selectedTeams, setSelectedTeams] = useState<TeamConfig[]>(() => storage.getTeamConfig());
   const [sortState, setSortState] = useState<SortState>({
     summary:     { col: null, dir: 'asc' },
@@ -51,8 +49,6 @@ export function useFilters() {
 
   return {
     filterByTeam, setFilterByTeam,
-    filterIgnoredInTickets, setFilterIgnoredInTickets,
-    ignoredUsers, setIgnoredUsers,
     selectedTeams, setSelectedTeams,
     selectedTeamIds,
     selectedTeamLabel,

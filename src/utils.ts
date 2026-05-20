@@ -17,7 +17,6 @@ export const STORAGE_KEYS = {
   TEAM_CONFIG: 'shortcut_team_config',
   TEAM_MEMBERS_CACHE: 'shortcut_team_members_cache',
   EPIC_WORKFLOW_CACHE: 'shortcut_epic_workflow_cache',
-  IGNORED_USERS: 'shortcut_ignored_users',
   DISPLAY_MODE: 'shortcut_display_mode',
   MY_NAME: 'shortcut_my_name',
   MIGRATION_COMPLETED: 'migration_completed',
@@ -101,13 +100,6 @@ export const storage = {
   setEpicWorkflowCache: (stateMap: Record<number, { name: string; type: string }>): void => {
     localStorage.setItem(STORAGE_KEYS.EPIC_WORKFLOW_CACHE, JSON.stringify(stateMap));
   },
-
-  getIgnoredUsers: (): string[] => {
-    const data = localStorage.getItem(STORAGE_KEYS.IGNORED_USERS);
-    if (!data) return [];
-    try { return JSON.parse(data); } catch { return []; }
-  },
-  setIgnoredUsers: (users: string[]): void => { localStorage.setItem(STORAGE_KEYS.IGNORED_USERS, JSON.stringify(users)); },
 
   getDisplayMode: (): 'normal' | 'dark' | 'star-trek' | 'matrix' => {
     const val = localStorage.getItem(STORAGE_KEYS.DISPLAY_MODE);

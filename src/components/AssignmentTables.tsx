@@ -28,7 +28,6 @@ export default function AssignmentTables(): React.JSX.Element | null {
     sortState, toggleSortState, resetSortState,
     collapsedCharts, setCollapsedCharts,
     filterByTeam, selectedTeamIds,
-    filterIgnoredInTickets, ignoredUsers,
     getEpicStateClass,
     visibleEpicIds,
   } = useDashboard();
@@ -46,14 +45,13 @@ export default function AssignmentTables(): React.JSX.Element | null {
         if (COMPLETE_STATE_NAMES.has(stateName)) continue;
         for (const ownerId of story.owner_ids || []) {
           const ownerName = members[ownerId] || ownerId;
-          if (filterIgnoredInTickets && ignoredUsers.includes(ownerName)) continue;
           if (!map[ownerName]) map[ownerName] = [];
           map[ownerName].push({ id: story.id, name: story.name, app_url: story.app_url, epicName: epic.name, epicAppUrl: epic.app_url, stateName: workflowConfig.states[story.workflow_state_id] || '' });
         }
       }
     }
     return Object.entries(map).map(([member, tickets]) => ({ member, tickets }));
-  }, [epics, visibleEpicIds, members, workflowConfig.states, filterByTeam, selectedTeamIds, filterIgnoredInTickets, ignoredUsers]);
+  }, [epics, visibleEpicIds, members, workflowConfig.states, filterByTeam, selectedTeamIds]);
 
   const donePill = <span className={`epic-state ${getEpicStateClass('done', 'Done')} !text-[0.75rem] !py-[0.15rem] !px-2 ml-[0.4rem]`}>Done ✓</span>;
   const blockedPill = <span className={`epic-state ${getEpicStateClass('', 'blocked')} !text-[0.75rem] !py-[0.15rem] !px-2 ml-[0.4rem]`}>Blocked</span>;
@@ -144,18 +142,14 @@ export default function AssignmentTables(): React.JSX.Element | null {
       <td className={tdClass}>
         {row.team.length === 0
           ? <span className="text-[#1a202c]">None</span>
-          : <ul className="m-0 pl-0 list-none">{[...row.team].sort((a, b) => a.localeCompare(b)).map((m, i) => <li key={i}>{!filterIgnoredInTickets && ignoredUsers.includes(m) ? <span className="bg-[#e5e7eb] rounded-full px-2 py-[0.1rem] inline-block text-[#1a202c]">{m}</span> : m}</li>)}</ul>}
+          : <ul className="m-0 pl-0 list-none">{[...row.team].sort((a, b) => a.localeCompare(b)).map((m, i) => <li key={i}>{m}</li>)}</ul>}
       </td>
     </tr>
   );
 
   const renderMemberEpicRow = (row: { member: string; epics: EpicRef[] }) => (
     <tr key={row.member}>
-      <td className={tdClass}>
-        {!filterIgnoredInTickets && ignoredUsers.includes(row.member)
-          ? <span className="bg-[#e5e7eb] rounded-full px-2 py-[0.1rem] inline-block text-[#1a202c]">{row.member}</span>
-          : row.member}
-      </td>
+      <td className={tdClass}>{row.member}</td>
       <td className={`${tdClass} text-center font-semibold`}>{row.epics.length}</td>
       <td className={tdClass}>
         <ul className="m-0 pl-0 list-none">
@@ -169,11 +163,7 @@ export default function AssignmentTables(): React.JSX.Element | null {
 
   const renderMemberTicketRow = (row: { member: string; tickets: Array<{ id: number; name: string; app_url?: string; epicName: string; epicAppUrl?: string; stateName: string }> }) => (
     <tr key={row.member}>
-      <td className={tdClass}>
-        {!filterIgnoredInTickets && ignoredUsers.includes(row.member)
-          ? <span className="bg-[#e5e7eb] rounded-full px-2 py-[0.1rem] inline-block text-[#1a202c]">{row.member}</span>
-          : row.member}
-      </td>
+      <td className={tdClass}>{row.member}</td>
       <td className={`${tdClass} text-center font-semibold`}>{row.tickets.length}</td>
       <td className={tdClass}>
         {(() => {

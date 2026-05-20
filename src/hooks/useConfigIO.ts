@@ -36,7 +36,6 @@ export function useConfigIO() {
         workflowConfig: storage.getWorkflowConfig(),
         epicsConfig,
         teamConfig: storage.getTeamConfig(),
-        ignoredUsers: storage.getIgnoredUsers(),
         migrationCompleted: localStorage.getItem(STORAGE_KEYS.MIGRATION_COMPLETED),
         exportDate: new Date().toISOString(),
         version: '1.0'
@@ -87,7 +86,6 @@ export function useConfigIO() {
           storage.setEpicsConfig(epicsConfig);
         }
         if (importData.teamConfig) storage.setTeamConfig(importData.teamConfig);
-        if (importData.ignoredUsers) storage.setIgnoredUsers(importData.ignoredUsers);
         if (importData.migrationCompleted) localStorage.setItem(STORAGE_KEYS.MIGRATION_COMPLETED, importData.migrationCompleted);
 
         setConfigSuccess('Configuration imported successfully! Reloading page...');

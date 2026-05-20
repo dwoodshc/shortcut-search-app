@@ -41,7 +41,7 @@ Two tables appear at the top of the dashboard, above the epic cards.
 - Export/Import configuration for backup and portability
 
 ### Unwatched Tickets
-When your Shortcut name is configured (Setup Wizard step 6), a table appears after the "Found X of Y Epics" line listing any **open tickets in your selected teams that you are not watching**:
+When your Shortcut name is configured (Setup Wizard step 5), a table appears after the "Found X of Y Epics" line listing any **open tickets in your selected teams that you are not watching**:
 - Covers both stories and epics from the currently loaded data
 - Columns: **Ticket ID** (linked to Shortcut or the in-page epic section), **Type** (colour-coded pill: Epic / Feature / Bug / Chore), **Description**
 - Footer shows the total unwatched count
@@ -66,12 +66,6 @@ Three collapsible assignment tables appear above the epic cards, controlled by t
 - Dedicated **Count** column (sortable) showing the number of open tickets per member
 - Tickets grouped under their epic heading (linked to Shortcut), with a ticket count per epic
 - Each ticket name is a direct link to Shortcut, followed by a coloured workflow-state pill
-- Respects the active team filter and ignored-users toggle
-
-#### Ignored Users Display
-- The **Show/Hide Ignored Users** button (beside "Expand Assignments") toggles visibility of users in the ignore list across all assignment tables and the Team Open Tickets table
-- When shown, ignored users are rendered as a **gray pill** to distinguish them from active users
-- Hidden by default (ignored users are filtered out)
 
 ### Epic Card
 
@@ -120,7 +114,6 @@ Per epic, three visualizations are available. Each has a **▶/▼ toggle** in i
 - Excludes completed tickets from the count
 - Sorted by workload (descending)
 - Highlights team members with zero open tickets
-- Ignored users are filtered out by default (toggle via **Show/Hide Ignored Users** button)
 
 ### Pull Requests
 - Collapsible per-epic table linking each story to its associated GitHub Pull Requests
@@ -139,13 +132,12 @@ Per epic, three visualizations are available. Each has a **▶/▼ toggle** in i
 ### Header Actions
 Three icon buttons in the top-right of the header (all with hover tooltips):
 - **Refresh** — Reload all epic and story data from Shortcut
-- **Edit Epic List** — Open the epic list configuration editor directly (wizard step 7)
+- **Edit Epic List** — Open the epic list configuration editor directly (wizard step 6)
 - **Settings** (gear) — Open the settings dropdown menu
 
 ### Toolbar Controls
 Displayed in the header when epics are loaded:
 - **Expand Assignments / Collapse Assignments** — Toggle all three assignment tables (hidden by default; enable under Settings → View Settings)
-- **Show Ignored Users / Hide Ignored Users** — Toggle visibility of ignored users across assignment tables and Team Open Tickets
 - **Expand Charts / Collapse Charts** — Toggle the Workflow Status Pie Chart and Story Type Breakdown across all epics (hidden by default; enable under Settings → View Settings)
 - **Show [Team Names] Only / Show All Teams** — Toggle filtering tickets to only the selected teams (shown when one or more teams are configured). The button label and header subtitle both reflect the currently selected team names (e.g. **Show Engineering & Design Only**)
 
@@ -181,7 +173,7 @@ The selected theme is stored in `shortcut_display_mode` and restored on next loa
 ### Setup & Configuration
 
 #### Initial Setup Wizard
-Automatically launches on first use or when configuration is incomplete. **7 steps:**
+Automatically launches on first use or when configuration is incomplete. **6 steps:**
 
 | Step | Description |
 |------|-------------|
@@ -189,9 +181,8 @@ Automatically launches on first use or when configuration is incomplete. **7 ste
 | 2 | Set workspace URL for generating Shortcut hyperlinks |
 | 3 | Select workflow from all available workflows in your workspace |
 | 4 | Select one or more Shortcut teams to filter assignment and ticket tables (click to toggle each team; multiple selections supported) |
-| 5 | Enter usernames to **ignore** in assignment and ticket tables (one per line) |
-| 6 | Enter your name **exactly as it appears in Shortcut** (optional — enables the Unwatched Tickets table) |
-| 7 | Enter the list of epic names to track (one per line) |
+| 5 | Enter your name **exactly as it appears in Shortcut** (optional — enables the Unwatched Tickets table) |
+| 6 | Enter the list of epic names to track (one per line) |
 
 - Visual workflow preview showing all states with colour-coded badges
 - Settings saved to browser localStorage automatically
@@ -262,7 +253,7 @@ shortcut-search-app/
 │   │   ├── AssignmentTables.tsx      # Epic owner and team member assignment tables
 │   │   ├── UnwatchedTickets.tsx      # Open tickets in selected teams the user is not watching
 │   │   ├── StoryDetailModal.tsx      # Modal listing stories filtered by workflow state
-│   │   ├── SetupWizard.tsx           # 7-step guided setup wizard
+│   │   ├── SetupWizard.tsx           # 6-step guided setup wizard
 │   │   ├── ThemeSelector.tsx         # Theme picker modal with live mini-previews
 │   │   ├── MatrixRain.tsx            # Animated canvas digital-rain overlay (Matrix theme)
 │   │   ├── OceanTide.tsx             # Animated canvas silver-particle overlay (Dark theme)
@@ -292,7 +283,6 @@ All configuration is stored in **browser localStorage**:
 | `shortcut_workflow_config` | Workflow ID, name, URL, and states |
 | `shortcut_epics_config` | Tracked epic names |
 | `shortcut_team_config` | Array of selected Shortcut teams (each with ID and name) |
-| `shortcut_ignored_users` | List of usernames to exclude from tables |
 | `shortcut_my_name` | Your Shortcut display name (optional; used by Unwatched Tickets) |
 | `shortcut_members_cache` | Owner ID → display name cache |
 | `shortcut_team_members_cache` | Team member IDs keyed by team ID; cached per team, populated on demand |
@@ -304,7 +294,7 @@ All configuration is stored in **browser localStorage**:
 **Backup & Portability:**
 - Use Export/Import in the Settings menu to save your configuration as a JSON file
 - Import to restore settings or transfer between browsers
-- Exported data includes: API token, workflow config, epic list, team config, and ignored users
+- Exported data includes: API token, workflow config, epic list, and team config
 
 ## API Calls
 
@@ -357,7 +347,7 @@ Epic workflow states are cached to localStorage and skipped on subsequent loads.
 ### First-Time Setup
 1. Run `npm run dev`
 2. The Setup Wizard launches automatically
-3. Complete all 7 steps: API token → workspace URL → workflow → select teams → ignore users → your name → epic list
+3. Complete all 6 steps: API token → workspace URL → workflow → select teams → your name → epic list
 4. The dashboard loads automatically once setup is complete
 
 ### Daily Use
@@ -369,8 +359,8 @@ Epic workflow states are cached to localStorage and skipped on subsequent loads.
 6. Click legend items in pie charts to open filtered views in Shortcut
 
 ### Managing Configuration
-- **Edit Epic List** header icon — open the epic list editor (wizard step 7)
-- **Settings → Setup Wizard** — re-run the full setup wizard to change token, URL, workflow, teams, your name, or ignored users
+- **Edit Epic List** header icon — open the epic list editor (wizard step 6)
+- **Settings → Setup Wizard** — re-run the full setup wizard to change token, URL, workflow, teams, or your name
 - **Settings → Export/Import** — backup configuration to JSON or restore from a previous backup
 - **Settings → Wipe Settings** — clear all localStorage data to start fresh
 
@@ -394,7 +384,7 @@ Epic workflow states are cached to localStorage and skipped on subsequent loads.
 - Verify your API token has permission to access stories
 
 ### Unwatched Tickets Not Appearing
-- Ensure your name is set in wizard step 6 (Settings → Setup Wizard)
+- Ensure your name is set in wizard step 5 (Settings → Setup Wizard)
 - Your name must match your Shortcut display name exactly (case-insensitive)
 - The table only appears when there are open tickets in your selected teams that you are not watching
 

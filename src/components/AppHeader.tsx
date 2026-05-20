@@ -15,7 +15,6 @@ export default function AppHeader(): React.JSX.Element {
     modals, setModal,
     collapsedCharts, setCollapsedCharts,
     filterByTeam, setFilterByTeam,
-    filterIgnoredInTickets, setFilterIgnoredInTickets,
     selectedTeamIds, selectedTeamLabel,
     searchEpics,
     toggleAllCharts,
@@ -167,13 +166,6 @@ export default function AppHeader(): React.JSX.Element {
               {collapsedCharts['assignment-epic'] && collapsedCharts['assignment-member'] && collapsedCharts['assignment-ticket'] ? 'Expand Assignments' : 'Collapse Assignments'}
             </button>
           )}
-          <button
-            onClick={() => setFilterIgnoredInTickets(prev => !prev)}
-            className={`header-action-btn${!filterIgnoredInTickets ? ' active' : ''}`}
-            title={filterIgnoredInTickets ? 'Currently hiding ignored users — click to show them highlighted in assignment and ticket tables' : 'Currently showing ignored users — click to hide them from assignment and ticket tables'}
-          >
-            {filterIgnoredInTickets ? 'Show Ignored Users' : 'Hide Ignored Users'}
-          </button>
           {viewSettings.showExpandChartsButton && (
             <button
               onClick={toggleAllCharts}

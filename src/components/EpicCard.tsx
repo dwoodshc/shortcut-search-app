@@ -59,7 +59,7 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
     collapsedCharts, toggleChart,
     generateShortcutUrl, shortcutWebUrl,
     getDisplayStories, getEpicStateInfo, getEpicStateClass,
-    selectedTeamIds, selectedTeamLabel, teamMemberIds, teamNameMap, filterByTeam, filterIgnoredInTickets, ignoredUsers,
+    selectedTeamIds, selectedTeamLabel, teamMemberIds, teamNameMap, filterByTeam,
     viewSettings, setViewSettings,
     incrementApiCalls,
     sortState, toggleSortState,
@@ -201,8 +201,7 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
   // --- Team open tickets table ---
   const nameList = (epic.owner_ids || [])
     .filter(id => selectedTeamIds.length === 0 || teamMemberIds.has(id))
-    .map(id => members[id] || id)
-    .filter(name => !filterIgnoredInTickets || !ignoredUsers.includes(name));
+    .map(id => members[id] || id);
 
   const nameCounts: Record<string, number> = {};
   nameList.forEach(name => { nameCounts[name] = 0; });
@@ -517,11 +516,7 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
                     <tbody>
                       {sortedNames.map(([name, count]) => (
                         <tr key={name} className={count === 0 ? 'zero-count-row' : ''}>
-                          <td>
-                            {!filterIgnoredInTickets && ignoredUsers.includes(name)
-                              ? <span className="bg-[#e5e7eb] rounded-full px-2 py-[0.1rem] inline-block">{name}</span>
-                              : name}
-                          </td>
+                          <td>{name}</td>
                           <td>{count}</td>
                         </tr>
                       ))}
