@@ -10,7 +10,7 @@ import React, { useState, useEffect } from 'react';
 import { useDashboard } from '../context/DashboardContext';
 import { createPieSlice, COMPLETE_STATE_NAMES, daysAgo, formatDaysAgo, storage, getApiBaseUrl } from '../utils';
 import { Epic, ViewSettings, PullRequest } from '../types';
-import { TargetIcon, UserIcon, HashIcon, KanbanIcon, PieIcon, ChartIcon, PullRequestIcon, BarChartIcon, UsersIcon, TicketIcon } from './icons';
+import { TargetActiveIcon, UserActiveIcon, HashActiveIcon, KanbanIcon, PieIcon, ChartIcon, PullRequestIcon, BarChartIcon, UsersIcon, TicketIcon } from './icons';
 import PeekButton from './PeekButton';
 import SortIcon from './SortIcon';
 
@@ -129,7 +129,7 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
     .filter(Boolean) as string[];
   const objectiveEl = objectiveNames.length === 0 ? null
     : !viewSettings.showEpicObjective
-      ? <PeekButton icon={TargetIcon} tooltip="Show Objective" onClick={() => updateViewSetting('showEpicObjective', true)} />
+      ? <PeekButton icon={TargetActiveIcon} tooltip="Show Objective" onClick={() => updateViewSetting('showEpicObjective', true)} />
       : <span className="epic-owner" style={{ cursor: 'pointer' }} onClick={() => updateViewSetting('showEpicObjective', false)} title="Click to hide">
           <strong>{objectiveNames.length > 1 ? 'Objectives: ' : 'Objective: '}</strong>{objectiveNames.join(', ')}
         </span>;
@@ -255,11 +255,11 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
                 <strong>{epic.owner_ids && epic.owner_ids.length > 1 ? 'Owners: ' : 'Owner: '}</strong>
                 {epic.owner_ids && epic.owner_ids.length > 0 ? epic.owner_ids.map(id => members[id] || id).join(', ') : 'No Owner'}
               </span>
-            : <PeekButton icon={UserIcon} tooltip="Show Owners" onClick={() => updateViewSetting('showEpicOwners', true)} />
+            : <PeekButton icon={UserActiveIcon} tooltip="Show Owners" onClick={() => updateViewSetting('showEpicOwners', true)} />
           }
           {viewSettings.showEpicStoryCount
             ? <span className="story-count" style={{ cursor: 'pointer' }} onClick={() => updateViewSetting('showEpicStoryCount', false)} title="Click to hide">{displayStories.length} stories</span>
-            : <PeekButton icon={HashIcon} tooltip="Show Story Count" onClick={() => updateViewSetting('showEpicStoryCount', true)} />
+            : <PeekButton icon={HashActiveIcon} tooltip="Show Story Count" onClick={() => updateViewSetting('showEpicStoryCount', true)} />
           }
           <span className={`epic-state ${getEpicStateClass(si.type, si.name)}`}>
             {si.type.toLowerCase() === 'done' ? 'Done ✓' : si.name}

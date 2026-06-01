@@ -22,6 +22,13 @@ export const TargetActiveIcon = (
     <circle cx="12" cy="12" r="8" fill="white" />
     <circle cx="12" cy="12" r="5" fill="#dc2626" />
     <circle cx="12" cy="12" r="2" fill="white" />
+    {/* Dart shaft from upper-right into the bullseye */}
+    <line x1="22" y1="2" x2="13" y2="11" stroke="#1f2937" strokeWidth="1.6" strokeLinecap="round" />
+    {/* Dart tip embedded in the bullseye */}
+    <circle cx="12.5" cy="11.5" r="0.9" fill="#1f2937" />
+    {/* Dart flight (fletching) at the back end */}
+    <polygon points="22,2 20,1 21.5,3.5" fill="#fbbf24" stroke="#1f2937" strokeWidth="0.5" strokeLinejoin="round" />
+    <polygon points="22,2 23,4 20.5,2.5" fill="#fbbf24" stroke="#1f2937" strokeWidth="0.5" strokeLinejoin="round" />
   </svg>
 );
 
@@ -48,6 +55,22 @@ export const UserIcon = (
 
 export const HashIcon = (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-[14px] h-[14px] align-middle inline-block">
+    <line x1="4" y1="9" x2="20" y2="9" />
+    <line x1="4" y1="15" x2="20" y2="15" />
+    <line x1="10" y1="3" x2="8" y2="21" />
+    <line x1="16" y1="3" x2="14" y2="21" />
+  </svg>
+);
+
+export const UserActiveIcon = (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-[14px] h-[14px] align-middle inline-block">
+    <circle cx="12" cy="8" r="4" fill="#494BCB" />
+    <path d="M4 21c0-4 4-7 8-7s8 3 8 7z" fill="#494BCB" />
+  </svg>
+);
+
+export const HashActiveIcon = (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke="#b45309" strokeWidth="3" strokeLinecap="round" className="w-[14px] h-[14px] align-middle inline-block">
     <line x1="4" y1="9" x2="20" y2="9" />
     <line x1="4" y1="15" x2="20" y2="15" />
     <line x1="10" y1="3" x2="8" y2="21" />
