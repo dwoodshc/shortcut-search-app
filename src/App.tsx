@@ -403,14 +403,28 @@ function App(): React.JSX.Element {
           <div className="modal-content text-center !px-12 !py-10" style={{ maxWidth: '360px' }}>
             <div className="text-[2.5rem] mb-4 inline-block" style={{ animation: 'egg-timer-flip 1.5s linear infinite' }}>⏳</div>
             <h2 className="m-0 mb-2 text-[1.2rem] text-[#03045E]">Loading Epics…</h2>
-            <p className="text-[#718096] mb-6 text-[0.9rem]">
+            <p className="text-[#718096] mb-2 text-[0.9rem]">
               {loadProgress.total > 0
                 ? `Loading ${loadProgress.loaded} of ${loadProgress.total} epics`
                 : 'Fetching epic and story data from Shortcut'}
             </p>
-            <div className="w-full h-1 bg-slate-200 rounded-sm overflow-hidden mb-6">
-              <div className="h-full bg-[#494BCB] rounded-sm" style={{ animation: 'loading-bar 1.5s ease-in-out infinite' }} />
-            </div>
+            {loadProgress.total > 0 ? (
+              <>
+                <div className="w-full h-2 bg-slate-200 rounded-sm overflow-hidden mb-1">
+                  <div
+                    className="h-full bg-[#494BCB] rounded-sm transition-[width] duration-200 ease-out"
+                    style={{ width: `${Math.round((loadProgress.loaded / loadProgress.total) * 100)}%` }}
+                  />
+                </div>
+                <p className="text-[#94a3b8] text-[0.75rem] mb-6">
+                  {Math.round((loadProgress.loaded / loadProgress.total) * 100)}% complete
+                </p>
+              </>
+            ) : (
+              <div className="w-full h-1 bg-slate-200 rounded-sm overflow-hidden mb-6">
+                <div className="h-full bg-[#494BCB] rounded-sm" style={{ animation: 'loading-bar 1.5s ease-in-out infinite' }} />
+              </div>
+            )}
             <button className="btn-secondary min-w-[100px]" onClick={cancelSearch}>Cancel</button>
           </div>
         </div>
