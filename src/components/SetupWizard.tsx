@@ -487,7 +487,7 @@ export default function SetupWizard({ step, onStepChange, onClose }: Props): Rea
               onClick={handleNext}
               className="btn-primary"
             >
-              {step < 7 ? 'Next' : 'Finish'}
+              {step < 6 ? 'Next' : 'Finish'}
             </button>
           </div>
         </div>
