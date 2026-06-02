@@ -7,7 +7,13 @@ A React-based web application for visualizing and managing Shortcut.com epics an
 ## Features
 
 ### Summary Tables
-Two tables appear at the top of the dashboard, above the epic cards.
+Three summary tables appear at the top of the dashboard, above the epic cards: Epic Status, Cycle Progress, and Story Summary.
+
+#### Cycle Progress
+- Single-row table showing the **current 6-week (42-day) delivery cycle**
+- Columns: **Current Cycle** (e.g. *Cycle 4*), **Start**, **End**, **Days Elapsed**, **Days Remaining**, **Overall Progress** (green progress bar with embedded percentage)
+- The Cycle 1 start date is configured in Setup Wizard step 6; the dates of every subsequent cycle in the year are derived from it (`cycle1 + (n−1) × 42` days)
+- Falls back to the first weekday of the current year if no Cycle 1 start date is stored
 
 #### Story Summary
 - Overall story counts across **all tracked epics** broken down by workflow state (Backlog → Complete)
@@ -76,7 +82,9 @@ Each tracked epic renders as a card with a collapsible body.
 - **Meta area** — Shows the epic's Objective(s), Owner(s), story count, and status as styled pills below the title.
 - **Objectives** — Displayed before Owners when one or more Shortcut Objectives are linked to the epic.
 - **Meta field peek icons** — When Objective, Owners, or Story Count are hidden, a small icon (target / person / hash) appears in their place; click to reveal the field globally, or click the field itself to hide it again.
-- **"Additional Views:" peek row** — Sits just under the epic title; a labelled row of peek icons toggles the per-card sections (Ticket Status Breakdown, Story Owners, Team Open Tickets, Workflow Status Pie Chart, Story Type Breakdown, Pull Requests, User Story Board). Toggles apply globally to every epic card. Strikethrough label = currently hidden.
+- **Peek-icon row** under the epic title with two labelled groups:
+  - **Global Additional Views:** — Ticket Status Breakdown, Story Owners, Team Open Tickets, Workflow Status Pie Chart, Story Type Breakdown. Toggling any of these flips the corresponding `viewSettings` flag and applies the change to **every** epic card on the dashboard.
+  - **Local Additional Views:** — Pull Requests, User Story Board. These two are **per-card local state** (hidden by default); clicking only toggles the section for *this* epic. Strikethrough label = currently hidden.
 
 ### Interactive Visualizations
 
@@ -122,19 +130,19 @@ Per epic, three visualizations are available. Visibility is controlled by the "A
 - Columns: **Ticket** (story name → Shortcut) and **Pull Requests** (`#<number>` links with merged ✓ / closed ✕ / draft markers)
 - Sortable headers: **Ticket** (A→Z / Z→A) and **Pull Requests** (numeric, by PR count)
 - Footer row in light blue showing **Ticket Count** and **Pull Request Count** for the epic
-- Visible by default; toggle via the Pull Request peek icon
+- **Hidden by default**; toggle via the Pull Request peek icon in the per-card *Local Additional Views* row (per-epic state)
 - PR data is fetched lazily on first display via `GET /api/stories/:id` (one call per story); results are cached on the card and the load is reflected in the **API calls** footer counter
 
 ### User Story Board
 - Five-column kanban display: Backlog → Ready for Development → In Development → In Review → Complete
 - Story cards with clickable links to Shortcut
 - Story count badges on each column header
-- Visible by default; toggle via the Kanban peek icon
+- **Hidden by default**; toggle via the Kanban peek icon in the per-card *Local Additional Views* row (per-epic state)
 
 ### Header Actions
 Three icon buttons in the top-right of the header (all with hover tooltips):
 - **Refresh** — Reload all epic and story data from Shortcut
-- **Edit Epic List** — Open the epic list configuration editor directly (wizard step 6)
+- **Edit Epic List** — Open the epic list configuration editor directly (wizard step 7)
 - **Settings** (gear) — Open the settings dropdown menu
 
 ### Toolbar Controls
@@ -173,7 +181,7 @@ The selected theme is stored in `shortcut_display_mode` and restored on next loa
 ### Setup & Configuration
 
 #### Initial Setup Wizard
-Automatically launches on first use or when configuration is incomplete. **6 steps:**
+Automatically launches on first use or when configuration is incomplete. **7 steps:**
 
 | Step | Description |
 |------|-------------|
@@ -182,7 +190,8 @@ Automatically launches on first use or when configuration is incomplete. **6 ste
 | 3 | Select workflow from all available workflows in your workspace |
 | 4 | Select one or more Shortcut teams to filter assignment and ticket tables (click to toggle each team; multiple selections supported) |
 | 5 | Enter your name **exactly as it appears in Shortcut** (optional — enables the Unwatched Tickets table) |
-| 6 | Enter the list of epic names to track (one per line) |
+| 6 | Pick the **Cycle 1 start date** — anchors the 6-week cycle calculations used by the Cycle Progress table (defaults to the first weekday of the current year) |
+| 7 | Enter the list of epic names to track (one per line) |
 
 - Visual workflow preview showing all states with colour-coded badges
 - Settings saved to browser localStorage automatically
@@ -249,11 +258,13 @@ shortcut-search-app/
 │   │   ├── AppHeader.tsx             # Sticky header: logo, icon buttons, action toolbar
 │   │   ├── AppFooter.tsx             # Static footer with version (sourced from package.json)
 │   │   ├── EpicCard.tsx              # Per-epic card: charts, tables, story board
-│   │   ├── SummaryTable.tsx          # Story totals summary + epic status table
+│   │   ├── SummaryTable.tsx          # Epic status + Cycle progress + Story summary
+│   │   ├── CycleProgress.tsx         # Current 6-week cycle and % progress
 │   │   ├── AssignmentTables.tsx      # Epic owner and team member assignment tables
+│   │   ├── AssignmentViewsRow.tsx    # "Assignments Views:" peek row at top of page
 │   │   ├── UnwatchedTickets.tsx      # Open tickets in selected teams the user is not watching
 │   │   ├── StoryDetailModal.tsx      # Modal listing stories filtered by workflow state
-│   │   ├── SetupWizard.tsx           # 6-step guided setup wizard
+│   │   ├── SetupWizard.tsx           # 7-step guided setup wizard
 │   │   ├── ThemeSelector.tsx         # Theme picker modal with live mini-previews
 │   │   ├── MatrixRain.tsx            # Animated canvas digital-rain overlay (Matrix theme)
 │   │   ├── OceanTide.tsx             # Animated canvas silver-particle overlay (Dark theme)
@@ -284,6 +295,7 @@ All configuration is stored in **browser localStorage**:
 | `shortcut_epics_config` | Tracked epic names |
 | `shortcut_team_config` | Array of selected Shortcut teams (each with ID and name) |
 | `shortcut_my_name` | Your Shortcut display name (optional; used by Unwatched Tickets) |
+| `shortcut_cycle1_start` | Cycle 1 start date (ISO `YYYY-MM-DD`); anchors the Cycle Progress calculations |
 | `shortcut_members_cache` | Owner ID → display name cache |
 | `shortcut_team_members_cache` | Team member IDs keyed by team ID; cached per team, populated on demand |
 | `shortcut_epic_workflow_cache` | Epic workflow states cache |
@@ -347,7 +359,7 @@ Epic workflow states are cached to localStorage and skipped on subsequent loads.
 ### First-Time Setup
 1. Run `npm run dev`
 2. The Setup Wizard launches automatically
-3. Complete all 6 steps: API token → workspace URL → workflow → select teams → your name → epic list
+3. Complete all 7 steps: API token → workspace URL → workflow → select teams → your name → Cycle 1 start → epic list
 4. The dashboard loads automatically once setup is complete
 
 ### Daily Use
@@ -359,8 +371,8 @@ Epic workflow states are cached to localStorage and skipped on subsequent loads.
 6. Click legend items in pie charts to open filtered views in Shortcut
 
 ### Managing Configuration
-- **Edit Epic List** header icon — open the epic list editor (wizard step 6)
-- **Settings → Setup Wizard** — re-run the full setup wizard to change token, URL, workflow, teams, or your name
+- **Edit Epic List** header icon — open the epic list editor (wizard step 7)
+- **Settings → Setup Wizard** — re-run the full setup wizard to change token, URL, workflow, teams, your name, or Cycle 1 start date
 - **Settings → Export/Import** — backup configuration to JSON or restore from a previous backup
 - **Settings → Wipe Settings** — clear all localStorage data to start fresh
 

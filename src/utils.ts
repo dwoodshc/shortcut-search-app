@@ -19,6 +19,7 @@ export const STORAGE_KEYS = {
   EPIC_WORKFLOW_CACHE: 'shortcut_epic_workflow_cache',
   DISPLAY_MODE: 'shortcut_display_mode',
   MY_NAME: 'shortcut_my_name',
+  CYCLE1_START: 'shortcut_cycle1_start',
   MIGRATION_COMPLETED: 'migration_completed',
   VIEW_SETTINGS: 'shortcut_view_settings',
 } as const;
@@ -111,9 +112,12 @@ export const storage = {
   getMyName: (): string => localStorage.getItem(STORAGE_KEYS.MY_NAME) || '',
   setMyName: (name: string): void => { localStorage.setItem(STORAGE_KEYS.MY_NAME, name); },
 
+  getCycle1Start: (): string => localStorage.getItem(STORAGE_KEYS.CYCLE1_START) || '',
+  setCycle1Start: (date: string): void => { localStorage.setItem(STORAGE_KEYS.CYCLE1_START, date); },
+
   getViewSettings: (): ViewSettings => {
     const data = localStorage.getItem(STORAGE_KEYS.VIEW_SETTINGS);
-    const defaults: ViewSettings = { showObjectivesFilter: true, showDoneEpics: true, showBlockedOnly: false, showEpicObjective: true, showEpicOwners: true, showEpicStoryCount: true, showEpicOwnerAssignments: false, showTeamMemberEpicAssignments: false, showTeamMemberTicketAssignments: false, showTicketStatusBreakdown: true, showStoryOwners: true, showTeamOpenTickets: true, showWorkflowStatusPieChart: true, showStoryTypeBreakdown: true, showTopOfPageLink: false };
+    const defaults: ViewSettings = { showObjectivesFilter: true, showDoneEpics: true, showBlockedOnly: false, showEpicObjective: true, showEpicOwners: true, showEpicStoryCount: true, showEpicOwnerAssignments: false, showTeamMemberEpicAssignments: false, showTeamMemberTicketAssignments: false, showTicketStatusBreakdown: true, showStoryOwners: true, showTeamOpenTickets: true, showWorkflowStatusPieChart: true, showStoryTypeBreakdown: true, showTopOfPageLink: false, showCycleProgress: true };
     if (!data) return defaults;
     try { return { ...defaults, ...JSON.parse(data) }; } catch { return defaults; }
   },

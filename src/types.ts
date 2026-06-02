@@ -124,6 +124,7 @@ export interface ViewSettings {
   showWorkflowStatusPieChart: boolean;
   showStoryTypeBreakdown: boolean;
   showTopOfPageLink: boolean;
+  showCycleProgress: boolean;
 }
 
 export interface ModalState {

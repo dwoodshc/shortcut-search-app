@@ -254,7 +254,7 @@ function App(): React.JSX.Element {
           } else if (!storedWorkflowConfig || !storedWorkflowConfig.workflow_id) {
             setSetupWizardStep(2);
           } else {
-            setSetupWizardStep(6);
+            setSetupWizardStep(7);
           }
           return;
         }
@@ -475,6 +475,7 @@ function App(): React.JSX.Element {
             <p>A React-based dashboard for tracking Shortcut.com epics, visualising progress, and monitoring team workload.</p>
             <ul>
               <li><strong>Story Summary:</strong> Overall story counts across all epics by workflow state</li>
+              <li><strong>Cycle Progress:</strong> Current 6-week cycle with start/end and % done</li>
               <li><strong>Epic Status Table:</strong> Progress bars, Last Changed; search and objective filters</li>
               <li><strong>Global Filters:</strong> Search/Done/Blocked filters apply across all sections</li>
               <li><strong>Unwatched Tickets:</strong> Open tickets in your selected teams you are not watching</li>
@@ -490,7 +491,7 @@ function App(): React.JSX.Element {
               <li><strong>Team Open Tickets:</strong> Sortable open counts per team member, non-complete</li>
               <li><strong>Pull Requests:</strong> Sortable table linking each story to its GitHub PRs</li>
               <li><strong>User Story Board:</strong> Kanban board (Backlog → Complete) per epic</li>
-              <li><strong>Setup Wizard:</strong> 6-step setup: token, URL, workflow, teams, name, epic list</li>
+              <li><strong>Setup Wizard:</strong> 7-step setup: token, URL, workflow, teams, name, cycle, list</li>
               <li><strong>Configuration Management:</strong> Export / Import all settings as JSON</li>
               <li><strong>View Settings:</strong> Toggle the per-card Top of Page link</li>
               <li><strong>Load Stats Bar:</strong> Load time, API call breakdown, page size, and download</li>
@@ -588,6 +589,18 @@ function App(): React.JSX.Element {
           <div className="modal-content" style={{ maxWidth: '420px' }} onClick={(e) => e.stopPropagation()}>
             <h2>View Settings</h2>
             <p className="mb-4 text-[#64748b] text-sm">Choose which data to display on the dashboard.</p>
+            <div className="mb-6">
+              <h3 className="text-sm font-semibold text-[#374151] mb-3">Summary Sections</h3>
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={viewSettings.showCycleProgress}
+                  onChange={(e) => updateViewSetting('showCycleProgress', e.target.checked)}
+                  className="w-4 h-4"
+                />
+                <span className="text-sm">Show Cycle Progress table</span>
+              </label>
+            </div>
             <div className="mb-6">
               <h3 className="text-sm font-semibold text-[#374151] mb-3">Top of Page Link</h3>
               <label className="flex items-center gap-3 cursor-pointer">

@@ -12,6 +12,7 @@ import { ResetIcon, TargetActiveIcon, CheckCircleIcon, BlockedIcon } from './ico
 import { COMPLETE_STATE_NAMES, daysAgo, formatDaysAgo } from '../utils';
 import SortIcon from './SortIcon';
 import PeekButton from './PeekButton';
+import CycleProgress from './CycleProgress';
 
 const STATE_ORDER = ['Backlog', 'Ready for Development', 'In Development', 'In Review', 'Complete'];
 const BACKLOG_STATES = ['backlog'];
@@ -603,10 +604,12 @@ function EpicStatusTable(): React.JSX.Element | null {
 }
 
 export default function SummaryTable(): React.JSX.Element {
+  const { viewSettings } = useDashboard();
   return (
     <>
-      <StoryTotalsSummary />
       <EpicStatusTable />
+      {viewSettings.showCycleProgress && <CycleProgress />}
+      <StoryTotalsSummary />
     </>
   );
 }
