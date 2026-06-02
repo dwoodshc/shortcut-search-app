@@ -65,7 +65,15 @@ export default function CycleProgress(): React.JSX.Element {
     <div className="mb-1">
       <h2 className="m-0 mb-1 text-[1.1rem] font-semibold text-[#1a202c]">Cycle Progress</h2>
       <div className="overflow-x-auto">
-        <table className="w-full border-separate border-spacing-0 bg-white rounded-lg shadow-[0_2px_4px_rgba(0,0,0,0.08)] border border-[#F0F0F7]" style={{ borderCollapse: 'separate' }}>
+        <table className="w-full border-separate border-spacing-0 bg-white rounded-lg shadow-[0_2px_4px_rgba(0,0,0,0.08)] border border-[#F0F0F7]" style={{ borderCollapse: 'separate', tableLayout: 'fixed' }}>
+          <colgroup>
+            <col style={{ width: '12%' }} />
+            <col style={{ width: '13%' }} />
+            <col style={{ width: '13%' }} />
+            <col style={{ width: '11%' }} />
+            <col style={{ width: '11%' }} />
+            <col style={{ width: '40%' }} />
+          </colgroup>
           <thead>
             <tr className="bg-[#494BCB] text-white">
               <th className="px-2 py-2 text-center font-semibold text-[0.8rem] rounded-tl-lg">Current Cycle</th>
@@ -73,7 +81,7 @@ export default function CycleProgress(): React.JSX.Element {
               <th className="px-2 py-2 text-center font-semibold text-[0.8rem]">End</th>
               <th className="px-2 py-2 text-center font-semibold text-[0.8rem]">Days Elapsed</th>
               <th className="px-2 py-2 text-center font-semibold text-[0.8rem]">Days Remaining</th>
-              <th className="px-2 py-2 text-center font-semibold text-[0.8rem] rounded-tr-lg min-w-[160px]">Overall Progress</th>
+              <th className="px-2 py-2 text-center font-semibold text-[0.8rem] rounded-tr-lg">Overall Progress</th>
             </tr>
           </thead>
           <tbody>
