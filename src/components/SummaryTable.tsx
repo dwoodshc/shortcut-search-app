@@ -537,26 +537,13 @@ function EpicStatusTable(): React.JSX.Element | null {
         </div>
         );
       })()}
-      {(() => {
-        const filterActive = !!(epicSearchQuery.trim() || deselectedObjectiveIds.size > 0 || !viewSettings.showDoneEpics || viewSettings.showBlockedOnly);
-        return (
-          <>
-            <div className="summary-table-grid">
-              <div className="flex-1">
-                <table className={tableClass} style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
-                  <thead>{theadRow}</thead>
-                  <tbody>{leftEpics.map((epic) => renderRow(epic))}</tbody>
-                </table>
-              </div>
-              <div className="flex-1">
-                <table className={tableClass} style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
-                  <thead>{theadRow}</thead>
-                  <tbody>{rightEpics.map((epic) => renderRow(epic))}</tbody>
-                </table>
-              </div>
-            </div>
-            {filterActive && (
-              <div className="mt-2 px-3 py-2 text-sm text-[#1e40af] text-left rounded-lg" style={{ background: '#dbeafe' }}>
+      {epicSearchQuery.trim() || deselectedObjectiveIds.size > 0 || !viewSettings.showDoneEpics || viewSettings.showBlockedOnly ? (
+        <table className={tableClass} style={{ borderCollapse: 'separate', borderSpacing: 0, width: '100%' }}>
+          <thead>{theadRow}</thead>
+          <tbody>
+            {visibleEpics.map((epic) => renderRow(epic))}
+            <tr>
+              <td colSpan={4} className="px-3 py-2 text-sm text-[#1e40af] text-left rounded-b-lg" style={{ background: '#dbeafe' }}>
                 <span className="font-semibold">
                   {visibleEpics.length === 0 ? 'No epics match your filter.' : `${visibleEpics.length} epic${visibleEpics.length === 1 ? '' : 's'} found.`}
                 </span>
@@ -590,11 +577,26 @@ function EpicStatusTable(): React.JSX.Element | null {
                 >
                   ✕ Clear all filters
                 </button>
-              </div>
-            )}
-          </>
-        );
-      })()}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      ) : (
+        <div className="summary-table-grid">
+          <div className="flex-1">
+            <table className={tableClass} style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
+              <thead>{theadRow}</thead>
+              <tbody>{leftEpics.map((epic) => renderRow(epic))}</tbody>
+            </table>
+          </div>
+          <div className="flex-1">
+            <table className={tableClass} style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
+              <thead>{theadRow}</thead>
+              <tbody>{rightEpics.map((epic) => renderRow(epic))}</tbody>
+            </table>
+          </div>
+        </div>
+      )}
       <div className="mt-2 text-[0.78rem] text-[#475569]">
         {epics.filter(e => !e.notFound).length === filteredEpicNames.length ? '✅ ' : '⚠️ '}
         Tracking {epics.filter(e => !e.notFound).length} of {filteredEpicNames.length} Epic{filteredEpicNames.length !== 1 ? 's' : ''}
