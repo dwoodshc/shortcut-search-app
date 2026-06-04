@@ -7,7 +7,7 @@
  * table shows cycle number, start/end dates, days elapsed/remaining, and a
  * percentage progress bar.
  */
-import React from 'react';
+import React, { useMemo } from 'react';
 import { storage } from '../utils';
 
 const CYCLE_LENGTH_DAYS = 42;
@@ -69,20 +69,34 @@ function formatDate(d: Date): string {
 }
 
 export default function CycleProgress(): React.JSX.Element {
-  const today = startOfDay(new Date());
-  const stored = parseCycle1Start(storage.getCycle1Start());
-  const cycle1Start = stored ?? firstWorkingDayOfYear(today.getFullYear());
-  const daysSinceCycle1 = Math.floor((today.getTime() - cycle1Start.getTime()) / MS_PER_DAY);
-  const cycleNumber = Math.max(1, Math.floor(daysSinceCycle1 / CYCLE_LENGTH_DAYS) + 1);
-  const cycleStart = addDays(cycle1Start, (cycleNumber - 1) * CYCLE_LENGTH_DAYS);
-  const cycleEnd = addDays(cycleStart, CYCLE_LENGTH_DAYS - 1);
-  // Weekday-only counts (Mon–Fri); excludes Saturdays and Sundays.
-  const totalDays = countWeekdays(cycleStart, cycleEnd);
-  const elapsedTo = today.getTime() > cycleEnd.getTime() ? cycleEnd : today;
-  const daysElapsed = today.getTime() < cycleStart.getTime() ? 0 : countWeekdays(cycleStart, elapsedTo);
-  const daysRemaining = Math.max(0, totalDays - daysElapsed);
-  const pctComplete = totalDays === 0 ? 0 : Math.min(100, Math.max(0, (daysElapsed / totalDays) * 100));
-  const pctRounded = Math.round(pctComplete);
+  // All cycle math is pure, deterministic for the current day, and depends only
+  // on localStorage. Compute once per mount; storage changes happen only via the
+  // Setup Wizard which forces a full reload.
+  const { cycle1Start, cycleNumber, cycleStart, cycleEnd, totalDays, daysElapsed, daysRemaining, pctRounded } = useMemo(() => {
+    const today = startOfDay(new Date());
+    const stored = parseCycle1Start(storage.getCycle1Start());
+    const c1 = stored ?? firstWorkingDayOfYear(today.getFullYear());
+    const daysSinceCycle1 = Math.floor((today.getTime() - c1.getTime()) / MS_PER_DAY);
+    const num = Math.max(1, Math.floor(daysSinceCycle1 / CYCLE_LENGTH_DAYS) + 1);
+    const start = addDays(c1, (num - 1) * CYCLE_LENGTH_DAYS);
+    const end = addDays(start, CYCLE_LENGTH_DAYS - 1);
+    // Weekday-only counts (Mon–Fri); excludes Saturdays and Sundays.
+    const total = countWeekdays(start, end);
+    const elapsedTo = today.getTime() > end.getTime() ? end : today;
+    const elapsed = today.getTime() < start.getTime() ? 0 : countWeekdays(start, elapsedTo);
+    const remaining = Math.max(0, total - elapsed);
+    const pct = total === 0 ? 0 : Math.min(100, Math.max(0, (elapsed / total) * 100));
+    return {
+      cycle1Start: c1,
+      cycleNumber: num,
+      cycleStart: start,
+      cycleEnd: end,
+      totalDays: total,
+      daysElapsed: elapsed,
+      daysRemaining: remaining,
+      pctRounded: Math.round(pct),
+    };
+  }, []);
 
   return (
     <div className="mb-1">

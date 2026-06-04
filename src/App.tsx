@@ -35,7 +35,7 @@ import { Epic, EpicState, Story } from './types';
 const toTitleCase = (str: string): string =>
   str.toLowerCase().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 
-function LoadStatsFooter({ loadStats, pageSizeKb }: { loadStats: import('./types').LoadStats; pageSizeKb: string | null }) {
+const LoadStatsFooter = React.memo(function LoadStatsFooter({ loadStats, pageSizeKb }: { loadStats: import('./types').LoadStats; pageSizeKb: string | null }) {
   const [showApiModal, setShowApiModal] = React.useState(false);
   const handleDownload = () => {
     const blob = new Blob([document.documentElement.outerHTML], { type: 'text/html' });
@@ -103,7 +103,7 @@ function LoadStatsFooter({ loadStats, pageSizeKb }: { loadStats: import('./types
       </div>
     </>
   );
-}
+});
 
 function App(): React.JSX.Element {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -267,7 +267,12 @@ function App(): React.JSX.Element {
     };
 
     checkConfig();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    // Intentionally mount-only: `searchEpics`, `setModal`, and `setSetupWizardStep`
+    // are referenced but the closure values at mount are exactly what we want —
+    // re-running this effect every time those refs change would re-launch the
+    // setup-wizard flow on every render. The empty dep array is correct.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Load epic names and workflow config from storage when wizard closes
   useEffect(() => {
