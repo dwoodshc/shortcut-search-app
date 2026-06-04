@@ -7,7 +7,7 @@
  */
 import React, { useState, useEffect } from 'react';
 import { useDashboard } from '../context/DashboardContext';
-import { storage, getApiBaseUrl, COMPLETE_STATE_NAMES } from '../utils';
+import { storage, getApiBaseUrl, COMPLETE_STATE_NAMES, STORY_TYPE_COLORS } from '../utils';
 import { Epic } from '../types';
 
 interface UnwatchedTicket {
@@ -110,12 +110,7 @@ export default function UnwatchedTickets(): React.JSX.Element | null {
   const tableClass = 'w-full bg-white rounded-lg shadow-[0_2px_4px_rgba(0,0,0,0.08)] border border-[#F0F0F7]';
   const tdClass = 'px-3 py-[0.4rem] text-sm border-b border-[#F0F0F7]';
 
-  const typeColor = (type: string) => {
-    if (type === 'Epic') return '#7c3aed';
-    if (type === 'Bug') return '#dc2626';
-    if (type === 'Chore') return '#64748b';
-    return '#1d4ed8';
-  };
+  const typeColor = (type: string): string => STORY_TYPE_COLORS[type.toLowerCase()] ?? STORY_TYPE_COLORS.feature;
 
   return (
     <div className="mb-4">

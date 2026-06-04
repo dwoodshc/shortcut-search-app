@@ -19,6 +19,7 @@ import EpicCard from './components/EpicCard';
 import SetupWizard from './components/SetupWizard';
 import AppHeader from './components/AppHeader';
 import AppFooter from './components/AppFooter';
+import PercentBar from './components/PercentBar';
 import MatrixRain from './components/MatrixRain';
 import OceanTide from './components/OceanTide';
 import ThemeSelector from './components/ThemeSelector';
@@ -415,11 +416,8 @@ function App(): React.JSX.Element {
             </p>
             {loadProgress.total > 0 ? (
               <>
-                <div className="w-full h-2 bg-slate-200 rounded-sm overflow-hidden mb-1">
-                  <div
-                    className="h-full bg-[#494BCB] rounded-sm transition-[width] duration-200 ease-out"
-                    style={{ width: `${Math.round((loadProgress.loaded / loadProgress.total) * 100)}%` }}
-                  />
+                <div className="mb-1">
+                  <PercentBar pct={(loadProgress.loaded / loadProgress.total) * 100} heightPx={8} />
                 </div>
                 <p className="text-[#94a3b8] text-[0.75rem] mb-6">
                   {Math.round((loadProgress.loaded / loadProgress.total) * 100)}% complete

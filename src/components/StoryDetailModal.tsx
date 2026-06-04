@@ -65,22 +65,19 @@ export default function StoryDetailModal({
           <table className="w-full border border-[#F0F0F7] rounded-lg" style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
             <thead>
               <tr className="bg-[#494BCB] text-white sticky top-0">
-                <th onClick={() => onSort('story')} className="cursor-pointer select-none px-3 py-2 text-left font-semibold text-sm rounded-tl-lg">
-                  Story<SortIcon sort={sort} col="story" />
-                  {sort.col === 'story' && (
-                    <span className="summary-sort-icon ml-[6px] cursor-pointer" data-tooltip="Restore original order" onClick={e => { e.stopPropagation(); onResetSort(); }}>
-                      {ResetIcon}
-                    </span>
-                  )}
-                </th>
-                <th onClick={() => onSort('epic')} className="cursor-pointer select-none px-3 py-2 text-left font-semibold text-sm whitespace-nowrap rounded-tr-lg">
-                  Epic<SortIcon sort={sort} col="epic" />
-                  {sort.col === 'epic' && (
-                    <span className="summary-sort-icon ml-[6px] cursor-pointer" data-tooltip="Restore original order" onClick={e => { e.stopPropagation(); onResetSort(); }}>
-                      {ResetIcon}
-                    </span>
-                  )}
-                </th>
+                {[
+                  { col: 'story', label: 'Story', extra: 'rounded-tl-lg' },
+                  { col: 'epic',  label: 'Epic',  extra: 'whitespace-nowrap rounded-tr-lg' },
+                ].map(({ col, label, extra }) => (
+                  <th key={col} onClick={() => onSort(col)} className={`cursor-pointer select-none px-3 py-2 text-left font-semibold text-sm ${extra}`}>
+                    {label}<SortIcon sort={sort} col={col} />
+                    {sort.col === col && (
+                      <span className="summary-sort-icon ml-[6px] cursor-pointer" data-tooltip="Restore original order" onClick={e => { e.stopPropagation(); onResetSort(); }}>
+                        {ResetIcon}
+                      </span>
+                    )}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody>

@@ -128,6 +128,48 @@ export const storage = {
 
 export const getApiBaseUrl = (): string => `http://${window.location.hostname}:3001`;
 
+/** Shared colour map for Shortcut story types — used both for pie-chart
+ *  segment fills (in EpicCard) and for the ticket-type pill background
+ *  (in UnwatchedTickets). White text is assumed on top of these colours. */
+export const STORY_TYPE_COLORS: Record<string, string> = {
+  feature: '#1d4ed8',  // blue-700
+  bug:     '#dc2626',  // red-600
+  chore:   '#64748b',  // slate-500
+  epic:    '#7c3aed',  // violet-600
+};
+
+export const CYCLE_LENGTH_DAYS = 42;
+
+/** Returns the Cycle 1 start date stored by the Setup Wizard (YYYY-MM-DD),
+ *  or the first weekday of the current year as a fallback. */
+export function getCycle1StartDate(): Date {
+  const stored = storage.getCycle1Start();
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(stored);
+  if (m) {
+    const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+    if (!Number.isNaN(d.getTime())) { d.setHours(0, 0, 0, 0); return d; }
+  }
+  const d = new Date(new Date().getFullYear(), 0, 1);
+  while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() + 1);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+/** Returns the start (inclusive), end (inclusive), and 1-indexed number of the
+ *  6-week cycle that contains `today`, anchored at the configured Cycle 1 start. */
+export function getCurrentCycleWindow(today: Date = new Date()): { start: Date; end: Date; number: number } {
+  const cycle1 = getCycle1StartDate();
+  const t = new Date(today); t.setHours(0, 0, 0, 0);
+  const msPerDay = 24 * 60 * 60 * 1000;
+  const daysSince = Math.floor((t.getTime() - cycle1.getTime()) / msPerDay);
+  const number = Math.max(1, Math.floor(daysSince / CYCLE_LENGTH_DAYS) + 1);
+  const start = new Date(cycle1);
+  start.setDate(cycle1.getDate() + (number - 1) * CYCLE_LENGTH_DAYS);
+  const end = new Date(start);
+  end.setDate(start.getDate() + CYCLE_LENGTH_DAYS - 1);
+  return { start, end, number };
+}
+
 export function daysAgo(dateStr: string | undefined): number | null {
   if (!dateStr) return null;
   const now = new Date();

@@ -8,41 +8,8 @@
  * percentage progress bar.
  */
 import React, { useMemo } from 'react';
-import { storage } from '../utils';
-
-const CYCLE_LENGTH_DAYS = 42;
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
-
-function firstWorkingDayOfYear(year: number): Date {
-  const d = new Date(year, 0, 1);
-  while (d.getDay() === 0 || d.getDay() === 6) {
-    d.setDate(d.getDate() + 1);
-  }
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
-
-function parseCycle1Start(value: string): Date | null {
-  // Expecting YYYY-MM-DD
-  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
-  if (!m) return null;
-  const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
-  if (Number.isNaN(d.getTime())) return null;
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
-
-function startOfDay(date: Date): Date {
-  const d = new Date(date);
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
-
-function addDays(date: Date, days: number): Date {
-  const d = new Date(date);
-  d.setDate(d.getDate() + days);
-  return d;
-}
+import { CYCLE_LENGTH_DAYS, getCurrentCycleWindow, getCycle1StartDate } from '../utils';
+import PercentBar from './PercentBar';
 
 function isWeekend(d: Date): boolean {
   const day = d.getDay();
@@ -73,13 +40,10 @@ export default function CycleProgress(): React.JSX.Element {
   // on localStorage. Compute once per mount; storage changes happen only via the
   // Setup Wizard which forces a full reload.
   const { cycle1Start, cycleNumber, cycleStart, cycleEnd, totalDays, daysElapsed, daysRemaining, pctRounded } = useMemo(() => {
-    const today = startOfDay(new Date());
-    const stored = parseCycle1Start(storage.getCycle1Start());
-    const c1 = stored ?? firstWorkingDayOfYear(today.getFullYear());
-    const daysSinceCycle1 = Math.floor((today.getTime() - c1.getTime()) / MS_PER_DAY);
-    const num = Math.max(1, Math.floor(daysSinceCycle1 / CYCLE_LENGTH_DAYS) + 1);
-    const start = addDays(c1, (num - 1) * CYCLE_LENGTH_DAYS);
-    const end = addDays(start, CYCLE_LENGTH_DAYS - 1);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const c1 = getCycle1StartDate();
+    const { start, end, number } = getCurrentCycleWindow(today);
     // Weekday-only counts (Mon–Fri); excludes Saturdays and Sundays.
     const total = countWeekdays(start, end);
     const elapsedTo = today.getTime() > end.getTime() ? end : today;
@@ -88,7 +52,7 @@ export default function CycleProgress(): React.JSX.Element {
     const pct = total === 0 ? 0 : Math.min(100, Math.max(0, (elapsed / total) * 100));
     return {
       cycle1Start: c1,
-      cycleNumber: num,
+      cycleNumber: number,
       cycleStart: start,
       cycleEnd: end,
       totalDays: total,
@@ -134,30 +98,7 @@ export default function CycleProgress(): React.JSX.Element {
               <td className="px-3 py-2 text-center text-sm font-semibold text-[#1a202c] border-b border-[#F0F0F7]" title="Mon–Fri only">{daysElapsed}</td>
               <td className="px-3 py-2 text-center text-sm font-semibold text-[#1a202c] border-b border-[#F0F0F7]" title="Mon–Fri only">{daysRemaining}</td>
               <td className="px-3 py-[0.4rem] border-b border-[#F0F0F7]">
-                <div className="flex h-[22px] rounded-full overflow-hidden border border-slate-200" title={`${pctRounded}% of cycle complete`}>
-                  <div
-                    style={{
-                      width: `${pctRounded}%`,
-                      background: '#059669',
-                      height: '100%',
-                      minWidth: pctRounded > 0 ? '2px' : '0',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    {pctRounded >= 8 && (
-                      <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#ffffff', whiteSpace: 'nowrap' }}>{pctRounded}%</span>
-                    )}
-                  </div>
-                  {pctRounded < 100 && (
-                    <div style={{ flex: 1, background: '#f1f5f9', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      {pctRounded < 8 && (
-                        <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#475569', whiteSpace: 'nowrap' }}>{pctRounded}%</span>
-                      )}
-                    </div>
-                  )}
-                </div>
+                <PercentBar pct={pctRounded} fillColor="#059669" showLabel title={`${pctRounded}% of cycle complete`} />
               </td>
             </tr>
           </tbody>

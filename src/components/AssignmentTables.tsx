@@ -90,47 +90,37 @@ export default function AssignmentTables(): React.JSX.Element | null {
     return 0;
   });
 
-  const epicTeamHead = (
-    <tr className="bg-[#494BCB]">
-      <th className={`${thBaseClass} rounded-tl-lg`} onClick={() => toggleSortState('epicTeam', 'epic')}>
-        Epic<SortIcon sort={sortState.epicTeam} col="epic" />
-        <span className="summary-sort-icon ml-[6px] cursor-pointer" data-tooltip="Restore original order" onClick={(e) => { e.stopPropagation(); resetSortState('epicTeam'); }} style={{ opacity: sortState.epicTeam.col ? 1 : 0.4 }}>
-          {ResetIcon}
-        </span>
-      </th>
-      <th className={`${thBaseClass} rounded-tr-lg cursor-default`}>Team Members</th>
-    </tr>
-  );
+  // Shared header renderer for the three assignment tables. Each table has a
+  // sortable first column (with restore icon), an optional sortable Count
+  // column in the middle, and a static label column on the right.
+  const renderHead = (
+    sortKey: 'epicTeam' | 'memberEpic' | 'memberTicket',
+    firstCol: { sortField: string; label: string },
+    lastCol: { label: string },
+    showCount: boolean,
+  ): React.JSX.Element => {
+    const sort = sortState[sortKey];
+    return (
+      <tr className="bg-[#494BCB]">
+        <th className={`${thBaseClass} rounded-tl-lg`} onClick={() => toggleSortState(sortKey, firstCol.sortField)}>
+          {firstCol.label}<SortIcon sort={sort} col={firstCol.sortField} />
+          <span className="summary-sort-icon ml-[6px] cursor-pointer" data-tooltip="Restore original order" onClick={(e) => { e.stopPropagation(); resetSortState(sortKey); }} style={{ opacity: sort.col ? 1 : 0.4 }}>
+            {ResetIcon}
+          </span>
+        </th>
+        {showCount && (
+          <th className={`${thBaseClass} text-center`} onClick={() => toggleSortState(sortKey, 'count')}>
+            Count<SortIcon sort={sort} col="count" isNumeric />
+          </th>
+        )}
+        <th className={`${thBaseClass} rounded-tr-lg cursor-default`}>{lastCol.label}</th>
+      </tr>
+    );
+  };
 
-  const memberEpicHead = (
-    <tr className="bg-[#494BCB]">
-      <th className={`${thBaseClass} rounded-tl-lg`} onClick={() => toggleSortState('memberEpic', 'member')}>
-        Team Member<SortIcon sort={sortState.memberEpic} col="member" />
-        <span className="summary-sort-icon ml-[6px] cursor-pointer" data-tooltip="Restore original order" onClick={(e) => { e.stopPropagation(); resetSortState('memberEpic'); }} style={{ opacity: sortState.memberEpic.col ? 1 : 0.4 }}>
-          {ResetIcon}
-        </span>
-      </th>
-      <th className={`${thBaseClass} text-center`} onClick={() => toggleSortState('memberEpic', 'count')}>
-        Count<SortIcon sort={sortState.memberEpic} col="count" isNumeric />
-      </th>
-      <th className={`${thBaseClass} rounded-tr-lg cursor-default`}>Epics</th>
-    </tr>
-  );
-
-  const memberTicketHead = (
-    <tr className="bg-[#494BCB]">
-      <th className={`${thBaseClass} rounded-tl-lg`} onClick={() => toggleSortState('memberTicket', 'member')}>
-        Team Member<SortIcon sort={sortState.memberTicket} col="member" />
-        <span className="summary-sort-icon ml-[6px] cursor-pointer" data-tooltip="Restore original order" onClick={(e) => { e.stopPropagation(); resetSortState('memberTicket'); }} style={{ opacity: sortState.memberTicket.col ? 1 : 0.4 }}>
-          {ResetIcon}
-        </span>
-      </th>
-      <th className={`${thBaseClass} text-center`} onClick={() => toggleSortState('memberTicket', 'count')}>
-        Count<SortIcon sort={sortState.memberTicket} col="count" isNumeric />
-      </th>
-      <th className={`${thBaseClass} rounded-tr-lg cursor-default`}>Open Tickets</th>
-    </tr>
-  );
+  const epicTeamHead = renderHead('epicTeam', { sortField: 'epic', label: 'Epic' }, { label: 'Team Members' }, false);
+  const memberEpicHead = renderHead('memberEpic', { sortField: 'member', label: 'Team Member' }, { label: 'Epics' }, true);
+  const memberTicketHead = renderHead('memberTicket', { sortField: 'member', label: 'Team Member' }, { label: 'Open Tickets' }, true);
 
   const renderEpicTeamRow = (row: EpicTeamEntry) => (
     <tr key={row.id as React.Key} className={row.team.length === 0 ? 'bg-[#fff9c4]' : ''}>

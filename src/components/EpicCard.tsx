@@ -8,7 +8,7 @@
  */
 import React, { useState, useEffect } from 'react';
 import { useDashboard } from '../context/DashboardContext';
-import { createPieSlice, COMPLETE_STATE_NAMES, daysAgo, formatDaysAgo, storage, getApiBaseUrl } from '../utils';
+import { createPieSlice, COMPLETE_STATE_NAMES, STORY_TYPE_COLORS, daysAgo, formatDaysAgo, storage, getApiBaseUrl } from '../utils';
 import { Epic, ViewSettings, PullRequest } from '../types';
 import { TargetActiveIcon, UserActiveIcon, HashActiveIcon, KanbanIcon, PieIcon, ChartIcon, PullRequestIcon, BarChartIcon, UsersIcon, TicketIcon } from './icons';
 import PeekButton from './PeekButton';
@@ -28,11 +28,6 @@ const STATE_COLORS: Record<string, string> = {
   'complete': '#16a34a',
 };
 
-const TYPE_COLORS: Record<string, string> = {
-  'feature': '#86efac',
-  'chore': '#fef08a',
-  'bug': '#fca5a5',
-};
 
 interface WorkflowSegment {
   stateId: number;
@@ -379,7 +374,7 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
                         {clickedStories.map(story => (
                           <tr key={story.id} className="border-b border-[#F0F0F7] last:border-0">
                             <td className="py-[0.3rem] pr-2 align-middle" style={{ width: '1%', whiteSpace: 'nowrap', textAlign: 'center' }}>
-                              <span className="text-[0.65rem] font-semibold px-1.5 py-[0.1rem] rounded-full text-white" style={{ backgroundColor: TYPE_COLORS[story.story_type] ?? TYPE_COLORS.feature }}>
+                              <span className="text-[0.65rem] font-semibold px-1.5 py-[0.1rem] rounded-full text-white" style={{ backgroundColor: STORY_TYPE_COLORS[story.story_type] ?? STORY_TYPE_COLORS.feature }}>
                                 {story.story_type.charAt(0).toUpperCase() + story.story_type.slice(1)}
                               </span>
                             </td>
@@ -489,7 +484,7 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
                             <g key={seg.type}>
                               <path
                                 d={createPieSlice(seg.startAngle, seg.angle)}
-                                fill={TYPE_COLORS[seg.type] || '#667eea'}
+                                fill={STORY_TYPE_COLORS[seg.type] || '#667eea'}
                                 stroke="#fff"
                                 strokeWidth="2"
                                 style={{ cursor: 'pointer' }}
@@ -511,7 +506,7 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
                       </div>
                       <div className="pie-chart-legend">
                         {typeSegmentsBase.map(seg => {
-                          const color = TYPE_COLORS[seg.type] || '#667eea';
+                          const color = STORY_TYPE_COLORS[seg.type] || '#667eea';
                           const storyTypeUrl = `${shortcutWebUrl}/epic/${epic.id}?group_by=story_type`;
                           return (
                             <a
