@@ -104,6 +104,11 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
       incrementApiCalls('GET /api/stories/:id', successful);
     });
     return () => { cancelled = true; };
+    // We intentionally watch `epic.stories?.length` (a primitive) rather than
+    // `epic.stories` (an array reference) so identity churn from parent re-renders
+    // doesn't cancel and re-fire the in-flight fetch. The closure captures the
+    // current stories at the moment the effect runs.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showPRs, prsLoaded, epic.stories?.length, incrementApiCalls]);
 
   if (epic.notFound) {
