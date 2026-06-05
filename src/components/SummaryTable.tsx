@@ -617,8 +617,8 @@ export default function SummaryTable(): React.JSX.Element {
   return (
     <>
       <EpicStatusTable />
-      {viewSettings.showCycleProgress && <CycleProgress />}
       <StoryTotalsSummary />
+      {viewSettings.showCycleProgress && <CycleProgress />}
     </>
   );
 }
