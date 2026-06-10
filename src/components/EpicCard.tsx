@@ -10,7 +10,7 @@ import React, { useState, useEffect } from 'react';
 import { useDashboard } from '../context/DashboardContext';
 import { createPieSlice, COMPLETE_STATE_NAMES, STORY_TYPE_COLORS, daysAgo, formatDaysAgo, storage, getApiBaseUrl } from '../utils';
 import { Epic, ViewSettings, PullRequest } from '../types';
-import { TargetActiveIcon, UserActiveIcon, HashActiveIcon, KanbanIcon, PieIcon, ChartIcon, PullRequestIcon, BarChartIcon, UsersIcon, TicketIcon } from './icons';
+import { TargetActiveIcon, UserActiveIcon, HashActiveIcon, KanbanIcon, PieIcon, ChartIcon, PullRequestIcon, BarChartIcon, UsersIcon, TicketIcon, ClipboardCopyIcon } from './icons';
 import PeekButton from './PeekButton';
 import SortIcon from './SortIcon';
 
@@ -73,6 +73,7 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
   const [cardCollapsed, setCardCollapsed] = useState(() => getEpicStateInfo(epic).type.toLowerCase() === 'done');
   const [showPRs, setShowPRs] = useState(false);
   const [showUserStoryBoard, setShowUserStoryBoard] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
   const [storyPrs, setStoryPrs] = useState<Record<number, PullRequest[]>>({});
   const [prsLoading, setPrsLoading] = useState(false);
   const [prsLoaded, setPrsLoaded] = useState(false);
@@ -233,6 +234,21 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
   })();
   const teamConfigName = selectedTeamIds.length > 0 ? (filterByTeam ? selectedTeamLabel : 'All Teams') : null;
 
+  const handleCopyLink = () => {
+    if (!epic.app_url) return;
+    const html = `<a href="${epic.app_url}">${epic.name}</a>`;
+    const plain = `${epic.name} (${epic.app_url})`;
+    navigator.clipboard.write([
+      new ClipboardItem({
+        'text/html': new Blob([html], { type: 'text/html' }),
+        'text/plain': new Blob([plain], { type: 'text/plain' }),
+      }),
+    ]).then(() => {
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 1500);
+    });
+  };
+
   return (
     <div id={`epic-${epic.id}`} className={`epic-card${cardCollapsed ? ' epic-card-collapsed' : ''}`}>
       <div className="epic-header">
@@ -247,6 +263,15 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
               epic.name
             )}
           </h3>
+          {epic.app_url && (
+            <button
+              className="epic-copy-link-btn"
+              onClick={handleCopyLink}
+              title="Copy link as HTML"
+            >
+              {copiedLink ? <span className="epic-copy-link-copied">Copied!</span> : ClipboardCopyIcon}
+            </button>
+          )}
         </div>
         <div className="epic-meta">
           {objectiveEl}
