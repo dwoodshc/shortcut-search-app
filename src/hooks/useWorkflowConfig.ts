@@ -3,14 +3,26 @@
  *
  * useWorkflowConfig.ts — Workflow configuration hook. Manages the selected workflow,
  * state-to-ID mappings, Shortcut workspace URL, and filtered epic names. Derives
- * filteredStateIds and summaryStateIds, and exposes loadSelectedWorkflow,
+ * filteredStateIds, and exposes loadSelectedWorkflow,
  * handleSelectWorkflow, and generateShortcutUrl.
  */
 import { useState, useCallback, useMemo } from 'react';
 import { storage } from '../utils';
 import { WorkflowConfig, Workflow } from '../types';
 
-const NORMALIZED_WORKFLOW_STATES = ['backlog', 'ready for development', 'in development', 'in review', 'ready for release', 'complete'];
+const NORMALIZED_WORKFLOW_STATES = ['backlog', 'ready for development', 'in development', 'in review', 'complete'];
+
+function buildStateMaps(states: Array<{ id: number; name: string }>) {
+  const stateIds: Record<string, number> = {};
+  const stateOrder: number[] = [];
+  const stateNames: Record<number, string> = {};
+  states.forEach(state => {
+    stateIds[state.name.toLowerCase().trim()] = state.id;
+    stateOrder.push(state.id);
+    stateNames[state.id] = state.name;
+  });
+  return { stateIds, stateOrder, stateNames };
+}
 
 export function useWorkflowConfig() {
   const [workflowConfig, setWorkflowConfig] = useState<WorkflowConfig>({
@@ -35,26 +47,18 @@ export function useWorkflowConfig() {
           setShortcutWebUrl(data.shortcut_web_url);
         }
         if (data.states && Array.isArray(data.states)) {
-          const stateMapping: Record<string, number> = {};
-          const stateOrder: number[] = [];
-          const stateIdToName: Record<number, string> = {};
-          data.states.forEach(state => {
-            const key = state.name.toLowerCase().trim();
-            stateMapping[key] = state.id;
-            stateOrder.push(state.id);
-            stateIdToName[state.id] = state.name;
-          });
+          const { stateIds, stateOrder, stateNames } = buildStateMaps(data.states);
           setWorkflowConfig(prev => ({
             ...prev,
             selectedId: data.workflow_id,
             savedId: data.workflow_id,
-            stateIds: stateMapping,
-            stateOrder: stateOrder,
-            states: stateIdToName,
+            stateIds,
+            stateOrder,
+            states: stateNames,
           }));
         }
       }
-    } catch (err) {}
+    } catch (err) { console.warn('Failed to load workflow config from storage:', err); }
   }, []);
 
   const handleSelectWorkflow = useCallback((workflow: Workflow) => {
@@ -66,37 +70,22 @@ export function useWorkflowConfig() {
         shortcut_web_url: shortcutWebUrl,
         states: states
       });
-      const stateMapping: Record<string, number> = {};
-      const stateOrder: number[] = [];
-      const stateIdToName: Record<number, string> = {};
-      workflow.states.forEach(state => {
-        const key = state.name.toLowerCase().trim();
-        stateMapping[key] = state.id;
-        stateOrder.push(state.id);
-        stateIdToName[state.id] = state.name;
-      });
+      const { stateIds, stateOrder, stateNames } = buildStateMaps(workflow.states);
       setWorkflowConfig(prev => ({
         ...prev,
         selectedId: workflow.id,
         savedId: workflow.id,
-        stateIds: stateMapping,
-        stateOrder: stateOrder,
-        states: stateIdToName,
+        stateIds,
+        stateOrder,
+        states: stateNames,
       }));
-    } catch (err) {}
+    } catch (err) { console.warn('Failed to persist selected workflow:', err); }
   }, [shortcutWebUrl]);
 
   const filteredStateIds = useMemo(() =>
     workflowConfig.stateOrder.filter(stateId => {
       const stateName = workflowConfig.states[stateId];
       return stateName && NORMALIZED_WORKFLOW_STATES.includes(stateName.toLowerCase().trim());
-    }),
-  [workflowConfig.stateOrder, workflowConfig.states]);
-
-  const summaryStateIds = useMemo(() =>
-    workflowConfig.stateOrder.filter(stateId => {
-      const name = workflowConfig.states[stateId];
-      return name && NORMALIZED_WORKFLOW_STATES.includes(name.toLowerCase().trim());
     }),
   [workflowConfig.stateOrder, workflowConfig.states]);
 
@@ -119,7 +108,6 @@ export function useWorkflowConfig() {
     loadSelectedWorkflow,
     handleSelectWorkflow,
     filteredStateIds,
-    summaryStateIds,
     generateShortcutUrl,
   };
 }

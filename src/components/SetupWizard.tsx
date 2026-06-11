@@ -1,8 +1,9 @@
 /**
  * Copyright (c) 2026 Dave Woods <dave.woods@slice.com>. All rights reserved.
  *
- * SetupWizard.tsx — 6-step guided setup modal. Steps: API token (verified against the
- * API), workspace URL, workflow selection, team selection, ignored users, and epic list.
+ * SetupWizard.tsx — 7-step guided setup modal. Steps: API token (verified against the
+ * API), workspace URL, workflow selection, team selection, my Shortcut name
+ * (for unwatched ticket detection), Cycle 1 start date, and epic list.
  * Local form state is initialised from storage on mount; each step persists to
  * localStorage before advancing.
  */
@@ -19,8 +20,7 @@ interface Props {
 
 export default function SetupWizard({ step, onStepChange, onClose }: Props): React.JSX.Element {
   const {
-    ignoredUsers, setIgnoredUsers,
-    selectedTeamId, setSelectedTeamId,
+    selectedTeams, setSelectedTeams, selectedTeamIds,
     shortcutWebUrl, setShortcutWebUrl,
     workflowConfig, setWorkflowField,
     handleSaveShortcutUrl, handleSelectWorkflow,
@@ -29,20 +29,43 @@ export default function SetupWizard({ step, onStepChange, onClose }: Props): Rea
     loading,
     successMessage,
     searchEpics,
+    incrementApiCalls,
   } = useDashboard();
 
   const [apiToken, setApiToken] = useState('');
   const [tokenError, setTokenError] = useState('');
   const [hasExistingToken, setHasExistingToken] = useState(() => !!storage.getApiToken());
   const [epicListError, setEpicListError] = useState('');
-  const [epicsList, setEpicsList] = useState<Array<{ name: string }>>(() => storage.getEpicsConfig()?.epics || []);
+  const [epicsText, setEpicsText] = useState(() => (storage.getEpicsConfig()?.epics || []).map(e => e.name).join('\n'));
   const [allTeams, setAllTeams] = useState<Team[]>([]);
+  const [myName, setMyName] = useState(() => storage.getMyName());
+  const [cycle1Start, setCycle1Start] = useState(() => {
+    const stored = storage.getCycle1Start();
+    if (stored) return stored;
+    // Default: first weekday of the current year (YYYY-MM-DD)
+    const d = new Date(new Date().getFullYear(), 0, 1);
+    while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() + 1);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  });
 
   const handleSaveEpicList = () => {
     setEpicListError('');
     try {
-      storage.setEpicsConfig({ epics: epicsList });
-      setFilteredEpicNames(epicsList.map(e => e.name));
+      const epics = epicsText.split('\n').filter(name => name.trim() !== '').map(name => ({ name: name.trim() }));
+      const seen = new Set<string>();
+      const duplicateLowers = new Set<string>();
+      for (const e of epics) {
+        const lower = e.name.toLowerCase();
+        if (seen.has(lower)) duplicateLowers.add(lower);
+        else seen.add(lower);
+      }
+      if (duplicateLowers.size > 0) {
+        const displayNames = [...duplicateLowers].map(lower => epics.find(e => e.name.toLowerCase() === lower)!.name);
+        setEpicListError(`Duplicate epic${displayNames.length > 1 ? 's' : ''}: ${displayNames.join(', ')}`);
+        return false;
+      }
+      storage.setEpicsConfig({ epics });
+      setFilteredEpicNames(epics.map(e => e.name));
       return true;
     } catch (err) {
       setEpicListError('Failed to save epics configuration. Please try again.');
@@ -50,81 +73,141 @@ export default function SetupWizard({ step, onStepChange, onClose }: Props): Rea
     }
   };
 
+  const handleStep1Next = async () => {
+    const existingToken = storage.getApiToken();
+    if (!apiToken.trim() && !existingToken) {
+      setTokenError('Please enter an API token');
+      return;
+    }
+    const tokenToVerify = apiToken.trim() || existingToken;
+    if (apiToken.trim()) storage.setApiToken(apiToken.trim());
+    try {
+      setTokenError('Verifying token...');
+      const response = await fetch(`${getApiBaseUrl()}/api/workflows`, {
+        headers: { 'Authorization': `Bearer ${tokenToVerify}` }
+      });
+      if (!response.ok) {
+        setTokenError(response.status === 401 || response.status === 403
+          ? 'Invalid API token. Please check your token and try again.'
+          : 'Failed to verify token. Please check your connection and try again.');
+        return;
+      }
+      incrementApiCalls('GET /api/workflows', 1);
+      setTokenError('');
+      onStepChange(2);
+    } catch (err) {
+      setTokenError('Exception - Failed to verify token. Please check your connection and try again.');
+    }
+  };
+
+  const handleStep2Next = async () => {
+    const savedUrl = handleSaveShortcutUrl();
+    if (savedUrl === false) return;
+    try {
+      const token = storage.getApiToken();
+      const workflowsResponse = await fetch(`${getApiBaseUrl()}/api/workflows`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (workflowsResponse.ok) {
+        incrementApiCalls('GET /api/workflows', 1);
+        setWorkflowField('workflows', await workflowsResponse.json());
+      } else {
+        setError('Failed to load workflows. You may need to go back and retry.');
+      }
+    } catch (err) {
+      setError('Failed to load workflows. Check your connection and try again.');
+    }
+    onStepChange(3);
+  };
+
+  const handleStep3Next = async () => {
+    if (!workflowConfig.selectedId) { setError('Please select a workflow'); return; }
+    const selectedWorkflow = workflowConfig.workflows.find(w => w.id === workflowConfig.selectedId);
+    if (!selectedWorkflow) return;
+    handleSelectWorkflow(selectedWorkflow);
+    try {
+      const token = storage.getApiToken();
+      const teamsRes = await fetch(`${getApiBaseUrl()}/api/teams`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (teamsRes.ok) {
+        incrementApiCalls('GET /api/teams', 1);
+        setAllTeams(await teamsRes.json());
+      } else {
+        setError('Failed to load teams. You can still proceed and skip team selection.');
+      }
+    } catch (err) {
+      setError('Failed to load teams. Check your connection and try again.');
+    }
+    onStepChange(4);
+  };
+
+  const handleNext = async () => {
+    if (step === 1) { await handleStep1Next(); }
+    else if (step === 2) { await handleStep2Next(); }
+    else if (step === 3) { await handleStep3Next(); }
+    else if (step === 4) { storage.setTeamConfig(selectedTeams); onStepChange(5); }
+    else if (step === 5) { storage.setMyName(myName.trim()); onStepChange(6); }
+    else if (step === 6) { storage.setCycle1Start(cycle1Start); onStepChange(7); }
+    else if (step === 7) { const saved = handleSaveEpicList(); if (saved) { onClose(); searchEpics(); } }
+  };
+
   return (
     <div className="modal-overlay">
       <div className="modal-content modal-content-large">
         <h2>Setup Wizard</h2>
-        <p style={{ color: '#718096', marginBottom: '1.5rem' }}>
+        <p className="text-[#718096] mb-6">
           Configure your Shortcut connection and epic tracking
         </p>
 
         {/* Step Indicator */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          marginBottom: '2rem',
-          position: 'relative'
-        }}>
-          {[1, 2, 3, 4, 5, 6].map((stepNum) => (
+        <div className="flex justify-between mb-8 relative">
+          {[1, 2, 3, 4, 5, 6, 7].map((stepNum) => (
             <div
               key={stepNum}
-              style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative', cursor: 'pointer' }}
+              className="flex-1 flex flex-col items-center relative cursor-pointer"
               onClick={() => onStepChange(stepNum)}
             >
-              <div style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '50%',
-                backgroundColor: step === stepNum ? '#494BCB' : step > stepNum ? '#22c55e' : '#e2e8f0',
-                color: step >= stepNum ? 'white' : '#94a3b8',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontWeight: 'bold',
-                fontSize: '1rem',
-                transition: 'all 0.3s ease',
-                zIndex: 1,
-                border: step === stepNum ? '2px solid #494BCB' : '2px solid transparent'
-              }}>
+              <div
+                className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 z-10 border-2"
+                style={{
+                  backgroundColor: step === stepNum ? '#494BCB' : step > stepNum ? '#22c55e' : '#e2e8f0',
+                  color: step >= stepNum ? 'white' : '#94a3b8',
+                  borderColor: step === stepNum ? '#494BCB' : 'transparent'
+                }}
+              >
                 {step > stepNum ? '✓' : stepNum}
               </div>
-              <div style={{
-                marginTop: '0.5rem',
-                fontSize: '0.75rem',
-                color: step === stepNum ? '#494BCB' : '#64748b',
-                fontWeight: step === stepNum ? '600' : 'normal',
-                textAlign: 'center',
-                userSelect: 'none'
-              }}>
+              <div
+                className={`mt-2 text-[0.65rem] text-center select-none ${step === stepNum ? 'text-[#494BCB] font-semibold' : 'text-[#64748b] font-normal'}`}
+              >
                 {stepNum === 1 && 'API Token'}
                 {stepNum === 2 && 'Shortcut URL'}
                 {stepNum === 3 && 'Workflow'}
                 {stepNum === 4 && 'Select Team'}
-                {stepNum === 5 && 'Ignore Users'}
-                {stepNum === 6 && 'Epic List'}
+                {stepNum === 5 && 'My Name'}
+                {stepNum === 6 && 'Cycle 1 Start'}
+                {stepNum === 7 && 'Epic List'}
               </div>
-              {stepNum < 6 && (
-                <div style={{
-                  position: 'absolute',
-                  top: '20px',
-                  left: '60%',
-                  width: 'calc(100% - 20px)',
-                  height: '2px',
-                  backgroundColor: step > stepNum ? '#22c55e' : '#e2e8f0',
-                  transition: 'all 0.3s ease',
-                  zIndex: 0
-                }} />
+              {stepNum < 7 && (
+                <div
+                  className="absolute top-4 left-[60%] h-[2px] transition-all duration-300 z-0"
+                  style={{
+                    width: 'calc(100% - 16px)',
+                    backgroundColor: step > stepNum ? '#22c55e' : '#e2e8f0',
+                  }}
+                />
               )}
             </div>
           ))}
         </div>
 
         {/* Step Content */}
-        <div style={{ height: '450px', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+        <div className="h-[450px] overflow-y-auto flex flex-col">
           {/* Step 1: API Token */}
           {step === 1 && (
             <div>
-              <h3 style={{ color: '#1e293b', marginBottom: '1rem' }}>Step 1: API Token</h3>
+              <h3 className="text-[#1e293b] mb-4">Step 1: API Token</h3>
               <p>To use this application, you need to provide a Shortcut API token.</p>
 
               <ol>
@@ -160,12 +243,12 @@ export default function SetupWizard({ step, onStepChange, onClose }: Props): Rea
                   autoFocus
                 />
                 {hasExistingToken && (
-                  <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.5rem', marginBottom: 0 }}>
+                  <p className="text-xs text-[#64748b] mt-2 mb-0">
                     Token is currently set. Enter a new token to replace it.
                   </p>
                 )}
                 {tokenError && (
-                  <div style={{ color: '#c33', marginTop: '0.5rem', fontSize: '0.875rem' }}>
+                  <div className="text-[#c33] mt-2 text-sm">
                     {tokenError}
                   </div>
                 )}
@@ -176,8 +259,8 @@ export default function SetupWizard({ step, onStepChange, onClose }: Props): Rea
           {/* Step 2: Shortcut URL */}
           {step === 2 && (
             <div>
-              <h3 style={{ color: '#1e293b', marginBottom: '1rem' }}>Step 2: Shortcut URL</h3>
-              <p style={{ marginBottom: '1.5rem' }}>Enter your Shortcut workspace URL. This will be used to generate hyperlinks to your epics.</p>
+              <h3 className="text-[#1e293b] mb-4">Step 2: Shortcut URL</h3>
+              <p className="mb-6">Enter your Shortcut workspace URL. This will be used to generate hyperlinks to your epics.</p>
 
               <div className="form-group">
                 <label htmlFor="shortcutWebUrl">Shortcut URL:</label>
@@ -189,7 +272,7 @@ export default function SetupWizard({ step, onStepChange, onClose }: Props): Rea
                   className="input-field"
                   placeholder="https://app.shortcut.com/your-workspace"
                 />
-                <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.5rem' }}>
+                <p className="text-xs text-[#64748b] mt-2">
                   Example: https://app.shortcut.com/your-workspace
                 </p>
               </div>
@@ -199,86 +282,58 @@ export default function SetupWizard({ step, onStepChange, onClose }: Props): Rea
           {/* Step 3: Select Workflow */}
           {step === 3 && (
             <div>
-              <h3 style={{ color: '#1e293b', marginBottom: '1rem' }}>Step 3: Select Workflow</h3>
-              <p style={{ marginBottom: '1.5rem' }}>Choose the workflow you want to use for tracking epic progress.</p>
+              <h3 className="text-[#1e293b] mb-4">Step 3: Select Workflow</h3>
+              <p className="mb-6">Choose the workflow you want to use for tracking epic progress.</p>
 
               {error && (
-                <div style={{
-                  backgroundColor: '#fef2f2',
-                  border: '1px solid #fecaca',
-                  color: '#dc2626',
-                  padding: '0.75rem',
-                  borderRadius: '8px',
-                  marginBottom: '1rem',
-                  fontSize: '0.875rem'
-                }}>
+                <div className="bg-[#fef2f2] border border-[#fecaca] text-[#dc2626] p-3 rounded-lg mb-4 text-sm">
                   {error}
                 </div>
               )}
 
               <div>
                 {workflowConfig.workflows.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '2rem 0' }}>
-                    <p style={{ color: '#94a3b8', fontStyle: 'italic' }}>
+                  <div className="text-center py-8">
+                    <p className="text-[#94a3b8] italic">
                       {loading ? 'Loading workflows...' : 'No workflows found'}
                     </p>
                   </div>
                 ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <div className="flex flex-col gap-4">
                     {workflowConfig.workflows.map((workflow) => (
                       <div
                         key={workflow.id}
+                        className="flex flex-col gap-3 p-4 rounded-lg transition-all duration-200 cursor-pointer"
                         style={{
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: '0.75rem',
-                          padding: '1rem',
                           backgroundColor: workflowConfig.selectedId === workflow.id ? '#eff6ff' : '#ffffff',
                           border: workflowConfig.selectedId === workflow.id ? '2px solid #494BCB' : '1px solid #e2e8f0',
-                          borderRadius: '8px',
-                          transition: 'all 0.2s ease',
-                          cursor: 'pointer'
                         }}
                         onClick={() => setWorkflowField('selectedId', workflow.id)}
                       >
-                        <div style={{ flex: 1 }}>
-                          <h4 style={{
-                            color: '#494BCB',
-                            marginBottom: '0.5rem',
-                            fontSize: '1rem',
-                            fontWeight: '600',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.5rem'
-                          }}>
+                        <div className="flex-1">
+                          <h4 className="text-[#494BCB] mb-2 text-base font-semibold flex items-center gap-2">
                             {workflow.name}
                             {workflowConfig.selectedId === workflow.id && (
-                              <span style={{ color: '#22c55e', fontSize: '0.875rem', fontWeight: 'normal' }}>
+                              <span className="text-green-500 text-sm font-normal">
                                 ✓ Selected
                               </span>
                             )}
                           </h4>
                           {workflow.description && (
-                            <p style={{ color: '#64748b', fontSize: '0.875rem', marginBottom: '0.75rem', lineHeight: '1.4' }}>
+                            <p className="text-[#64748b] text-sm mb-3 leading-[1.4]">
                               {workflow.description}
                             </p>
                           )}
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                          <div className="flex flex-wrap gap-2">
                             {workflow.states && workflow.states.map((state) => (
                               <div
                                 key={state.id}
+                                className="text-white px-3 py-1 rounded-full text-xs font-semibold inline-block whitespace-nowrap"
                                 style={{
                                   backgroundColor: state.color === 'green' ? '#22c55e' :
                                                  state.color === 'yellow' ? '#fbbf24' :
                                                  state.color === 'red' ? '#ef4444' :
                                                  state.color === 'blue' ? '#3b82f6' : '#6b7280',
-                                  color: 'white',
-                                  padding: '0.25rem 0.75rem',
-                                  borderRadius: '12px',
-                                  fontSize: '0.75rem',
-                                  fontWeight: '600',
-                                  display: 'inline-block',
-                                  whiteSpace: 'nowrap'
                                 }}
                               >
                                 {state.name}
@@ -294,108 +349,137 @@ export default function SetupWizard({ step, onStepChange, onClose }: Props): Rea
             </div>
           )}
 
-          {/* Step 4: Select Team */}
+          {/* Step 4: Select Teams */}
           {step === 4 && (
             <div>
-              <h3 style={{ color: '#1e293b', marginBottom: '1rem' }}>Step 4: Select Team</h3>
-              <p style={{ marginBottom: '1.5rem' }}>Choose the Shortcut team you want to track in this dashboard.</p>
+              <h3 className="text-[#1e293b] mb-4">Step 4: Select Teams</h3>
+              <p className="mb-6">Choose one or more Shortcut teams to track in this dashboard.</p>
               {allTeams.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '2rem 0' }}>
-                  <p style={{ color: '#94a3b8', fontStyle: 'italic', marginBottom: '1rem' }}>No teams found. You can skip this step if you don't use teams.</p>
+                <div className="text-center py-8">
+                  <p className="text-[#94a3b8] italic mb-4">No teams found. You can skip this step if you don't use teams.</p>
                   <button
                     type="button"
-                    className="btn-secondary"
-                    style={{ fontSize: '0.8rem' }}
+                    className="btn-secondary text-[0.8rem]"
                     onClick={async () => {
                       try {
                         const token = storage.getApiToken();
                         const teamsRes = await fetch(`${getApiBaseUrl()}/api/teams`, {
                           headers: { 'Authorization': `Bearer ${token}` }
                         });
-                        if (teamsRes.ok) setAllTeams(await teamsRes.json());
-                      } catch (err) {}
+                        if (teamsRes.ok) {
+                          incrementApiCalls('GET /api/teams', 1);
+                          setAllTeams(await teamsRes.json());
+                        } else {
+                          setError('Failed to load teams. Check your connection and try again.');
+                        }
+                      } catch (err) {
+                        setError('Failed to load teams. Check your connection and try again.');
+                      }
                     }}
                   >
                     Retry
                   </button>
                 </div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  {allTeams.map((team) => (
-                    <div
-                      key={team.id}
-                      onClick={() => setSelectedTeamId(team.id)}
-                      style={{
-                        padding: '0.75rem 1rem',
-                        backgroundColor: selectedTeamId === team.id ? '#eff6ff' : '#ffffff',
-                        border: selectedTeamId === team.id ? '2px solid #494BCB' : '1px solid #e2e8f0',
-                        borderRadius: '8px',
-                        cursor: 'pointer',
-                        transition: 'all 0.15s ease'
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <span style={{ fontWeight: 600, fontSize: '0.95rem', color: '#494BCB' }}>{team.name}</span>
-                        {selectedTeamId === team.id && (
-                          <span style={{ color: '#22c55e', fontSize: '0.8rem' }}>✓ Selected</span>
+                <div className="flex flex-col gap-3">
+                  {allTeams.map((team) => {
+                    const isSelected = selectedTeamIds.includes(team.id);
+                    return (
+                      <div
+                        key={team.id}
+                        onClick={() => setSelectedTeams(prev =>
+                          prev.some(t => t.id === team.id)
+                            ? prev.filter(t => t.id !== team.id)
+                            : [...prev, { id: team.id, name: team.name }]
+                        )}
+                        className="px-4 py-3 rounded-lg cursor-pointer transition-all duration-150"
+                        style={{
+                          backgroundColor: isSelected ? '#eff6ff' : '#ffffff',
+                          border: isSelected ? '2px solid #494BCB' : '1px solid #e2e8f0',
+                        }}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-[0.95rem] text-[#494BCB]">{team.name}</span>
+                          {isSelected && (
+                            <span className="text-green-500 text-[0.8rem]">✓ Selected</span>
+                          )}
+                        </div>
+                        {team.description && (
+                          <p className="text-[#64748b] text-[0.85rem] mt-1 mb-0">{team.description}</p>
                         )}
                       </div>
-                      {team.description && (
-                        <p style={{ color: '#64748b', fontSize: '0.85rem', margin: '0.25rem 0 0' }}>{team.description}</p>
-                      )}
-                    </div>
-                  ))}
+                    );
+                  })}
+                  {selectedTeamIds.length > 1 && (
+                    <p className="text-[#64748b] text-[0.85rem] mt-1 mb-0">
+                      {selectedTeamIds.length} teams selected
+                    </p>
+                  )}
                 </div>
               )}
             </div>
           )}
 
-          {/* Step 5: Ignore Users */}
+          {/* Step 5: My Name */}
           {step === 5 && (
-            <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-              <h3 style={{ color: '#1e293b', marginBottom: '0.4rem' }}>Step 5: Ignore Users</h3>
-              <p style={{ marginBottom: '0.15rem' }}>Enter the names of Shortcut users to exclude from the assignment tables (one per line).</p>
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-                <textarea
+            <div>
+              <h3 className="text-[#1e293b] mb-4">Step 5: Your Shortcut Name</h3>
+              <p className="mb-6">Enter your name exactly as it appears in Shortcut. This will be used to find open tickets in your selected teams that you are not watching.</p>
+              <div className="form-group">
+                <label htmlFor="myName">Your name in Shortcut:</label>
+                <input
+                  type="text"
+                  id="myName"
+                  value={myName}
+                  onChange={(e) => setMyName(e.target.value)}
                   className="input-field"
-                  value={ignoredUsers.join('\n')}
-                  onChange={(e) => setIgnoredUsers(e.target.value.split('\n').filter(u => u.trim() !== ''))}
-                  placeholder={"John Smith\nJane Doe"}
-                  style={{ flex: 1, width: '100%', resize: 'none', fontFamily: 'inherit', fontSize: '1rem', padding: '0.5rem 0.75rem', boxSizing: 'border-box' }}
+                  placeholder="e.g. Jane Smith"
                 />
+                <p className="text-xs text-[#64748b] mt-2">
+                  This is optional. Leave blank to skip unwatched ticket tracking.
+                </p>
               </div>
             </div>
           )}
 
-          {/* Step 6: Epic List */}
+          {/* Step 6: Cycle 1 Start Date */}
           {step === 6 && (
-            <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-              <h3 style={{ color: '#1e293b', marginBottom: '0.4rem' }}>Step 6: Epic List</h3>
-              <p style={{ marginBottom: '0.15rem' }}>Add the epics you want to track.</p>
-
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-                <textarea
+            <div>
+              <h3 className="text-[#1e293b] mb-4">Step 6: Cycle 1 Start Date</h3>
+              <p className="mb-6">Pick the calendar date that <strong>Cycle 1</strong> begins. Each cycle is 6 weeks (42 days), and the dates of the remaining cycles in the year are calculated from this anchor.</p>
+              <div className="form-group">
+                <label htmlFor="cycle1Start">Cycle 1 start date:</label>
+                <input
+                  type="date"
+                  id="cycle1Start"
+                  value={cycle1Start}
+                  onChange={(e) => setCycle1Start(e.target.value)}
                   className="input-field"
-                  value={epicsList.map(e => e.name).join('\n')}
-                  onChange={(e) => setEpicsList(e.target.value.split('\n').filter(name => name.trim() !== '').map(name => ({ name })))}
+                />
+                <p className="text-xs text-[#64748b] mt-2">
+                  Defaults to the first weekday of the current year. You can change this anytime by re-running the wizard.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Step 7: Epic List */}
+          {step === 7 && (
+            <div className="flex flex-col h-full">
+              <h3 className="text-[#1e293b] mb-[0.4rem]">Step 7: Epic List</h3>
+              <p className="mb-[0.15rem]">Add the epics you want to track.</p>
+
+              <div className="flex-1 flex flex-col min-h-0">
+                <textarea
+                  className="input-field flex-1 w-full resize-none font-inherit text-base px-3 py-2 box-border"
+                  value={epicsText}
+                  onChange={(e) => setEpicsText(e.target.value)}
                   placeholder={"Epic Alpha\nEpic Beta\nEpic Gamma"}
-                  style={{ flex: 1, width: '100%', resize: 'none', fontFamily: 'inherit', fontSize: '1rem', padding: '0.5rem 0.75rem', boxSizing: 'border-box' }}
                 />
               </div>
 
               {epicListError && (
-                <div style={{
-                  color: '#c33',
-                  marginTop: '0.5rem',
-                  fontSize: '0.875rem',
-                  backgroundColor: '#fee',
-                  border: '1px solid #fcc',
-                  padding: '0.75rem',
-                  borderRadius: '6px',
-                  whiteSpace: 'pre-line',
-                  maxHeight: '150px',
-                  overflowY: 'auto'
-                }}>
+                <div className="text-[#c33] mt-2 text-sm bg-[#fee] border border-[#fcc] p-3 rounded-md whitespace-pre-line max-h-[150px] overflow-y-auto">
                   {epicListError}
                 </div>
               )}
@@ -405,21 +489,13 @@ export default function SetupWizard({ step, onStepChange, onClose }: Props): Rea
 
         {/* Success message display */}
         {successMessage && (
-          <div style={{
-            backgroundColor: '#d1fae5',
-            border: '1px solid #6ee7b7',
-            color: '#065f46',
-            padding: '0.75rem',
-            borderRadius: '8px',
-            marginTop: '1rem',
-            fontSize: '0.875rem'
-          }}>
+          <div className="bg-[#d1fae5] border border-[#6ee7b7] text-[#065f46] p-3 rounded-lg mt-4 text-sm">
             {successMessage}
           </div>
         )}
 
         {/* Navigation Buttons */}
-        <div className="modal-buttons" style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'space-between' }}>
+        <div className="modal-buttons mt-6 flex justify-between">
           <button
             type="button"
             onClick={onClose}
@@ -427,7 +503,7 @@ export default function SetupWizard({ step, onStepChange, onClose }: Props): Rea
           >
             Cancel
           </button>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <div className="flex gap-2">
             {step > 1 && (
               <button
                 type="button"
@@ -439,95 +515,10 @@ export default function SetupWizard({ step, onStepChange, onClose }: Props): Rea
             )}
             <button
               type="button"
-              onClick={async () => {
-                if (step === 1) {
-                  const existingToken = storage.getApiToken();
-                  if (!apiToken.trim() && !existingToken) {
-                    setTokenError('Please enter an API token');
-                    return;
-                  }
-
-                  const tokenToVerify = apiToken.trim() || existingToken;
-
-                  if (apiToken.trim()) {
-                    storage.setApiToken(apiToken);
-                  }
-
-                  try {
-                    setTokenError('Verifying token...');
-                    const response = await fetch(`${getApiBaseUrl()}/api/workflows`, {
-                      headers: { 'Authorization': `Bearer ${tokenToVerify}` }
-                    });
-
-                    if (!response.ok) {
-                      if (response.status === 401 || response.status === 403) {
-                        setTokenError('Invalid API token. Please check your token and try again.');
-                      } else {
-                        setTokenError('Failed to verify token. Please check your connection and try again.');
-                      }
-                      return;
-                    }
-
-                    setTokenError('');
-                    onStepChange(2);
-                  } catch (err) {
-                    setTokenError('Exception - Failed to verify token. Please check your connection and try again.');
-                    return;
-                  }
-                } else if (step === 2) {
-                  const savedUrl = handleSaveShortcutUrl();
-                  if (savedUrl !== false) {
-                    try {
-                      const token = storage.getApiToken();
-                      const workflowsResponse = await fetch(`${getApiBaseUrl()}/api/workflows`, {
-                        headers: { 'Authorization': `Bearer ${token}` }
-                      });
-                      if (workflowsResponse.ok) {
-                        const workflows = await workflowsResponse.json();
-                        setWorkflowField('workflows', workflows);
-                      }
-                    } catch (err) {}
-                    onStepChange(3);
-                  }
-                } else if (step === 3) {
-                  if (!workflowConfig.selectedId) {
-                    setError('Please select a workflow');
-                    return;
-                  }
-                  const selectedWorkflow = workflowConfig.workflows.find(w => w.id === workflowConfig.selectedId);
-                  if (selectedWorkflow) {
-                    handleSelectWorkflow(selectedWorkflow);
-                    try {
-                      const token = storage.getApiToken();
-                      const teamsRes = await fetch(`${getApiBaseUrl()}/api/teams`, {
-                        headers: { 'Authorization': `Bearer ${token}` }
-                      });
-                      if (teamsRes.ok) setAllTeams(await teamsRes.json());
-                    } catch (err) {}
-                    onStepChange(4);
-                  }
-                } else if (step === 4) {
-                  if (selectedTeamId) {
-                    const selectedTeam = allTeams.find(t => t.id === selectedTeamId);
-                    if (selectedTeam) {
-                      storage.setTeamConfig({ id: selectedTeam.id, name: selectedTeam.name });
-                    }
-                  }
-                  onStepChange(5);
-                } else if (step === 5) {
-                  storage.setIgnoredUsers(ignoredUsers);
-                  onStepChange(6);
-                } else if (step === 6) {
-                  const saved = handleSaveEpicList();
-                  if (saved) {
-                    onClose();
-                    searchEpics();
-                  }
-                }
-              }}
+              onClick={handleNext}
               className="btn-primary"
             >
-              {step < 6 ? 'Next' : 'Finish'}
+              {step < 7 ? 'Next' : 'Finish'}
             </button>
           </div>
         </div>

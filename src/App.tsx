@@ -6,19 +6,24 @@
  * configuration check, wipe-settings, and derived data (epicTeamData, memberEpicMap)
  * that depends on outputs from more than one hook.
  */
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import './App.css';
 import StoryDetailModal from './components/StoryDetailModal';
 import SummaryTable from './components/SummaryTable';
 import AssignmentTables from './components/AssignmentTables';
+import AssignmentViewsRow from './components/AssignmentViewsRow';
+import UnwatchedTickets from './components/UnwatchedTickets';
 import EpicCard from './components/EpicCard';
 import SetupWizard from './components/SetupWizard';
-import EpicSidebar from './components/EpicSidebar';
 import AppHeader from './components/AppHeader';
 import AppFooter from './components/AppFooter';
-import { storage, getApiBaseUrl } from './utils';
+import PercentBar from './components/PercentBar';
+import MatrixRain from './components/MatrixRain';
+import OceanTide from './components/OceanTide';
+import ThemeSelector from './components/ThemeSelector';
+import { storage, getApiBaseUrl, STORAGE_KEYS } from './utils';
 import pkg from '../package.json';
 import { useEpicsData } from './hooks/useEpicsData';
 import { useWorkflowConfig } from './hooks/useWorkflowConfig';
@@ -26,10 +31,99 @@ import { useModals } from './hooks/useModals';
 import { useFilters } from './hooks/useFilters';
 import { useConfigIO } from './hooks/useConfigIO';
 import { DashboardContext } from './context/DashboardContext';
-import { Epic, EpicState } from './types';
+import { Epic, EpicState, Story } from './types';
+
+const toTitleCase = (str: string): string =>
+  str.toLowerCase().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+
+const LoadStatsFooter = React.memo(function LoadStatsFooter({ loadStats, pageSizeKb }: { loadStats: import('./types').LoadStats; pageSizeKb: string | null }) {
+  const [showApiModal, setShowApiModal] = React.useState(false);
+  const handleDownload = () => {
+    const blob = new Blob([document.documentElement.outerHTML], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `shortcut-dashboard-${loadStats.loadedAt.toISOString().slice(0, 10)}.html`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+  const statClass = "flex items-center gap-[0.35rem] text-[#718096] text-[0.78rem]";
+  const divider = <span className="text-[#cbd5e0]">|</span>;
+  const sortedBreakdown = Object.entries(loadStats.apiCallBreakdown || {})
+    .sort((a, b) => b[1] - a[1]);
+  return (
+    <>
+      {showApiModal && (
+        <div className="modal-overlay" onClick={() => setShowApiModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '480px' }}>
+            <h2 className="m-0 mb-4 text-[1.1rem]">API Call Breakdown</h2>
+            <table className="w-full" style={{ borderCollapse: 'collapse' }}>
+              <thead>
+                <tr className="border-b-2 border-[#E2E8F0]">
+                  <th className="text-left pb-2 pr-4 text-sm font-semibold text-[#64748b]">Endpoint</th>
+                  <th className="text-right pb-2 text-sm font-semibold text-[#64748b]">Calls</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sortedBreakdown.map(([endpoint, count]) => (
+                  <tr key={endpoint} className="border-b border-[#F0F0F7] last:border-0">
+                    <td className="py-2 pr-4 text-sm font-mono text-[#1a202c]">{endpoint}</td>
+                    <td className="py-2 text-right text-sm font-semibold text-[#494BCB]">{count}</td>
+                  </tr>
+                ))}
+                <tr className="border-t-2 border-[#E2E8F0]">
+                  <td className="pt-2 pr-4 text-sm font-semibold text-[#64748b]">Total</td>
+                  <td className="pt-2 text-right text-sm font-semibold text-[#1a202c]">{loadStats.apiCallCount}</td>
+                </tr>
+              </tbody>
+            </table>
+            <div className="modal-buttons mt-4">
+              <button type="button" onClick={() => setShowApiModal(false)} className="btn-primary">Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+      <div className="bg-[#f8fafc] border-t border-slate-200 px-8 py-2 flex flex-wrap gap-4 items-center justify-center">
+        <div className={statClass}><span>⏱</span><span>Load time: <strong>{(loadStats.loadTime / 1000).toFixed(2)}s</strong></span></div>
+        {divider}
+        <div className={statClass}>
+          <span>🔗</span>
+          <span>API calls: <button onClick={() => setShowApiModal(true)} className="bg-transparent border-0 cursor-pointer text-[#494BCB] text-[0.78rem] font-bold p-0 underline decoration-dotted">{loadStats.apiCallCount}</button></span>
+        </div>
+        {divider}
+        <div className={statClass}><span>🕐</span><span>Generated: <strong>{loadStats.loadedAt.toLocaleString()}</strong></span></div>
+        {divider}
+        <div className={statClass}><span>📄</span><span>Page size: <strong>{pageSizeKb} KB</strong></span></div>
+        {divider}
+        <div className={statClass}>
+          <span>💾</span>
+          <button onClick={handleDownload} className="bg-transparent border-0 cursor-pointer text-[#494BCB] text-[0.78rem] font-semibold p-0 underline">
+            Download page
+          </button>
+        </div>
+      </div>
+    </>
+  );
+});
 
 function App(): React.JSX.Element {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [theme, setTheme] = useState<'normal' | 'dark' | 'star-trek' | 'matrix'>(() => storage.getDisplayMode());
+  const darkMode = theme === 'dark';
+  const matrixMode = theme === 'matrix';
+
+  const selectTheme = useCallback((t: 'normal' | 'dark' | 'star-trek' | 'matrix') => {
+    setTheme(t);
+    storage.setDisplayMode(t);
+  }, []);
+
+  const [viewSettings, setViewSettingsState] = useState(() => storage.getViewSettings());
+  const setViewSettings = useCallback((s: ReturnType<typeof storage.getViewSettings>) => {
+    setViewSettingsState(s);
+    storage.setViewSettings(s);
+  }, []);
+  const updateViewSetting = useCallback((key: keyof typeof viewSettings, value: boolean) =>
+    setViewSettings({ ...viewSettings, [key]: value }), [viewSettings, setViewSettings]);
 
   const {
     workflowConfig, setWorkflowConfig, setWorkflowField,
@@ -37,19 +131,16 @@ function App(): React.JSX.Element {
     filteredEpicNames, setFilteredEpicNames,
     loadSelectedWorkflow,
     handleSelectWorkflow,
-    filteredStateIds, summaryStateIds,
+    filteredStateIds,
     generateShortcutUrl,
   } = useWorkflowConfig();
 
   const {
     filterByTeam, setFilterByTeam,
-    filterIgnoredInTickets, setFilterIgnoredInTickets,
-    ignoredUsers, setIgnoredUsers,
-    selectedTeamId, setSelectedTeamId,
-    showSidebar, setShowSidebar,
+    selectedTeams, setSelectedTeams, selectedTeamIds, selectedTeamLabel,
     sortState, toggleSortState, resetSortState,
-    collapsedCharts, setCollapsedCharts, toggleChart,
-    scrollToEpic,
+    epicSearchQuery, setEpicSearchQuery,
+    deselectedObjectiveIds, setDeselectedObjectiveIds,
     getDisplayStories,
   } = useFilters();
 
@@ -58,26 +149,29 @@ function App(): React.JSX.Element {
     setupWizardStep, setSetupWizardStep,
     readmeContent,
     handleOpenReadme,
-  } = useModals({ showSidebar, setShowSidebar });
+  } = useModals();
+
+  const onRateLimit = useCallback(() => setModal('rateLimit', true), [setModal]);
 
   const {
     epics, setEpics,
     members, setMembers,
-    loading, loadProgress, loadStats,
+    loading, loadProgress, loadStats, incrementApiCalls,
     error, setError,
     apiTokenIssue,
     epicStates,
     teamMemberIds, setTeamMemberIds,
+    teamNameMap,
+    objectives,
     loadEpics: searchEpics, cancelSearch,
   } = useEpicsData({
     epicNames: filteredEpicNames,
     loadSelectedWorkflow,
-    setCollapsedCharts,
-    onRateLimit: () => setModal('rateLimit', true),
+    onRateLimit,
     setFilteredEpicNames,
   });
 
-  const { importError, importSuccess, handleExportData, handleImportData } = useConfigIO();
+  const { configError, configSuccess, handleExportData, handleImportData } = useConfigIO();
 
   // Needs shortcutWebUrl from useWorkflowConfig and setError from useEpicsData
   const handleSaveShortcutUrl = useCallback(() => {
@@ -108,20 +202,11 @@ function App(): React.JSX.Element {
     return true;
   }, [shortcutWebUrl, setShortcutWebUrl, workflowConfig.selectedId, setError]);
 
-  // Needs epics from useEpicsData and collapsedCharts from useFilters
-  const toggleAllCharts = useCallback(() => {
-    const chartTypes = ['workflow-pie', 'type-pie'];
-    const allChartKeys = epics
-      .filter(e => !e.notFound)
-      .flatMap(epic => chartTypes.map(type => `${epic.id}-${type}`));
-    const allCollapsed = allChartKeys.every(key => collapsedCharts[key]);
-    const newState = { ...collapsedCharts };
-    allChartKeys.forEach(key => { newState[key] = !allCollapsed; });
-    setCollapsedCharts(newState);
-  }, [epics, collapsedCharts, setCollapsedCharts]);
+  const wipeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => { return () => { if (wipeTimerRef.current) clearTimeout(wipeTimerRef.current); }; }, []);
 
   // Resets state from every hook — orchestration, belongs in App
-  const handleWipeSettings = () => {
+  const handleWipeSettings = useCallback(() => {
     localStorage.clear();
     sessionStorage.clear();
     setEpics([]);
@@ -129,23 +214,23 @@ function App(): React.JSX.Element {
     setWorkflowConfig({ states: {}, stateOrder: [], stateIds: {}, workflows: [], selectedId: null, savedId: null });
     setMembers({});
     setShortcutWebUrl('');
-    setSelectedTeamId(null);
+    setSelectedTeams([]);
     setTeamMemberIds(new Set());
-    setIgnoredUsers([]);
     setError(null);
     setModal('wipeConfirm', false);
     setSuccessMessage('All settings have been wiped successfully!');
-    setTimeout(() => {
+    wipeTimerRef.current = setTimeout(() => {
       setSuccessMessage(null);
       window.location.reload();
     }, 2000);
-  };
+  }, [setEpics, setFilteredEpicNames, setWorkflowConfig, setMembers, setShortcutWebUrl, setSelectedTeams, setTeamMemberIds, setError, setModal]);
 
-  // Check if API token and config exist on mount, trigger setup wizard if not
+  // Intentional empty dep array: this runs once on mount only. searchEpics is stable
+  // at mount time; adding it as a dep would cause re-runs as filteredEpicNames changes.
   useEffect(() => {
     const checkConfig = async () => {
       try {
-        const migrationDone = localStorage.getItem('migration_completed');
+        const migrationDone = localStorage.getItem(STORAGE_KEYS.MIGRATION_COMPLETED);
         if (!migrationDone) {
           try {
             const migrationResponse = await fetch(`${getApiBaseUrl()}/api/migrate-data`);
@@ -155,8 +240,8 @@ function App(): React.JSX.Element {
               if (migrationData.workflowConfig && !storage.getWorkflowConfig()) storage.setWorkflowConfig(migrationData.workflowConfig);
               if (migrationData.epicsConfig && !storage.getEpicsConfig()) storage.setEpicsConfig(migrationData.epicsConfig);
             }
-          } catch (migrationErr) {}
-          localStorage.setItem('migration_completed', 'true');
+          } catch (migrationErr) { console.warn('Migration fetch failed:', migrationErr); }
+          localStorage.setItem(STORAGE_KEYS.MIGRATION_COMPLETED, 'true');
         }
 
         const token = storage.getApiToken();
@@ -170,7 +255,7 @@ function App(): React.JSX.Element {
           } else if (!storedWorkflowConfig || !storedWorkflowConfig.workflow_id) {
             setSetupWizardStep(2);
           } else {
-            setSetupWizardStep(6);
+            setSetupWizardStep(7);
           }
           return;
         }
@@ -183,7 +268,12 @@ function App(): React.JSX.Element {
     };
 
     checkConfig();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    // Intentionally mount-only: `searchEpics`, `setModal`, and `setSetupWizardStep`
+    // are referenced but the closure values at mount are exactly what we want —
+    // re-running this effect every time those refs change would re-launch the
+    // setup-wizard flow on every render. The empty dep array is correct.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Load epic names and workflow config from storage when wizard closes
   useEffect(() => {
@@ -193,13 +283,11 @@ function App(): React.JSX.Element {
       if (epicsConfig && epicsConfig.epics) {
         setFilteredEpicNames(epicsConfig.epics.map(e => e.name));
       }
-    } catch (err) {}
+    } catch (err) { console.warn('Failed to load epics config after wizard close:', err); }
     loadSelectedWorkflow();
   }, [modals.setupWizard, loadSelectedWorkflow, setFilteredEpicNames]);
 
   // Epic state helpers
-  const toTitleCase = (str: string): string => str.toLowerCase().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-
   const getEpicStateClass = useCallback((stateType: string, stateName: string): string => {
     const lowerName = (stateName || '').toLowerCase().trim();
     if (lowerName === 'blocked') return 'epic-state-blocked';
@@ -213,81 +301,134 @@ function App(): React.JSX.Element {
   const getEpicStateInfo = useCallback((epic: Epic): EpicState => {
     if (epic.epic_state_id && epicStates[epic.epic_state_id]) return epicStates[epic.epic_state_id];
     return { name: toTitleCase(epic.state || ''), type: epic.state || '' };
-  }, [epicStates]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [epicStates]);
 
   // Derived data that assembles outputs from multiple hooks
-  const allDisplayStories = useMemo(() =>
-    epics.filter(e => !e.notFound).flatMap(epic => getDisplayStories(epic)),
-  [epics, getDisplayStories]);
+  const visibleEpicIds = useMemo(() => {
+    const trimmed = epicSearchQuery.trim().toLowerCase();
+    const ids = new Set<number | string>();
+    // "Blocked" lives in the workspace's custom epic-workflow names, not in Shortcut's
+    // coarse epic.state grouping. If the epic-workflow cache hasn't populated yet,
+    // skip the blocked filter rather than hiding every epic.
+    const hasEpicStateInfo = Object.keys(epicStates).length > 0;
+    for (const epic of epics) {
+      if (epic.notFound) continue;
+      if (trimmed && !epic.name.toLowerCase().includes(trimmed)) continue;
+      const info = getEpicStateInfo(epic);
+      if (viewSettings.showBlockedOnly && hasEpicStateInfo && info.name.toLowerCase().trim() !== 'blocked') continue;
+      if (!viewSettings.showDoneEpics && info.type.toLowerCase() === 'done') continue;
+      if (deselectedObjectiveIds.size > 0) {
+        const objIds = epic.objective_ids || [];
+        if (objIds.length === 0) {
+          if (deselectedObjectiveIds.has(-1)) continue;
+        } else if (!objIds.some(id => !deselectedObjectiveIds.has(id))) {
+          continue;
+        }
+      }
+      ids.add(epic.id);
+    }
+    return ids;
+  }, [epics, epicStates, epicSearchQuery, deselectedObjectiveIds, viewSettings.showDoneEpics, viewSettings.showBlockedOnly, getEpicStateInfo]);
+
+  const allDisplayStories = useMemo(() => {
+    const result: Story[] = [];
+    for (const epic of epics) {
+      if (epic.notFound || !visibleEpicIds.has(epic.id)) continue;
+      result.push(...getDisplayStories(epic));
+    }
+    return result;
+  }, [epics, visibleEpicIds, getDisplayStories]);
 
   const epicTeamData = useMemo(() => {
-    return epics.filter(e => !e.notFound).map(epic => ({
-      id: epic.id,
-      name: epic.name,
-      isDone: getEpicStateInfo(epic).type === 'done',
-      isReadyForRelease: getEpicStateInfo(epic).name.toLowerCase().trim() === 'ready for release',
-      team: (epic.owner_ids || [])
-        .filter(id => !selectedTeamId || teamMemberIds.has(id))
-        .map(id => members[id] || id)
-        .filter(name => !filterIgnoredInTickets || !ignoredUsers.includes(name)),
-    }));
-  }, [epics, selectedTeamId, teamMemberIds, members, filterIgnoredInTickets, ignoredUsers, getEpicStateInfo]);
+    return epics.filter(e => !e.notFound && visibleEpicIds.has(e.id)).map(epic => {
+      const stateInfo = getEpicStateInfo(epic);
+      const stateNameNorm = stateInfo.name.toLowerCase().trim();
+      return {
+        id: epic.id,
+        name: epic.name,
+        isDone: stateInfo.type === 'done',
+        isBlocked: stateNameNorm === 'blocked',
+        team: (epic.owner_ids || [])
+          .filter(id => selectedTeamIds.length === 0 || teamMemberIds.has(id))
+          .map(id => members[id] || id),
+      };
+    });
+  }, [epics, visibleEpicIds, selectedTeamIds, teamMemberIds, members, getEpicStateInfo]);
 
   const memberEpicMap = useMemo(() => {
-    const map: Record<string, Array<{ id: number | string; name: string; isDone: boolean; isReadyForRelease: boolean }>> = {};
-    epicTeamData.forEach(({ id, name, isDone, isReadyForRelease, team }) => {
+    const map: Record<string, Array<{ id: number | string; name: string; isDone: boolean; isBlocked: boolean }>> = {};
+    epicTeamData.forEach(({ id, name, isDone, isBlocked, team }) => {
       team.forEach(member => {
         if (!map[member]) map[member] = [];
-        map[member].push({ id, name, isDone, isReadyForRelease });
+        map[member].push({ id, name, isDone, isBlocked });
       });
     });
     return map;
   }, [epicTeamData]);
 
+  const pageSizeKb = useMemo(() => {
+    if (!loadStats) return null;
+    return (new Blob([document.documentElement.outerHTML]).size / 1024).toFixed(1);
+  }, [loadStats]);
+
   const dashboardContext = useMemo(() => ({
     // Data
-    epics, members, epicStates, teamMemberIds, loadStats,
+    epics, objectives, members, epicStates, teamMemberIds, loadStats, incrementApiCalls,
     workflowConfig, setWorkflowField,
     // UI state
     modals, setModal,
     sortState, toggleSortState, resetSortState,
-    collapsedCharts, setCollapsedCharts, toggleChart,
     filterByTeam, setFilterByTeam,
-    ignoredUsers, setIgnoredUsers,
-    filterIgnoredInTickets, setFilterIgnoredInTickets,
-    selectedTeamId, setSelectedTeamId,
+    selectedTeams, setSelectedTeams, selectedTeamIds, selectedTeamLabel, teamNameMap,
     shortcutWebUrl, setShortcutWebUrl,
-    showSidebar, setShowSidebar,
     error, setError, loading, successMessage,
     filteredEpicNames, setFilteredEpicNames,
     setupWizardStep, setSetupWizardStep,
     // Derived / callbacks
     getDisplayStories, generateShortcutUrl,
     getEpicStateInfo, getEpicStateClass,
-    filteredStateIds, summaryStateIds,
+    filteredStateIds,
     epicTeamData, memberEpicMap, allDisplayStories,
-    searchEpics, scrollToEpic,
+    searchEpics,
     handleSaveShortcutUrl, handleSelectWorkflow,
-    toggleAllCharts, handleOpenReadme,
-  }), [epics, members, epicStates, teamMemberIds, loadStats, workflowConfig, setWorkflowField, modals, setModal, sortState, toggleSortState, resetSortState, collapsedCharts, setCollapsedCharts, toggleChart, filterByTeam, setFilterByTeam, ignoredUsers, setIgnoredUsers, filterIgnoredInTickets, setFilterIgnoredInTickets, selectedTeamId, setSelectedTeamId, shortcutWebUrl, setShortcutWebUrl, showSidebar, setShowSidebar, error, setError, loading, successMessage, filteredEpicNames, setFilteredEpicNames, setupWizardStep, setSetupWizardStep, getDisplayStories, generateShortcutUrl, getEpicStateInfo, getEpicStateClass, filteredStateIds, summaryStateIds, epicTeamData, memberEpicMap, allDisplayStories, searchEpics, scrollToEpic, handleSaveShortcutUrl, handleSelectWorkflow, toggleAllCharts, handleOpenReadme]); // eslint-disable-line react-hooks/exhaustive-deps
+    handleOpenReadme,
+    displayTheme: theme, selectTheme,
+    viewSettings, setViewSettings,
+    epicSearchQuery, setEpicSearchQuery,
+    deselectedObjectiveIds, setDeselectedObjectiveIds,
+    visibleEpicIds,
+  }), [epics, objectives, members, epicStates, teamMemberIds, loadStats, incrementApiCalls, workflowConfig, setWorkflowField, modals, setModal, sortState, toggleSortState, resetSortState, filterByTeam, setFilterByTeam, selectedTeams, setSelectedTeams, selectedTeamIds, selectedTeamLabel, teamNameMap, shortcutWebUrl, setShortcutWebUrl, error, setError, loading, successMessage, filteredEpicNames, setFilteredEpicNames, setupWizardStep, setSetupWizardStep, getDisplayStories, generateShortcutUrl, getEpicStateInfo, getEpicStateClass, filteredStateIds, epicTeamData, memberEpicMap, allDisplayStories, searchEpics, handleSaveShortcutUrl, handleSelectWorkflow, handleOpenReadme, theme, selectTheme, viewSettings, setViewSettings, epicSearchQuery, setEpicSearchQuery, deselectedObjectiveIds, setDeselectedObjectiveIds, visibleEpicIds]);
 
   return (
     <DashboardContext.Provider value={dashboardContext}>
-    <div className="App" id="top">
+    <div className="App" id="top" data-theme={theme}>
+        {matrixMode && <MatrixRain />}
+        {darkMode && <OceanTide />}
       {loading && (
         <div className="modal-overlay" style={{ zIndex: 9999 }}>
-          <div className="modal-content" style={{ textAlign: 'center', padding: '2.5rem 3rem', maxWidth: '360px' }}>
-            <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>⏳</div>
-            <h2 style={{ margin: '0 0 0.5rem', fontSize: '1.2rem', color: '#03045E' }}>Loading Epics…</h2>
-            <p style={{ color: '#718096', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
+          <div className="modal-content text-center !px-12 !py-10" style={{ maxWidth: '360px' }}>
+            <div className="text-[2.5rem] mb-4 inline-block" style={{ animation: 'egg-timer-flip 1.5s linear infinite' }}>⏳</div>
+            <h2 className="m-0 mb-2 text-[1.2rem] text-[#03045E]">Loading Epics…</h2>
+            <p className="text-[#718096] mb-2 text-[0.9rem]">
               {loadProgress.total > 0
                 ? `Loading ${loadProgress.loaded} of ${loadProgress.total} epics`
                 : 'Fetching epic and story data from Shortcut'}
             </p>
-            <div style={{ width: '100%', height: '4px', background: '#e2e8f0', borderRadius: '2px', overflow: 'hidden', marginBottom: '1.5rem' }}>
-              <div style={{ height: '100%', background: '#494BCB', borderRadius: '2px', animation: 'loading-bar 1.5s ease-in-out infinite' }} />
-            </div>
-            <button className="btn-secondary" onClick={cancelSearch} style={{ minWidth: '100px' }}>Cancel</button>
+            {loadProgress.total > 0 ? (
+              <>
+                <div className="mb-1">
+                  <PercentBar pct={(loadProgress.loaded / loadProgress.total) * 100} heightPx={8} />
+                </div>
+                <p className="text-[#94a3b8] text-[0.75rem] mb-6">
+                  {Math.round((loadProgress.loaded / loadProgress.total) * 100)}% complete
+                </p>
+              </>
+            ) : (
+              <div className="w-full h-1 bg-slate-200 rounded-sm overflow-hidden mb-6">
+                <div className="h-full bg-[#494BCB] rounded-sm" style={{ animation: 'loading-bar 1.5s ease-in-out infinite' }} />
+              </div>
+            )}
+            <button className="btn-secondary min-w-[100px]" onClick={cancelSearch}>Cancel</button>
           </div>
         </div>
       )}
@@ -305,16 +446,16 @@ function App(): React.JSX.Element {
 
       {modals.rateLimit && (
         <div className="modal-overlay" onClick={() => setModal('rateLimit', false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ textAlign: 'center', padding: '2.5rem 3rem', maxWidth: '420px' }}>
-            <div style={{ fontSize: '3rem', marginBottom: '0.75rem' }}>🚦</div>
-            <h2 style={{ margin: '0 0 0.75rem', fontSize: '1.3rem', color: '#b91c1c' }}>Too Many Requests</h2>
-            <p style={{ color: '#4a5568', marginBottom: '0.5rem' }}>
+          <div className="modal-content text-center !px-12 !py-10" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '420px' }}>
+            <div className="text-[3rem] mb-3">🚦</div>
+            <h2 className="m-0 mb-3 text-[1.3rem] text-[#b91c1c]">Too Many Requests</h2>
+            <p className="text-[#4a5568] mb-2">
               The Shortcut API has rate-limited this session <strong>(HTTP 429)</strong>.
             </p>
-            <p style={{ color: '#718096', fontSize: '0.875rem', marginBottom: '1.75rem' }}>
+            <p className="text-[#718096] text-sm mb-7">
               This happens when too many API calls are made in a short period. Please wait a few minutes before trying again.
             </p>
-            <button className="btn-primary" onClick={() => setModal('rateLimit', false)} style={{ minWidth: '100px' }}>OK</button>
+            <button className="btn-primary min-w-[100px]" onClick={() => setModal('rateLimit', false)}>OK</button>
           </div>
         </div>
       )}
@@ -330,28 +471,36 @@ function App(): React.JSX.Element {
       {modals.about && (
         <div className="modal-overlay" onClick={() => setModal('about', false)}>
           <div className="modal-content modal-content-about" onClick={(e) => e.stopPropagation()}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
-              <img src="/dave.png" alt="D.A.V.E." style={{ width: '72px', height: '72px', flexShrink: 0 }} />
-              <h2 style={{ margin: 0 }}>About Shortcut Dashboard</h2>
+            <div className="flex items-center gap-4 mb-4">
+              <img src="/dave.png" alt="D.A.V.E." className="w-[72px] h-[72px] shrink-0" />
+              <h2 className="m-0">About Shortcut Dashboard</h2>
             </div>
             <p>A React-based dashboard for tracking Shortcut.com epics, visualising progress, and monitoring team workload.</p>
             <ul>
               <li><strong>Story Summary:</strong> Overall story counts across all epics by workflow state</li>
-              <li><strong>Epic Status Table:</strong> At-a-glance chevron progress bars and epic state for all tracked epics</li>
-              <li><strong>Epic Owner Assignment:</strong> Maps each epic to its assigned team members</li>
-              <li><strong>Team Member Assignment:</strong> Inverted view — each team member and their assigned epics</li>
-              <li><strong>Ticket Status Breakdown:</strong> 3D column chart of story workflow states per epic</li>
+              <li><strong>Cycle Progress:</strong> Current 6-week cycle with start/end and % done</li>
+              <li><strong>Epic Status Table:</strong> Progress bars, Last Changed; search and objective filters</li>
+              <li><strong>Global Filters:</strong> Search/Done/Blocked filters apply across all sections</li>
+              <li><strong>Unwatched Tickets:</strong> Open tickets in your selected teams you are not watching</li>
+              <li><strong>Epic Owner Assignments:</strong> Maps each epic to its assigned team members</li>
+              <li><strong>Team Member Epic Assignments:</strong> Inverted view — each member and their epics</li>
+              <li><strong>Team Member Ticket Assignments:</strong> Open tickets grouped by epic, with status pills</li>
+              <li><strong>Epic Card:</strong> Collapsible; Done epics start collapsed by default</li>
+              <li><strong>Additional Views Row:</strong> Per-card peek icons toggle sections globally</li>
+              <li><strong>Ticket Status Breakdown:</strong> 3D column chart; click a bar to view tickets in that state</li>
               <li><strong>Workflow Status Pie Chart:</strong> Stories by workflow state with clickable Shortcut links</li>
               <li><strong>Story Type Breakdown:</strong> Feature / Bug / Chore pie chart per epic</li>
-              <li><strong>Story Owners Table:</strong> Per-epic story owner counts including unassigned</li>
-              <li><strong>Team Open Tickets:</strong> Open ticket counts per team member, excluding completed stories</li>
-              <li><strong>User Story Board:</strong> Kanban view (Backlog → Complete) with collapsible story cards</li>
-              <li><strong>Sidebar Navigation:</strong> Slide-out panel for quick jumping between epics</li>
-              <li><strong>Ignored Users:</strong> Configurable list of users excluded from assignment and ticket tables</li>
-              <li><strong>Setup Wizard:</strong> 6-step guided setup — token, URL, workflow, team, ignored users, epic list</li>
-              <li><strong>Configuration Management:</strong> Export / Import of all settings as JSON</li>
+              <li><strong>Story Owners Table:</strong> Sortable per-epic owner counts, plus unassigned</li>
+              <li><strong>Team Open Tickets:</strong> Sortable open counts per team member, non-complete</li>
+              <li><strong>Pull Requests:</strong> Sortable table linking each story to its GitHub PRs</li>
+              <li><strong>User Story Board:</strong> Kanban board (Backlog → Complete) per epic</li>
+              <li><strong>Setup Wizard:</strong> 7-step setup: token, URL, workflow, teams, name, cycle, list</li>
+              <li><strong>Configuration Management:</strong> Export / Import all settings as JSON</li>
+              <li><strong>View Settings:</strong> Toggle the per-card Top of Page link</li>
+              <li><strong>Load Stats Bar:</strong> Load time, API call breakdown, page size, and download</li>
+              <li><strong>Themes:</strong> Normal, Dark Mode, Star Trek (LCARS), and Matrix</li>
             </ul>
-            <p style={{ marginTop: '1rem', fontSize: '0.875rem', color: '#718096' }}>
+            <p className="mt-4 text-sm text-[#718096]">
               Version {pkg.version} | Project D.A.V.E. (Dashboards Are Very Effective)
             </p>
             <div className="modal-buttons">
@@ -365,26 +514,26 @@ function App(): React.JSX.Element {
         <div className="modal-overlay" onClick={() => setModal('exportImport', false)}>
           <div className="modal-content modal-content-export-import" onClick={(e) => e.stopPropagation()}>
             <h2>Export/Import Configuration</h2>
-            {importSuccess && (
-              <div style={{ padding: '0.75rem', marginBottom: '1rem', backgroundColor: '#d1fae5', border: '1px solid #6ee7b7', borderRadius: '0.375rem', color: '#065f46' }}>
-                {importSuccess}
+            {configSuccess && (
+              <div className="p-3 mb-4 bg-[#d1fae5] border border-[#6ee7b7] rounded-md text-[#065f46]">
+                {configSuccess}
               </div>
             )}
-            {importError && (
-              <div style={{ padding: '0.75rem', marginBottom: '1rem', backgroundColor: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '0.375rem', color: '#dc2626' }}>
-                {importError}
+            {configError && (
+              <div className="p-3 mb-4 bg-[#fef2f2] border border-[#fca5a5] rounded-md text-[#dc2626]">
+                {configError}
               </div>
             )}
-            <div style={{ marginBottom: '2rem' }}>
-              <h3 style={{ marginBottom: '0.5rem' }}>Export Configuration</h3>
-              <p style={{ marginBottom: '1rem', color: '#64748b' }}>Download your current configuration as a JSON file for backup.</p>
+            <div className="mb-8">
+              <h3 className="mb-2">Export Configuration</h3>
+              <p className="mb-4 text-[#64748b]">Download your current configuration as a JSON file for backup.</p>
               <button type="button" onClick={handleExportData} className="btn-primary">Export Configuration</button>
             </div>
-            <div style={{ marginBottom: '1.5rem' }}>
-              <h3 style={{ marginBottom: '0.5rem' }}>Import Configuration</h3>
-              <p style={{ marginBottom: '1rem', color: '#64748b' }}>Upload a previously exported configuration file to restore your settings.</p>
-              <input type="file" id="import-file-input" accept=".json" onChange={handleImportData} style={{ display: 'none' }} />
-              <label htmlFor="import-file-input" className="btn-secondary" style={{ display: 'inline-block', textAlign: 'center' }}>
+            <div className="mb-6">
+              <h3 className="mb-2">Import Configuration</h3>
+              <p className="mb-4 text-[#64748b]">Upload a previously exported configuration file to restore your settings.</p>
+              <input type="file" id="import-file-input" accept=".json" onChange={handleImportData} className="hidden" />
+              <label htmlFor="import-file-input" className="btn-secondary inline-block text-center">
                 Choose File
               </label>
             </div>
@@ -398,15 +547,15 @@ function App(): React.JSX.Element {
       {modals.wipeConfirm && (
         <div className="modal-overlay" onClick={() => setModal('wipeConfirm', false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h2 style={{ color: '#dc2626' }}>Wipe All Settings?</h2>
-            <p style={{ marginBottom: '1.5rem' }}>This action will permanently delete all stored data including:</p>
-            <ul style={{ marginBottom: '1.5rem', textAlign: 'left', paddingLeft: '2rem' }}>
+            <h2 className="text-[#dc2626]">Wipe All Settings?</h2>
+            <p className="mb-6">This action will permanently delete all stored data including:</p>
+            <ul className="mb-6 text-left pl-8">
               <li>API Token</li>
               <li>Workflow Configuration</li>
               <li>Epic List and Team Members</li>
               <li>All other settings</li>
             </ul>
-            <p style={{ marginBottom: '1.5rem', fontWeight: 'bold', color: '#dc2626' }}>
+            <p className="mb-6 font-bold text-[#dc2626]">
               This action cannot be undone. Are you sure you want to continue?
             </p>
             <div className="modal-buttons">
@@ -414,7 +563,7 @@ function App(): React.JSX.Element {
               <button
                 type="button"
                 onClick={handleWipeSettings}
-                style={{ backgroundColor: '#dc2626', color: 'white', padding: '0.5rem 1rem', border: 'none', borderRadius: '0.375rem', cursor: 'pointer', fontSize: '0.875rem', fontWeight: '500' }}
+                className="bg-[#dc2626] text-white px-4 py-2 border-0 rounded-md cursor-pointer text-sm font-medium"
               >
                 Yes, Wipe All Settings
               </button>
@@ -428,9 +577,8 @@ function App(): React.JSX.Element {
           <div className="modal-content modal-content-large" onClick={(e) => e.stopPropagation()}>
             <h2>README.md</h2>
             <div
-              className="markdown-content"
-              style={{ maxHeight: '60vh', overflowY: 'auto', marginBottom: '1rem', backgroundColor: '#ffffff', padding: '1.5rem', borderRadius: '6px', border: '1px solid #e2e8f0' }}
-              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked(readmeContent || '') as string) }}
+              className="markdown-content max-h-[60vh] overflow-y-auto mb-4 bg-white p-6 rounded-md border border-slate-200"
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(readmeContent || '', { async: false }), { FORBID_TAGS: ['script', 'style', 'iframe', 'object', 'embed', 'form'], FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 'javascript'] }) }}
             />
             <div className="modal-buttons">
               <button type="button" onClick={() => setModal('readme', false)} className="btn-primary">Close</button>
@@ -439,13 +587,50 @@ function App(): React.JSX.Element {
         </div>
       )}
 
+      {modals.viewSettings && (
+        <div className="modal-overlay" onClick={() => setModal('viewSettings', false)}>
+          <div className="modal-content" style={{ maxWidth: '420px' }} onClick={(e) => e.stopPropagation()}>
+            <h2>View Settings</h2>
+            <p className="mb-4 text-[#64748b] text-sm">Choose which data to display on the dashboard.</p>
+            <div className="mb-6">
+              <h3 className="text-sm font-semibold text-[#374151] mb-3">Summary Sections</h3>
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={viewSettings.showCycleProgress}
+                  onChange={(e) => updateViewSetting('showCycleProgress', e.target.checked)}
+                  className="w-4 h-4"
+                />
+                <span className="text-sm">Show Cycle Progress table</span>
+              </label>
+            </div>
+            <div className="mb-6">
+              <h3 className="text-sm font-semibold text-[#374151] mb-3">Top of Page Link</h3>
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={viewSettings.showTopOfPageLink}
+                  onChange={(e) => updateViewSetting('showTopOfPageLink', e.target.checked)}
+                  className="w-4 h-4"
+                />
+                <span className="text-sm">Show ↑ Top of Page link on each epic card</span>
+              </label>
+            </div>
+            <div className="modal-buttons">
+              <button type="button" onClick={() => setModal('viewSettings', false)} className="btn-primary">Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <ThemeSelector />
+
       <AppHeader />
-      <EpicSidebar />
 
       <main className="container">
         {successMessage && (
-          <div style={{ backgroundColor: '#d1fae5', border: '1px solid #6ee7b7', color: '#065f46', padding: '1rem', borderRadius: '6px', marginBottom: '1rem' }}>
-            <p style={{ margin: 0 }}>{successMessage}</p>
+          <div className="bg-[#d1fae5] border border-[#6ee7b7] text-[#065f46] p-4 rounded-md mb-4">
+            <p className="m-0">{successMessage}</p>
           </div>
         )}
 
@@ -453,11 +638,10 @@ function App(): React.JSX.Element {
           <div className="error-message">
             <p>{error}</p>
             {apiTokenIssue && (
-              <p style={{ marginTop: '0.5rem' }}>
+              <p className="mt-2">
                 <button
                   onClick={() => { setModal('setupWizard', true); setSetupWizardStep(1); }}
-                  className="btn-primary"
-                  style={{ fontSize: '0.875rem', padding: '0.5rem 1rem' }}
+                  className="btn-primary text-sm px-4 py-2"
                 >
                   Open Setup
                 </button>
@@ -468,65 +652,20 @@ function App(): React.JSX.Element {
 
         {epics.length > 0 && (
           <div className="epics-list">
+            <AssignmentViewsRow />
+            <AssignmentTables />
             <SummaryTable />
 
-            <div style={{ marginBottom: '0.5rem', paddingBottom: '0.75rem', borderBottom: '2px solid #e2e8f0' }}>
-              <div style={{ display: 'flex', alignItems: 'center' }}>
-                <h2 style={{ margin: 0, fontSize: '1.0rem' }}>
-                  {epics.filter(e => !e.notFound).length === filteredEpicNames.length ? '✅ ' : '⚠️ '}
-                  Found {epics.filter(e => !e.notFound).length} of {filteredEpicNames.length} Epic{filteredEpicNames.length !== 1 ? 's' : ''}
-                </h2>
-              </div>
-              {epics.some(e => e.notFound) && (
-                <div style={{ marginTop: '0.4rem', fontSize: '0.8rem', color: '#dc2626' }}>
-                  <span style={{ fontWeight: 600 }}>Not found: </span>
-                  {epics.filter(e => e.notFound).map(e => e.name).join(', ')}
-                </div>
-              )}
-            </div>
+            <UnwatchedTickets />
 
-            <AssignmentTables />
-
-            {epics.map((epic) => (
+            {epics.filter(epic => !epic.notFound && visibleEpicIds.has(epic.id)).map((epic) => (
               <EpicCard key={epic.id as React.Key} epic={epic} />
             ))}
           </div>
         )}
       </main>
 
-      {loadStats && (() => {
-        const pageSizeBytes = new Blob([document.documentElement.outerHTML]).size;
-        const pageSizeKb = (pageSizeBytes / 1024).toFixed(1);
-        const handleDownload = () => {
-          const blob = new Blob([document.documentElement.outerHTML], { type: 'text/html' });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = `shortcut-dashboard-${loadStats.loadedAt.toISOString().slice(0, 10)}.html`;
-          a.click();
-          URL.revokeObjectURL(url);
-        };
-        const statStyle: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#718096', fontSize: '0.78rem' };
-        const divider = <span style={{ color: '#cbd5e0' }}>|</span>;
-        return (
-          <div style={{ background: '#f8fafc', borderTop: '1px solid #e2e8f0', padding: '0.5rem 2rem', display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={statStyle}><span>⏱</span><span>Load time: <strong>{(loadStats.loadTime / 1000).toFixed(2)}s</strong></span></div>
-            {divider}
-            <div style={statStyle}><span>🔗</span><span>API calls: <strong>{loadStats.apiCallCount}</strong></span></div>
-            {divider}
-            <div style={statStyle}><span>🕐</span><span>Generated: <strong>{loadStats.loadedAt.toLocaleString()}</strong></span></div>
-            {divider}
-            <div style={statStyle}><span>📄</span><span>Page size: <strong>{pageSizeKb} KB</strong></span></div>
-            {divider}
-            <div style={statStyle}>
-              <span>💾</span>
-              <button onClick={handleDownload} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#494BCB', fontSize: '0.78rem', fontWeight: 600, padding: 0, textDecoration: 'underline' }}>
-                Download page
-              </button>
-            </div>
-          </div>
-        );
-      })()}
+      {loadStats && <LoadStatsFooter loadStats={loadStats} pageSizeKb={pageSizeKb} />}
 
       <AppFooter />
     </div>

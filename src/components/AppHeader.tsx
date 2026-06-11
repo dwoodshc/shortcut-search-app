@@ -7,25 +7,26 @@
  * filtering.
  */
 import React from 'react';
-import { storage } from '../utils';
 import { useDashboard } from '../context/DashboardContext';
 
 export default function AppHeader(): React.JSX.Element {
   const {
     epics,
     modals, setModal,
-    collapsedCharts, setCollapsedCharts,
     filterByTeam, setFilterByTeam,
-    filterIgnoredInTickets, setFilterIgnoredInTickets,
-    selectedTeamId,
+    selectedTeamIds, selectedTeamLabel,
     searchEpics,
-    toggleAllCharts,
     handleOpenReadme,
     setSetupWizardStep,
   } = useDashboard();
 
+  const handleHeaderClick = (e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).closest('button, a, input, label')) return;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
-    <header className="App-header">
+    <header className="App-header" onClick={handleHeaderClick} style={{ cursor: 'pointer' }} title="Back to top">
       <div className="header-logo">
         <a href="#top" title="Back to top">
           <img
@@ -35,11 +36,11 @@ export default function AppHeader(): React.JSX.Element {
           />
         </a>
       </div>
-      <div style={{ textAlign: 'center' }}>
+      <div className="header-center">
         <h1>Shortcut Dashboard</h1>
-        {storage.getTeamConfig()?.name && (
-          <div style={{ fontSize: '1.4rem', fontWeight: 400, opacity: 0.85, marginTop: '0.15rem', letterSpacing: '0.03em' }}>
-            {filterByTeam ? `${storage.getTeamConfig()!.name} Team Only` : 'All Teams'}
+        {selectedTeamLabel && (
+          <div className="text-[1.4rem] font-normal opacity-85 mt-[0.15rem] tracking-[0.03em]">
+            {filterByTeam ? `${selectedTeamLabel} Only` : 'All Teams'}
           </div>
         )}
       </div>
@@ -49,7 +50,7 @@ export default function AppHeader(): React.JSX.Element {
             className="settings-icon"
             aria-label="Refresh Epics"
             data-tooltip="Refresh Epics"
-            onClick={(e) => searchEpics()}
+            onClick={() => searchEpics()}
           >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
               <path d="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
@@ -61,7 +62,7 @@ export default function AppHeader(): React.JSX.Element {
             data-tooltip="Edit Epic List"
             onClick={() => {
               setModal('setupWizard', true);
-              setSetupWizardStep(6);
+              setSetupWizardStep(7);
             }}
           >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
@@ -103,18 +104,35 @@ export default function AppHeader(): React.JSX.Element {
                 className="settings-menu-item"
                 onClick={() => {
                   setModal('settingsMenu', false);
+                  setModal('viewSettings', true);
+                }}
+              >
+                View Settings
+              </button>
+              <button
+                className="settings-menu-item"
+                onClick={() => {
+                  setModal('settingsMenu', false);
+                  setModal('themeSelector', true);
+                }}
+              >
+                Theme
+              </button>
+              <button
+                className="settings-menu-item"
+                onClick={() => {
+                  setModal('settingsMenu', false);
                   setModal('exportImport', true);
                 }}
               >
                 Export/Import
               </button>
               <button
-                className="settings-menu-item"
+                className="settings-menu-item !text-red-600"
                 onClick={() => {
                   setModal('settingsMenu', false);
                   setModal('wipeConfirm', true);
                 }}
-                style={{ color: '#dc2626' }}
               >
                 Wipe Settings
               </button>
@@ -130,49 +148,20 @@ export default function AppHeader(): React.JSX.Element {
             </div>
           )}
         </div>
-        {epics.length > 0 && (
-          <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-            <button
-              onClick={() => {
-                const bothCollapsed = collapsedCharts['assignment-epic'] && collapsedCharts['assignment-member'];
-                setCollapsedCharts(prev => ({ ...prev, 'assignment-epic': !bothCollapsed, 'assignment-member': !bothCollapsed }));
-              }}
-              className={`header-action-btn${!(collapsedCharts['assignment-epic'] && collapsedCharts['assignment-member']) ? ' active' : ''}`}
-              title="Show or hide the Epic Owner Assignment and Team Member Assignment tables"
-            >
-              {collapsedCharts['assignment-epic'] && collapsedCharts['assignment-member'] ? 'Expand Assignments' : 'Collapse Assignments'}
-            </button>
-            <button
-              onClick={() => setFilterIgnoredInTickets(prev => !prev)}
-              className={`header-action-btn${!filterIgnoredInTickets ? ' active' : ''}`}
-              title={filterIgnoredInTickets ? 'Currently hiding ignored users — click to show them highlighted in assignment and ticket tables' : 'Currently showing ignored users — click to hide them from assignment and ticket tables'}
-            >
-              {filterIgnoredInTickets ? 'Show Ignored Users' : 'Hide Ignored Users'}
-            </button>
-            <button
-              onClick={toggleAllCharts}
-              className={`header-action-btn${(() => { const keys = epics.filter(e => !e.notFound).flatMap(e => ['workflow-pie','type-pie'].map(t => `${e.id}-${t}`)); return !keys.every(k => collapsedCharts[k]); })() ? ' active' : ''}`}
-              title="Show or hide the Workflow Status Pie Chart and Story Type Breakdown across all epics"
-            >
-              {(() => {
-                const allChartKeys = epics.filter(e => !e.notFound).flatMap(e => ['workflow-pie','type-pie'].map(t => `${e.id}-${t}`));
-                return allChartKeys.every(key => collapsedCharts[key]) ? 'Expand Charts' : 'Collapse Charts';
-              })()}
-            </button>
-            {selectedTeamId && (
-              <button
-                onClick={() => setFilterByTeam(prev => !prev)}
-                className={`header-action-btn${filterByTeam ? ' active' : ''}`}
-                title={filterByTeam
-                  ? `Currently showing only ${storage.getTeamConfig()?.name || 'team'} tickets — click to show all tickets`
-                  : `Currently showing all tickets — click to show only tickets assigned to ${storage.getTeamConfig()?.name || 'team'}`}
-              >
-                {filterByTeam ? 'Show All Teams' : `Show ${storage.getTeamConfig()?.name || 'Team'} Team Only`}
-              </button>
-            )}
-          </div>
-        )}
       </div>
+      {epics.length > 0 && selectedTeamIds.length > 0 && (
+        <div className="header-actions-row">
+          <button
+            onClick={() => setFilterByTeam(prev => !prev)}
+            className={`header-action-btn${filterByTeam ? ' active' : ''}`}
+            title={filterByTeam
+              ? `Currently showing only ${selectedTeamLabel || 'team'} tickets — click to show all tickets`
+              : `Currently showing all tickets — click to show only tickets assigned to ${selectedTeamLabel || 'team'}`}
+          >
+            {filterByTeam ? 'Show All Teams' : `Show ${selectedTeamLabel || 'Team'} Only`}
+          </button>
+        </div>
+      )}
     </header>
   );
 }
