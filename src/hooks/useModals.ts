@@ -20,6 +20,7 @@ export function useModals() {
     rateLimit: false,
     storyDetailFilter: null,
     themeSelector: false,
+    viewSettings: false,
   });
   const setModal = useCallback(<K extends ModalKey>(key: K, value: ModalState[K]) =>
     setModals(prev => ({ ...prev, [key]: value })), []);
@@ -52,6 +53,8 @@ export function useModals() {
           setModal('storyDetailFilter', null);
         } else if (modals.themeSelector) {
           setModal('themeSelector', false);
+        } else if (modals.viewSettings) {
+          setModal('viewSettings', false);
         } else if (modals.settingsMenu) {
           setModal('settingsMenu', false);
         }
@@ -59,7 +62,7 @@ export function useModals() {
     };
     document.addEventListener('keydown', handleEscKey);
     return () => document.removeEventListener('keydown', handleEscKey);
-  }, [modals.setupWizard, modals.about, modals.readme, modals.exportImport, modals.settingsMenu, modals.storyDetailFilter, modals.themeSelector, setModal]);
+  }, [modals.setupWizard, modals.about, modals.readme, modals.exportImport, modals.settingsMenu, modals.storyDetailFilter, modals.themeSelector, modals.viewSettings, setModal]);
 
   const handleOpenReadme = useCallback(async () => {
     try {

@@ -13,14 +13,17 @@ import './App.css';
 import StoryDetailModal from './components/StoryDetailModal';
 import SummaryTable from './components/SummaryTable';
 import AssignmentTables from './components/AssignmentTables';
+import AssignmentViewsRow from './components/AssignmentViewsRow';
+import UnwatchedTickets from './components/UnwatchedTickets';
 import EpicCard from './components/EpicCard';
 import SetupWizard from './components/SetupWizard';
 import AppHeader from './components/AppHeader';
 import AppFooter from './components/AppFooter';
+import PercentBar from './components/PercentBar';
 import MatrixRain from './components/MatrixRain';
 import OceanTide from './components/OceanTide';
 import ThemeSelector from './components/ThemeSelector';
-import { storage, getApiBaseUrl } from './utils';
+import { storage, getApiBaseUrl, STORAGE_KEYS } from './utils';
 import pkg from '../package.json';
 import { useEpicsData } from './hooks/useEpicsData';
 import { useWorkflowConfig } from './hooks/useWorkflowConfig';
@@ -28,34 +31,99 @@ import { useModals } from './hooks/useModals';
 import { useFilters } from './hooks/useFilters';
 import { useConfigIO } from './hooks/useConfigIO';
 import { DashboardContext } from './context/DashboardContext';
-import { Epic, EpicState } from './types';
+import { Epic, EpicState, Story } from './types';
 
 const toTitleCase = (str: string): string =>
   str.toLowerCase().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+
+const LoadStatsFooter = React.memo(function LoadStatsFooter({ loadStats, pageSizeKb }: { loadStats: import('./types').LoadStats; pageSizeKb: string | null }) {
+  const [showApiModal, setShowApiModal] = React.useState(false);
+  const handleDownload = () => {
+    const blob = new Blob([document.documentElement.outerHTML], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `shortcut-dashboard-${loadStats.loadedAt.toISOString().slice(0, 10)}.html`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+  const statClass = "flex items-center gap-[0.35rem] text-[#718096] text-[0.78rem]";
+  const divider = <span className="text-[#cbd5e0]">|</span>;
+  const sortedBreakdown = Object.entries(loadStats.apiCallBreakdown || {})
+    .sort((a, b) => b[1] - a[1]);
+  return (
+    <>
+      {showApiModal && (
+        <div className="modal-overlay" onClick={() => setShowApiModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '480px' }}>
+            <h2 className="m-0 mb-4 text-[1.1rem]">API Call Breakdown</h2>
+            <table className="w-full" style={{ borderCollapse: 'collapse' }}>
+              <thead>
+                <tr className="border-b-2 border-[#E2E8F0]">
+                  <th className="text-left pb-2 pr-4 text-sm font-semibold text-[#64748b]">Endpoint</th>
+                  <th className="text-right pb-2 text-sm font-semibold text-[#64748b]">Calls</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sortedBreakdown.map(([endpoint, count]) => (
+                  <tr key={endpoint} className="border-b border-[#F0F0F7] last:border-0">
+                    <td className="py-2 pr-4 text-sm font-mono text-[#1a202c]">{endpoint}</td>
+                    <td className="py-2 text-right text-sm font-semibold text-[#494BCB]">{count}</td>
+                  </tr>
+                ))}
+                <tr className="border-t-2 border-[#E2E8F0]">
+                  <td className="pt-2 pr-4 text-sm font-semibold text-[#64748b]">Total</td>
+                  <td className="pt-2 text-right text-sm font-semibold text-[#1a202c]">{loadStats.apiCallCount}</td>
+                </tr>
+              </tbody>
+            </table>
+            <div className="modal-buttons mt-4">
+              <button type="button" onClick={() => setShowApiModal(false)} className="btn-primary">Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+      <div className="bg-[#f8fafc] border-t border-slate-200 px-8 py-2 flex flex-wrap gap-4 items-center justify-center">
+        <div className={statClass}><span>⏱</span><span>Load time: <strong>{(loadStats.loadTime / 1000).toFixed(2)}s</strong></span></div>
+        {divider}
+        <div className={statClass}>
+          <span>🔗</span>
+          <span>API calls: <button onClick={() => setShowApiModal(true)} className="bg-transparent border-0 cursor-pointer text-[#494BCB] text-[0.78rem] font-bold p-0 underline decoration-dotted">{loadStats.apiCallCount}</button></span>
+        </div>
+        {divider}
+        <div className={statClass}><span>🕐</span><span>Generated: <strong>{loadStats.loadedAt.toLocaleString()}</strong></span></div>
+        {divider}
+        <div className={statClass}><span>📄</span><span>Page size: <strong>{pageSizeKb} KB</strong></span></div>
+        {divider}
+        <div className={statClass}>
+          <span>💾</span>
+          <button onClick={handleDownload} className="bg-transparent border-0 cursor-pointer text-[#494BCB] text-[0.78rem] font-semibold p-0 underline">
+            Download page
+          </button>
+        </div>
+      </div>
+    </>
+  );
+});
 
 function App(): React.JSX.Element {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [theme, setTheme] = useState<'normal' | 'dark' | 'star-trek' | 'matrix'>(() => storage.getDisplayMode());
   const darkMode = theme === 'dark';
-  const starTrekMode = theme === 'star-trek';
   const matrixMode = theme === 'matrix';
-
-  const toggleDarkMode = useCallback(() => {
-    setTheme(prev => { const next = prev === 'dark' ? 'normal' : 'dark'; storage.setDisplayMode(next); return next; });
-  }, []);
-
-  const toggleStarTrekMode = useCallback(() => {
-    setTheme(prev => { const next = prev === 'star-trek' ? 'normal' : 'star-trek'; storage.setDisplayMode(next); return next; });
-  }, []);
-
-  const toggleMatrixMode = useCallback(() => {
-    setTheme(prev => { const next = prev === 'matrix' ? 'normal' : 'matrix'; storage.setDisplayMode(next); return next; });
-  }, []);
 
   const selectTheme = useCallback((t: 'normal' | 'dark' | 'star-trek' | 'matrix') => {
     setTheme(t);
     storage.setDisplayMode(t);
   }, []);
+
+  const [viewSettings, setViewSettingsState] = useState(() => storage.getViewSettings());
+  const setViewSettings = useCallback((s: ReturnType<typeof storage.getViewSettings>) => {
+    setViewSettingsState(s);
+    storage.setViewSettings(s);
+  }, []);
+  const updateViewSetting = useCallback((key: keyof typeof viewSettings, value: boolean) =>
+    setViewSettings({ ...viewSettings, [key]: value }), [viewSettings, setViewSettings]);
 
   const {
     workflowConfig, setWorkflowConfig, setWorkflowField,
@@ -63,17 +131,16 @@ function App(): React.JSX.Element {
     filteredEpicNames, setFilteredEpicNames,
     loadSelectedWorkflow,
     handleSelectWorkflow,
-    filteredStateIds, summaryStateIds,
+    filteredStateIds,
     generateShortcutUrl,
   } = useWorkflowConfig();
 
   const {
     filterByTeam, setFilterByTeam,
-    filterIgnoredInTickets, setFilterIgnoredInTickets,
-    ignoredUsers, setIgnoredUsers,
     selectedTeams, setSelectedTeams, selectedTeamIds, selectedTeamLabel,
     sortState, toggleSortState, resetSortState,
-    collapsedCharts, setCollapsedCharts, toggleChart,
+    epicSearchQuery, setEpicSearchQuery,
+    deselectedObjectiveIds, setDeselectedObjectiveIds,
     getDisplayStories,
   } = useFilters();
 
@@ -84,24 +151,27 @@ function App(): React.JSX.Element {
     handleOpenReadme,
   } = useModals();
 
+  const onRateLimit = useCallback(() => setModal('rateLimit', true), [setModal]);
+
   const {
     epics, setEpics,
     members, setMembers,
-    loading, loadProgress, loadStats,
+    loading, loadProgress, loadStats, incrementApiCalls,
     error, setError,
     apiTokenIssue,
     epicStates,
     teamMemberIds, setTeamMemberIds,
+    teamNameMap,
+    objectives,
     loadEpics: searchEpics, cancelSearch,
   } = useEpicsData({
     epicNames: filteredEpicNames,
     loadSelectedWorkflow,
-    setCollapsedCharts,
-    onRateLimit: () => setModal('rateLimit', true),
+    onRateLimit,
     setFilteredEpicNames,
   });
 
-  const { importError, importSuccess, handleExportData, handleImportData } = useConfigIO();
+  const { configError, configSuccess, handleExportData, handleImportData } = useConfigIO();
 
   // Needs shortcutWebUrl from useWorkflowConfig and setError from useEpicsData
   const handleSaveShortcutUrl = useCallback(() => {
@@ -132,23 +202,11 @@ function App(): React.JSX.Element {
     return true;
   }, [shortcutWebUrl, setShortcutWebUrl, workflowConfig.selectedId, setError]);
 
-  // Needs epics from useEpicsData and collapsedCharts from useFilters
-  const toggleAllCharts = useCallback(() => {
-    const chartTypes = ['workflow-pie', 'type-pie'];
-    const allChartKeys = epics
-      .filter(e => !e.notFound)
-      .flatMap(epic => chartTypes.map(type => `${epic.id}-${type}`));
-    const allCollapsed = allChartKeys.every(key => collapsedCharts[key]);
-    const newState = { ...collapsedCharts };
-    allChartKeys.forEach(key => { newState[key] = !allCollapsed; });
-    setCollapsedCharts(newState);
-  }, [epics, collapsedCharts, setCollapsedCharts]);
-
   const wipeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => { return () => { if (wipeTimerRef.current) clearTimeout(wipeTimerRef.current); }; }, []);
 
   // Resets state from every hook — orchestration, belongs in App
-  const handleWipeSettings = () => {
+  const handleWipeSettings = useCallback(() => {
     localStorage.clear();
     sessionStorage.clear();
     setEpics([]);
@@ -158,7 +216,6 @@ function App(): React.JSX.Element {
     setShortcutWebUrl('');
     setSelectedTeams([]);
     setTeamMemberIds(new Set());
-    setIgnoredUsers([]);
     setError(null);
     setModal('wipeConfirm', false);
     setSuccessMessage('All settings have been wiped successfully!');
@@ -166,14 +223,14 @@ function App(): React.JSX.Element {
       setSuccessMessage(null);
       window.location.reload();
     }, 2000);
-  };
+  }, [setEpics, setFilteredEpicNames, setWorkflowConfig, setMembers, setShortcutWebUrl, setSelectedTeams, setTeamMemberIds, setError, setModal]);
 
   // Intentional empty dep array: this runs once on mount only. searchEpics is stable
   // at mount time; adding it as a dep would cause re-runs as filteredEpicNames changes.
   useEffect(() => {
     const checkConfig = async () => {
       try {
-        const migrationDone = localStorage.getItem('migration_completed');
+        const migrationDone = localStorage.getItem(STORAGE_KEYS.MIGRATION_COMPLETED);
         if (!migrationDone) {
           try {
             const migrationResponse = await fetch(`${getApiBaseUrl()}/api/migrate-data`);
@@ -183,8 +240,8 @@ function App(): React.JSX.Element {
               if (migrationData.workflowConfig && !storage.getWorkflowConfig()) storage.setWorkflowConfig(migrationData.workflowConfig);
               if (migrationData.epicsConfig && !storage.getEpicsConfig()) storage.setEpicsConfig(migrationData.epicsConfig);
             }
-          } catch (migrationErr) {}
-          localStorage.setItem('migration_completed', 'true');
+          } catch (migrationErr) { console.warn('Migration fetch failed:', migrationErr); }
+          localStorage.setItem(STORAGE_KEYS.MIGRATION_COMPLETED, 'true');
         }
 
         const token = storage.getApiToken();
@@ -198,7 +255,7 @@ function App(): React.JSX.Element {
           } else if (!storedWorkflowConfig || !storedWorkflowConfig.workflow_id) {
             setSetupWizardStep(2);
           } else {
-            setSetupWizardStep(6);
+            setSetupWizardStep(7);
           }
           return;
         }
@@ -211,7 +268,12 @@ function App(): React.JSX.Element {
     };
 
     checkConfig();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    // Intentionally mount-only: `searchEpics`, `setModal`, and `setSetupWizardStep`
+    // are referenced but the closure values at mount are exactly what we want —
+    // re-running this effect every time those refs change would re-launch the
+    // setup-wizard flow on every render. The empty dep array is correct.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Load epic names and workflow config from storage when wizard closes
   useEffect(() => {
@@ -221,7 +283,7 @@ function App(): React.JSX.Element {
       if (epicsConfig && epicsConfig.epics) {
         setFilteredEpicNames(epicsConfig.epics.map(e => e.name));
       }
-    } catch (err) {}
+    } catch (err) { console.warn('Failed to load epics config after wizard close:', err); }
     loadSelectedWorkflow();
   }, [modals.setupWizard, loadSelectedWorkflow, setFilteredEpicNames]);
 
@@ -242,47 +304,82 @@ function App(): React.JSX.Element {
   }, [epicStates]);
 
   // Derived data that assembles outputs from multiple hooks
-  const allDisplayStories = useMemo(() =>
-    epics.filter(e => !e.notFound).flatMap(epic => getDisplayStories(epic)),
-  [epics, getDisplayStories]);
+  const visibleEpicIds = useMemo(() => {
+    const trimmed = epicSearchQuery.trim().toLowerCase();
+    const ids = new Set<number | string>();
+    // "Blocked" lives in the workspace's custom epic-workflow names, not in Shortcut's
+    // coarse epic.state grouping. If the epic-workflow cache hasn't populated yet,
+    // skip the blocked filter rather than hiding every epic.
+    const hasEpicStateInfo = Object.keys(epicStates).length > 0;
+    for (const epic of epics) {
+      if (epic.notFound) continue;
+      if (trimmed && !epic.name.toLowerCase().includes(trimmed)) continue;
+      const info = getEpicStateInfo(epic);
+      if (viewSettings.showBlockedOnly && hasEpicStateInfo && info.name.toLowerCase().trim() !== 'blocked') continue;
+      if (!viewSettings.showDoneEpics && info.type.toLowerCase() === 'done') continue;
+      if (deselectedObjectiveIds.size > 0) {
+        const objIds = epic.objective_ids || [];
+        if (objIds.length === 0) {
+          if (deselectedObjectiveIds.has(-1)) continue;
+        } else if (!objIds.some(id => !deselectedObjectiveIds.has(id))) {
+          continue;
+        }
+      }
+      ids.add(epic.id);
+    }
+    return ids;
+  }, [epics, epicStates, epicSearchQuery, deselectedObjectiveIds, viewSettings.showDoneEpics, viewSettings.showBlockedOnly, getEpicStateInfo]);
+
+  const allDisplayStories = useMemo(() => {
+    const result: Story[] = [];
+    for (const epic of epics) {
+      if (epic.notFound || !visibleEpicIds.has(epic.id)) continue;
+      result.push(...getDisplayStories(epic));
+    }
+    return result;
+  }, [epics, visibleEpicIds, getDisplayStories]);
 
   const epicTeamData = useMemo(() => {
-    return epics.filter(e => !e.notFound).map(epic => ({
-      id: epic.id,
-      name: epic.name,
-      isDone: getEpicStateInfo(epic).type === 'done',
-      isReadyForRelease: getEpicStateInfo(epic).name.toLowerCase().trim() === 'ready for release',
-      isBlocked: getEpicStateInfo(epic).name.toLowerCase().trim() === 'blocked',
-      team: (epic.owner_ids || [])
-        .filter(id => selectedTeamIds.length === 0 || teamMemberIds.has(id))
-        .map(id => members[id] || id)
-        .filter(name => !filterIgnoredInTickets || !ignoredUsers.includes(name)),
-    }));
-  }, [epics, selectedTeamIds, teamMemberIds, members, filterIgnoredInTickets, ignoredUsers, getEpicStateInfo]);
+    return epics.filter(e => !e.notFound && visibleEpicIds.has(e.id)).map(epic => {
+      const stateInfo = getEpicStateInfo(epic);
+      const stateNameNorm = stateInfo.name.toLowerCase().trim();
+      return {
+        id: epic.id,
+        name: epic.name,
+        isDone: stateInfo.type === 'done',
+        isBlocked: stateNameNorm === 'blocked',
+        team: (epic.owner_ids || [])
+          .filter(id => selectedTeamIds.length === 0 || teamMemberIds.has(id))
+          .map(id => members[id] || id),
+      };
+    });
+  }, [epics, visibleEpicIds, selectedTeamIds, teamMemberIds, members, getEpicStateInfo]);
 
   const memberEpicMap = useMemo(() => {
-    const map: Record<string, Array<{ id: number | string; name: string; isDone: boolean; isReadyForRelease: boolean; isBlocked: boolean }>> = {};
-    epicTeamData.forEach(({ id, name, isDone, isReadyForRelease, isBlocked, team }) => {
+    const map: Record<string, Array<{ id: number | string; name: string; isDone: boolean; isBlocked: boolean }>> = {};
+    epicTeamData.forEach(({ id, name, isDone, isBlocked, team }) => {
       team.forEach(member => {
         if (!map[member]) map[member] = [];
-        map[member].push({ id, name, isDone, isReadyForRelease, isBlocked });
+        map[member].push({ id, name, isDone, isBlocked });
       });
     });
     return map;
   }, [epicTeamData]);
 
+  const pageSizeKb = useMemo(() => {
+    if (!loadStats) return null;
+    return (new Blob([document.documentElement.outerHTML]).size / 1024).toFixed(1);
+  }, [loadStats]);
+
   const dashboardContext = useMemo(() => ({
     // Data
-    epics, members, epicStates, teamMemberIds, loadStats,
+    epics, objectives, members, epicStates, teamMemberIds, loadStats, incrementApiCalls,
     workflowConfig, setWorkflowField,
     // UI state
     modals, setModal,
     sortState, toggleSortState, resetSortState,
-    collapsedCharts, setCollapsedCharts, toggleChart,
     filterByTeam, setFilterByTeam,
-    ignoredUsers, setIgnoredUsers,
-    filterIgnoredInTickets, setFilterIgnoredInTickets,
-    selectedTeams, setSelectedTeams, selectedTeamIds, selectedTeamLabel,
+    selectedTeams, setSelectedTeams, selectedTeamIds, selectedTeamLabel, teamNameMap,
     shortcutWebUrl, setShortcutWebUrl,
     error, setError, loading, successMessage,
     filteredEpicNames, setFilteredEpicNames,
@@ -290,16 +387,17 @@ function App(): React.JSX.Element {
     // Derived / callbacks
     getDisplayStories, generateShortcutUrl,
     getEpicStateInfo, getEpicStateClass,
-    filteredStateIds, summaryStateIds,
+    filteredStateIds,
     epicTeamData, memberEpicMap, allDisplayStories,
     searchEpics,
     handleSaveShortcutUrl, handleSelectWorkflow,
-    toggleAllCharts, handleOpenReadme,
-    darkMode, toggleDarkMode,
-    starTrekMode, toggleStarTrekMode,
-    matrixMode, toggleMatrixMode,
+    handleOpenReadme,
     displayTheme: theme, selectTheme,
-  }), [epics, members, epicStates, teamMemberIds, loadStats, workflowConfig, setWorkflowField, modals, setModal, sortState, toggleSortState, resetSortState, collapsedCharts, setCollapsedCharts, toggleChart, filterByTeam, setFilterByTeam, ignoredUsers, setIgnoredUsers, filterIgnoredInTickets, setFilterIgnoredInTickets, selectedTeams, setSelectedTeams, selectedTeamIds, selectedTeamLabel, shortcutWebUrl, setShortcutWebUrl, error, setError, loading, successMessage, filteredEpicNames, setFilteredEpicNames, setupWizardStep, setSetupWizardStep, getDisplayStories, generateShortcutUrl, getEpicStateInfo, getEpicStateClass, filteredStateIds, summaryStateIds, epicTeamData, memberEpicMap, allDisplayStories, searchEpics, handleSaveShortcutUrl, handleSelectWorkflow, toggleAllCharts, handleOpenReadme, darkMode, toggleDarkMode, starTrekMode, toggleStarTrekMode, matrixMode, toggleMatrixMode, theme, selectTheme]);
+    viewSettings, setViewSettings,
+    epicSearchQuery, setEpicSearchQuery,
+    deselectedObjectiveIds, setDeselectedObjectiveIds,
+    visibleEpicIds,
+  }), [epics, objectives, members, epicStates, teamMemberIds, loadStats, incrementApiCalls, workflowConfig, setWorkflowField, modals, setModal, sortState, toggleSortState, resetSortState, filterByTeam, setFilterByTeam, selectedTeams, setSelectedTeams, selectedTeamIds, selectedTeamLabel, teamNameMap, shortcutWebUrl, setShortcutWebUrl, error, setError, loading, successMessage, filteredEpicNames, setFilteredEpicNames, setupWizardStep, setSetupWizardStep, getDisplayStories, generateShortcutUrl, getEpicStateInfo, getEpicStateClass, filteredStateIds, epicTeamData, memberEpicMap, allDisplayStories, searchEpics, handleSaveShortcutUrl, handleSelectWorkflow, handleOpenReadme, theme, selectTheme, viewSettings, setViewSettings, epicSearchQuery, setEpicSearchQuery, deselectedObjectiveIds, setDeselectedObjectiveIds, visibleEpicIds]);
 
   return (
     <DashboardContext.Provider value={dashboardContext}>
@@ -309,16 +407,27 @@ function App(): React.JSX.Element {
       {loading && (
         <div className="modal-overlay" style={{ zIndex: 9999 }}>
           <div className="modal-content text-center !px-12 !py-10" style={{ maxWidth: '360px' }}>
-            <div className="text-[2.5rem] mb-4">⏳</div>
+            <div className="text-[2.5rem] mb-4 inline-block" style={{ animation: 'egg-timer-flip 1.5s linear infinite' }}>⏳</div>
             <h2 className="m-0 mb-2 text-[1.2rem] text-[#03045E]">Loading Epics…</h2>
-            <p className="text-[#718096] mb-6 text-[0.9rem]">
+            <p className="text-[#718096] mb-2 text-[0.9rem]">
               {loadProgress.total > 0
                 ? `Loading ${loadProgress.loaded} of ${loadProgress.total} epics`
                 : 'Fetching epic and story data from Shortcut'}
             </p>
-            <div className="w-full h-1 bg-slate-200 rounded-sm overflow-hidden mb-6">
-              <div className="h-full bg-[#494BCB] rounded-sm" style={{ animation: 'loading-bar 1.5s ease-in-out infinite' }} />
-            </div>
+            {loadProgress.total > 0 ? (
+              <>
+                <div className="mb-1">
+                  <PercentBar pct={(loadProgress.loaded / loadProgress.total) * 100} heightPx={8} />
+                </div>
+                <p className="text-[#94a3b8] text-[0.75rem] mb-6">
+                  {Math.round((loadProgress.loaded / loadProgress.total) * 100)}% complete
+                </p>
+              </>
+            ) : (
+              <div className="w-full h-1 bg-slate-200 rounded-sm overflow-hidden mb-6">
+                <div className="h-full bg-[#494BCB] rounded-sm" style={{ animation: 'loading-bar 1.5s ease-in-out infinite' }} />
+              </div>
+            )}
             <button className="btn-secondary min-w-[100px]" onClick={cancelSearch}>Cancel</button>
           </div>
         </div>
@@ -369,19 +478,27 @@ function App(): React.JSX.Element {
             <p>A React-based dashboard for tracking Shortcut.com epics, visualising progress, and monitoring team workload.</p>
             <ul>
               <li><strong>Story Summary:</strong> Overall story counts across all epics by workflow state</li>
-              <li><strong>Epic Status Table:</strong> At-a-glance chevron progress bars and epic state for all tracked epics</li>
-              <li><strong>Epic Owner Assignment:</strong> Maps each epic to its assigned team members</li>
-              <li><strong>Team Member Assignment:</strong> Inverted view — each team member and their assigned epics</li>
-              <li><strong>Ticket Status Breakdown:</strong> 3D column chart of story workflow states per epic</li>
+              <li><strong>Cycle Progress:</strong> Current 6-week cycle with start/end and % done</li>
+              <li><strong>Epic Status Table:</strong> Progress bars, Last Changed; search and objective filters</li>
+              <li><strong>Global Filters:</strong> Search/Done/Blocked filters apply across all sections</li>
+              <li><strong>Unwatched Tickets:</strong> Open tickets in your selected teams you are not watching</li>
+              <li><strong>Epic Owner Assignments:</strong> Maps each epic to its assigned team members</li>
+              <li><strong>Team Member Epic Assignments:</strong> Inverted view — each member and their epics</li>
+              <li><strong>Team Member Ticket Assignments:</strong> Open tickets grouped by epic, with status pills</li>
+              <li><strong>Epic Card:</strong> Collapsible; Done epics start collapsed by default</li>
+              <li><strong>Additional Views Row:</strong> Per-card peek icons toggle sections globally</li>
+              <li><strong>Ticket Status Breakdown:</strong> 3D column chart; click a bar to view tickets in that state</li>
               <li><strong>Workflow Status Pie Chart:</strong> Stories by workflow state with clickable Shortcut links</li>
               <li><strong>Story Type Breakdown:</strong> Feature / Bug / Chore pie chart per epic</li>
-              <li><strong>Story Owners Table:</strong> Per-epic story owner counts including unassigned</li>
-              <li><strong>Team Open Tickets:</strong> Open ticket counts per team member, excluding completed stories</li>
-              <li><strong>User Story Board:</strong> Kanban view (Backlog → Complete) with collapsible story cards</li>
-              <li><strong>Ignored Users:</strong> Configurable list of users excluded from assignment and ticket tables</li>
-              <li><strong>Setup Wizard:</strong> 6-step guided setup — token, URL, workflow, team, ignored users, epic list</li>
-              <li><strong>Configuration Management:</strong> Export / Import of all settings as JSON</li>
-              <li><strong>Themes:</strong> Four display themes selectable via Settings → Theme</li>
+              <li><strong>Story Owners Table:</strong> Sortable per-epic owner counts, plus unassigned</li>
+              <li><strong>Team Open Tickets:</strong> Sortable open counts per team member, non-complete</li>
+              <li><strong>Pull Requests:</strong> Sortable table linking each story to its GitHub PRs</li>
+              <li><strong>User Story Board:</strong> Kanban board (Backlog → Complete) per epic</li>
+              <li><strong>Setup Wizard:</strong> 7-step setup: token, URL, workflow, teams, name, cycle, list</li>
+              <li><strong>Configuration Management:</strong> Export / Import all settings as JSON</li>
+              <li><strong>View Settings:</strong> Toggle the per-card Top of Page link</li>
+              <li><strong>Load Stats Bar:</strong> Load time, API call breakdown, page size, and download</li>
+              <li><strong>Themes:</strong> Normal, Dark Mode, Star Trek (LCARS), and Matrix</li>
             </ul>
             <p className="mt-4 text-sm text-[#718096]">
               Version {pkg.version} | Project D.A.V.E. (Dashboards Are Very Effective)
@@ -397,14 +514,14 @@ function App(): React.JSX.Element {
         <div className="modal-overlay" onClick={() => setModal('exportImport', false)}>
           <div className="modal-content modal-content-export-import" onClick={(e) => e.stopPropagation()}>
             <h2>Export/Import Configuration</h2>
-            {importSuccess && (
+            {configSuccess && (
               <div className="p-3 mb-4 bg-[#d1fae5] border border-[#6ee7b7] rounded-md text-[#065f46]">
-                {importSuccess}
+                {configSuccess}
               </div>
             )}
-            {importError && (
+            {configError && (
               <div className="p-3 mb-4 bg-[#fef2f2] border border-[#fca5a5] rounded-md text-[#dc2626]">
-                {importError}
+                {configError}
               </div>
             )}
             <div className="mb-8">
@@ -461,10 +578,46 @@ function App(): React.JSX.Element {
             <h2>README.md</h2>
             <div
               className="markdown-content max-h-[60vh] overflow-y-auto mb-4 bg-white p-6 rounded-md border border-slate-200"
-              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(readmeContent || '') as string, { FORBID_TAGS: ['script', 'style', 'iframe', 'object', 'embed', 'form'], FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 'javascript'] }) }}
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(readmeContent || '', { async: false }), { FORBID_TAGS: ['script', 'style', 'iframe', 'object', 'embed', 'form'], FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 'javascript'] }) }}
             />
             <div className="modal-buttons">
               <button type="button" onClick={() => setModal('readme', false)} className="btn-primary">Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {modals.viewSettings && (
+        <div className="modal-overlay" onClick={() => setModal('viewSettings', false)}>
+          <div className="modal-content" style={{ maxWidth: '420px' }} onClick={(e) => e.stopPropagation()}>
+            <h2>View Settings</h2>
+            <p className="mb-4 text-[#64748b] text-sm">Choose which data to display on the dashboard.</p>
+            <div className="mb-6">
+              <h3 className="text-sm font-semibold text-[#374151] mb-3">Summary Sections</h3>
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={viewSettings.showCycleProgress}
+                  onChange={(e) => updateViewSetting('showCycleProgress', e.target.checked)}
+                  className="w-4 h-4"
+                />
+                <span className="text-sm">Show Cycle Progress table</span>
+              </label>
+            </div>
+            <div className="mb-6">
+              <h3 className="text-sm font-semibold text-[#374151] mb-3">Top of Page Link</h3>
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={viewSettings.showTopOfPageLink}
+                  onChange={(e) => updateViewSetting('showTopOfPageLink', e.target.checked)}
+                  className="w-4 h-4"
+                />
+                <span className="text-sm">Show ↑ Top of Page link on each epic card</span>
+              </label>
+            </div>
+            <div className="modal-buttons">
+              <button type="button" onClick={() => setModal('viewSettings', false)} className="btn-primary">Close</button>
             </div>
           </div>
         </div>
@@ -499,65 +652,20 @@ function App(): React.JSX.Element {
 
         {epics.length > 0 && (
           <div className="epics-list">
+            <AssignmentViewsRow />
+            <AssignmentTables />
             <SummaryTable />
 
-            <div className="mb-2 pb-3 border-b-2 border-slate-200">
-              <div className="flex items-center">
-                <h2 className="m-0 text-[1.0rem]">
-                  {epics.filter(e => !e.notFound).length === filteredEpicNames.length ? '✅ ' : '⚠️ '}
-                  Found {epics.filter(e => !e.notFound).length} of {filteredEpicNames.length} Epic{filteredEpicNames.length !== 1 ? 's' : ''}
-                </h2>
-              </div>
-              {epics.some(e => e.notFound) && (
-                <div className="mt-[0.4rem] text-[0.8rem] text-[#dc2626]">
-                  <span className="font-semibold">Not found: </span>
-                  {epics.filter(e => e.notFound).map(e => e.name).join(', ')}
-                </div>
-              )}
-            </div>
+            <UnwatchedTickets />
 
-            <AssignmentTables />
-
-            {epics.map((epic) => (
+            {epics.filter(epic => !epic.notFound && visibleEpicIds.has(epic.id)).map((epic) => (
               <EpicCard key={epic.id as React.Key} epic={epic} />
             ))}
           </div>
         )}
       </main>
 
-      {loadStats && (() => {
-        const pageSizeBytes = new Blob([document.documentElement.outerHTML]).size;
-        const pageSizeKb = (pageSizeBytes / 1024).toFixed(1);
-        const handleDownload = () => {
-          const blob = new Blob([document.documentElement.outerHTML], { type: 'text/html' });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = `shortcut-dashboard-${loadStats.loadedAt.toISOString().slice(0, 10)}.html`;
-          a.click();
-          URL.revokeObjectURL(url);
-        };
-        const statClass = "flex items-center gap-[0.35rem] text-[#718096] text-[0.78rem]";
-        const divider = <span className="text-[#cbd5e0]">|</span>;
-        return (
-          <div className="bg-[#f8fafc] border-t border-slate-200 px-8 py-2 flex flex-wrap gap-4 items-center justify-center">
-            <div className={statClass}><span>⏱</span><span>Load time: <strong>{(loadStats.loadTime / 1000).toFixed(2)}s</strong></span></div>
-            {divider}
-            <div className={statClass}><span>🔗</span><span>API calls: <strong>{loadStats.apiCallCount}</strong></span></div>
-            {divider}
-            <div className={statClass}><span>🕐</span><span>Generated: <strong>{loadStats.loadedAt.toLocaleString()}</strong></span></div>
-            {divider}
-            <div className={statClass}><span>📄</span><span>Page size: <strong>{pageSizeKb} KB</strong></span></div>
-            {divider}
-            <div className={statClass}>
-              <span>💾</span>
-              <button onClick={handleDownload} className="bg-transparent border-0 cursor-pointer text-[#494BCB] text-[0.78rem] font-semibold p-0 underline">
-                Download page
-              </button>
-            </div>
-          </div>
-        );
-      })()}
+      {loadStats && <LoadStatsFooter loadStats={loadStats} pageSizeKb={pageSizeKb} />}
 
       <AppFooter />
     </div>
