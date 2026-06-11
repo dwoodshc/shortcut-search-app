@@ -2,8 +2,8 @@
  * Copyright (c) 2026 Dave Woods <dave.woods@slice.com>. All rights reserved.
  *
  * SetupWizard.tsx — 7-step guided setup modal. Steps: API token (verified against the
- * API), workspace URL, workflow selection, team selection, ignored users, my Shortcut
- * name (for unwatched ticket detection), and epic list.
+ * API), workspace URL, workflow selection, team selection, my Shortcut name
+ * (for unwatched ticket detection), Cycle 1 start date, and epic list.
  * Local form state is initialised from storage on mount; each step persists to
  * localStorage before advancing.
  */
@@ -20,7 +20,6 @@ interface Props {
 
 export default function SetupWizard({ step, onStepChange, onClose }: Props): React.JSX.Element {
   const {
-    ignoredUsers, setIgnoredUsers,
     selectedTeams, setSelectedTeams, selectedTeamIds,
     shortcutWebUrl, setShortcutWebUrl,
     workflowConfig, setWorkflowField,
@@ -30,6 +29,7 @@ export default function SetupWizard({ step, onStepChange, onClose }: Props): Rea
     loading,
     successMessage,
     searchEpics,
+    incrementApiCalls,
   } = useDashboard();
 
   const [apiToken, setApiToken] = useState('');
@@ -39,16 +39,28 @@ export default function SetupWizard({ step, onStepChange, onClose }: Props): Rea
   const [epicsText, setEpicsText] = useState(() => (storage.getEpicsConfig()?.epics || []).map(e => e.name).join('\n'));
   const [allTeams, setAllTeams] = useState<Team[]>([]);
   const [myName, setMyName] = useState(() => storage.getMyName());
-  const [ignoredUsersText, setIgnoredUsersText] = useState(() => ignoredUsers.join('\n'));
+  const [cycle1Start, setCycle1Start] = useState(() => {
+    const stored = storage.getCycle1Start();
+    if (stored) return stored;
+    // Default: first weekday of the current year (YYYY-MM-DD)
+    const d = new Date(new Date().getFullYear(), 0, 1);
+    while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() + 1);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  });
 
   const handleSaveEpicList = () => {
     setEpicListError('');
     try {
       const epics = epicsText.split('\n').filter(name => name.trim() !== '').map(name => ({ name: name.trim() }));
-      const lowerNames = epics.map(e => e.name.toLowerCase());
-      const duplicateLowers = lowerNames.filter((n, i) => lowerNames.indexOf(n) !== i);
-      if (duplicateLowers.length > 0) {
-        const displayNames = [...new Set(duplicateLowers)].map(lower => epics.find(e => e.name.toLowerCase() === lower)!.name);
+      const seen = new Set<string>();
+      const duplicateLowers = new Set<string>();
+      for (const e of epics) {
+        const lower = e.name.toLowerCase();
+        if (seen.has(lower)) duplicateLowers.add(lower);
+        else seen.add(lower);
+      }
+      if (duplicateLowers.size > 0) {
+        const displayNames = [...duplicateLowers].map(lower => epics.find(e => e.name.toLowerCase() === lower)!.name);
         setEpicListError(`Duplicate epic${displayNames.length > 1 ? 's' : ''}: ${displayNames.join(', ')}`);
         return false;
       }
@@ -80,6 +92,7 @@ export default function SetupWizard({ step, onStepChange, onClose }: Props): Rea
           : 'Failed to verify token. Please check your connection and try again.');
         return;
       }
+      incrementApiCalls('GET /api/workflows', 1);
       setTokenError('');
       onStepChange(2);
     } catch (err) {
@@ -96,6 +109,7 @@ export default function SetupWizard({ step, onStepChange, onClose }: Props): Rea
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (workflowsResponse.ok) {
+        incrementApiCalls('GET /api/workflows', 1);
         setWorkflowField('workflows', await workflowsResponse.json());
       } else {
         setError('Failed to load workflows. You may need to go back and retry.');
@@ -116,8 +130,12 @@ export default function SetupWizard({ step, onStepChange, onClose }: Props): Rea
       const teamsRes = await fetch(`${getApiBaseUrl()}/api/teams`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      if (teamsRes.ok) setAllTeams(await teamsRes.json());
-      else setError('Failed to load teams. You can still proceed and skip team selection.');
+      if (teamsRes.ok) {
+        incrementApiCalls('GET /api/teams', 1);
+        setAllTeams(await teamsRes.json());
+      } else {
+        setError('Failed to load teams. You can still proceed and skip team selection.');
+      }
     } catch (err) {
       setError('Failed to load teams. Check your connection and try again.');
     }
@@ -129,13 +147,8 @@ export default function SetupWizard({ step, onStepChange, onClose }: Props): Rea
     else if (step === 2) { await handleStep2Next(); }
     else if (step === 3) { await handleStep3Next(); }
     else if (step === 4) { storage.setTeamConfig(selectedTeams); onStepChange(5); }
-    else if (step === 5) {
-      const parsed = ignoredUsersText.split('\n').map(u => u.trim()).filter(Boolean);
-      setIgnoredUsers(parsed);
-      storage.setIgnoredUsers(parsed);
-      onStepChange(6);
-    }
-    else if (step === 6) { storage.setMyName(myName.trim()); onStepChange(7); }
+    else if (step === 5) { storage.setMyName(myName.trim()); onStepChange(6); }
+    else if (step === 6) { storage.setCycle1Start(cycle1Start); onStepChange(7); }
     else if (step === 7) { const saved = handleSaveEpicList(); if (saved) { onClose(); searchEpics(); } }
   };
 
@@ -172,8 +185,8 @@ export default function SetupWizard({ step, onStepChange, onClose }: Props): Rea
                 {stepNum === 2 && 'Shortcut URL'}
                 {stepNum === 3 && 'Workflow'}
                 {stepNum === 4 && 'Select Team'}
-                {stepNum === 5 && 'Ignore Users'}
-                {stepNum === 6 && 'My Name'}
+                {stepNum === 5 && 'My Name'}
+                {stepNum === 6 && 'Cycle 1 Start'}
                 {stepNum === 7 && 'Epic List'}
               </div>
               {stepNum < 7 && (
@@ -353,8 +366,12 @@ export default function SetupWizard({ step, onStepChange, onClose }: Props): Rea
                         const teamsRes = await fetch(`${getApiBaseUrl()}/api/teams`, {
                           headers: { 'Authorization': `Bearer ${token}` }
                         });
-                        if (teamsRes.ok) setAllTeams(await teamsRes.json());
-                        else setError('Failed to load teams. Check your connection and try again.');
+                        if (teamsRes.ok) {
+                          incrementApiCalls('GET /api/teams', 1);
+                          setAllTeams(await teamsRes.json());
+                        } else {
+                          setError('Failed to load teams. Check your connection and try again.');
+                        }
                       } catch (err) {
                         setError('Failed to load teams. Check your connection and try again.');
                       }
@@ -403,26 +420,10 @@ export default function SetupWizard({ step, onStepChange, onClose }: Props): Rea
             </div>
           )}
 
-          {/* Step 5: Ignore Users */}
+          {/* Step 5: My Name */}
           {step === 5 && (
-            <div className="flex flex-col h-full">
-              <h3 className="text-[#1e293b] mb-[0.4rem]">Step 5: Ignore Users</h3>
-              <p className="mb-[0.15rem]">Enter the names of Shortcut users to exclude from the assignment tables (one per line).</p>
-              <div className="flex-1 flex flex-col min-h-0">
-                <textarea
-                  className="input-field flex-1 w-full resize-none font-inherit text-base px-3 py-2 box-border"
-                  value={ignoredUsersText}
-                  onChange={(e) => setIgnoredUsersText(e.target.value)}
-                  placeholder={"John Smith\nJane Doe"}
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Step 6: My Name */}
-          {step === 6 && (
             <div>
-              <h3 className="text-[#1e293b] mb-4">Step 6: Your Shortcut Name</h3>
+              <h3 className="text-[#1e293b] mb-4">Step 5: Your Shortcut Name</h3>
               <p className="mb-6">Enter your name exactly as it appears in Shortcut. This will be used to find open tickets in your selected teams that you are not watching.</p>
               <div className="form-group">
                 <label htmlFor="myName">Your name in Shortcut:</label>
@@ -436,6 +437,27 @@ export default function SetupWizard({ step, onStepChange, onClose }: Props): Rea
                 />
                 <p className="text-xs text-[#64748b] mt-2">
                   This is optional. Leave blank to skip unwatched ticket tracking.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Step 6: Cycle 1 Start Date */}
+          {step === 6 && (
+            <div>
+              <h3 className="text-[#1e293b] mb-4">Step 6: Cycle 1 Start Date</h3>
+              <p className="mb-6">Pick the calendar date that <strong>Cycle 1</strong> begins. Each cycle is 6 weeks (42 days), and the dates of the remaining cycles in the year are calculated from this anchor.</p>
+              <div className="form-group">
+                <label htmlFor="cycle1Start">Cycle 1 start date:</label>
+                <input
+                  type="date"
+                  id="cycle1Start"
+                  value={cycle1Start}
+                  onChange={(e) => setCycle1Start(e.target.value)}
+                  className="input-field"
+                />
+                <p className="text-xs text-[#64748b] mt-2">
+                  Defaults to the first weekday of the current year. You can change this anytime by re-running the wizard.
                 </p>
               </div>
             </div>

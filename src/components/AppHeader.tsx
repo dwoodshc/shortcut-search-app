@@ -13,18 +13,20 @@ export default function AppHeader(): React.JSX.Element {
   const {
     epics,
     modals, setModal,
-    collapsedCharts, setCollapsedCharts,
     filterByTeam, setFilterByTeam,
-    filterIgnoredInTickets, setFilterIgnoredInTickets,
     selectedTeamIds, selectedTeamLabel,
     searchEpics,
-    toggleAllCharts,
     handleOpenReadme,
     setSetupWizardStep,
   } = useDashboard();
 
+  const handleHeaderClick = (e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).closest('button, a, input, label')) return;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
-    <header className="App-header">
+    <header className="App-header" onClick={handleHeaderClick} style={{ cursor: 'pointer' }} title="Back to top">
       <div className="header-logo">
         <a href="#top" title="Back to top">
           <img
@@ -105,7 +107,7 @@ export default function AppHeader(): React.JSX.Element {
                   setModal('viewSettings', true);
                 }}
               >
-                View
+                View Settings
               </button>
               <button
                 className="settings-menu-item"
@@ -147,46 +149,17 @@ export default function AppHeader(): React.JSX.Element {
           )}
         </div>
       </div>
-      {epics.length > 0 && (
+      {epics.length > 0 && selectedTeamIds.length > 0 && (
         <div className="header-actions-row">
           <button
-            onClick={() => {
-              const allCollapsed = collapsedCharts['assignment-epic'] && collapsedCharts['assignment-member'] && collapsedCharts['assignment-ticket'];
-              setCollapsedCharts(prev => ({ ...prev, 'assignment-epic': !allCollapsed, 'assignment-member': !allCollapsed, 'assignment-ticket': !allCollapsed }));
-            }}
-            className={`header-action-btn${!(collapsedCharts['assignment-epic'] && collapsedCharts['assignment-member'] && collapsedCharts['assignment-ticket']) ? ' active' : ''}`}
-            title="Show or hide the Epic Owner Assignments, Team Member Epic Assignments, and Team Member Ticket Assignments tables"
+            onClick={() => setFilterByTeam(prev => !prev)}
+            className={`header-action-btn${filterByTeam ? ' active' : ''}`}
+            title={filterByTeam
+              ? `Currently showing only ${selectedTeamLabel || 'team'} tickets — click to show all tickets`
+              : `Currently showing all tickets — click to show only tickets assigned to ${selectedTeamLabel || 'team'}`}
           >
-            {collapsedCharts['assignment-epic'] && collapsedCharts['assignment-member'] && collapsedCharts['assignment-ticket'] ? 'Expand Assignments' : 'Collapse Assignments'}
+            {filterByTeam ? 'Show All Teams' : `Show ${selectedTeamLabel || 'Team'} Only`}
           </button>
-          <button
-            onClick={() => setFilterIgnoredInTickets(prev => !prev)}
-            className={`header-action-btn${!filterIgnoredInTickets ? ' active' : ''}`}
-            title={filterIgnoredInTickets ? 'Currently hiding ignored users — click to show them highlighted in assignment and ticket tables' : 'Currently showing ignored users — click to hide them from assignment and ticket tables'}
-          >
-            {filterIgnoredInTickets ? 'Show Ignored Users' : 'Hide Ignored Users'}
-          </button>
-          <button
-            onClick={toggleAllCharts}
-            className={`header-action-btn${(() => { const keys = epics.filter(e => !e.notFound).flatMap(e => ['workflow-pie','type-pie'].map(t => `${e.id}-${t}`)); return !keys.every(k => collapsedCharts[k]); })() ? ' active' : ''}`}
-            title="Show or hide the Workflow Status Pie Chart and Story Type Breakdown across all epics"
-          >
-            {(() => {
-              const allChartKeys = epics.filter(e => !e.notFound).flatMap(e => ['workflow-pie','type-pie'].map(t => `${e.id}-${t}`));
-              return allChartKeys.every(key => collapsedCharts[key]) ? 'Expand Charts' : 'Collapse Charts';
-            })()}
-          </button>
-          {selectedTeamIds.length > 0 && (
-            <button
-              onClick={() => setFilterByTeam(prev => !prev)}
-              className={`header-action-btn${filterByTeam ? ' active' : ''}`}
-              title={filterByTeam
-                ? `Currently showing only ${selectedTeamLabel || 'team'} tickets — click to show all tickets`
-                : `Currently showing all tickets — click to show only tickets assigned to ${selectedTeamLabel || 'team'}`}
-            >
-              {filterByTeam ? 'Show All Teams' : `Show ${selectedTeamLabel || 'Team'} Only`}
-            </button>
-          )}
         </div>
       )}
     </header>

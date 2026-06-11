@@ -7,8 +7,8 @@
  */
 import React, { useState, useEffect } from 'react';
 import { useDashboard } from '../context/DashboardContext';
-import { storage, getApiBaseUrl, COMPLETE_STATE_NAMES } from '../utils';
-import { Epic, Story } from '../types';
+import { storage, getApiBaseUrl, COMPLETE_STATE_NAMES, STORY_TYPE_COLORS } from '../utils';
+import { Epic } from '../types';
 
 interface UnwatchedTicket {
   id: number | string;
@@ -64,11 +64,10 @@ function collectUnwatched(
 }
 
 export default function UnwatchedTickets(): React.JSX.Element | null {
-  const { epics, members, selectedTeamIds, workflowConfig, getEpicStateInfo, visibleEpicIds } = useDashboard();
+  const { epics, members, selectedTeamIds, workflowConfig, getEpicStateInfo, visibleEpicIds, incrementApiCalls } = useDashboard();
   const [myMemberId, setMyMemberId] = useState<string | null>(null);
   const [nameNotFound, setNameNotFound] = useState(false);
-
-  const myName = storage.getMyName();
+  const [myName] = useState<string>(() => storage.getMyName());
 
   useEffect(() => {
     if (!myName || myMemberId) return;
@@ -81,15 +80,19 @@ export default function UnwatchedTickets(): React.JSX.Element | null {
     const token = storage.getApiToken();
     if (!token) return;
     fetch(`${getApiBaseUrl()}/api/members`, { headers: { 'Authorization': `Bearer ${token}` } })
-      .then(r => r.ok ? r.json() : null)
+      .then(r => {
+        if (!r.ok) return null;
+        incrementApiCalls('GET /api/members', 1);
+        return r.json();
+      })
       .then((all: { id: string; profile: { name: string } }[] | null) => {
         if (!all) return;
         const match = all.find(m => m.profile.name.toLowerCase() === myName.toLowerCase());
         if (match) setMyMemberId(match.id);
         else setNameNotFound(true);
       })
-      .catch(() => {});
-  }, [myName, myMemberId, members]);
+      .catch(err => { console.warn('Failed to fetch members for unwatched-ticket lookup:', err); });
+  }, [myName, myMemberId, members, incrementApiCalls]);
 
   if (!myName || epics.length === 0) return null;
   if (!myMemberId) return nameNotFound ? (
@@ -107,12 +110,7 @@ export default function UnwatchedTickets(): React.JSX.Element | null {
   const tableClass = 'w-full bg-white rounded-lg shadow-[0_2px_4px_rgba(0,0,0,0.08)] border border-[#F0F0F7]';
   const tdClass = 'px-3 py-[0.4rem] text-sm border-b border-[#F0F0F7]';
 
-  const typeColor = (type: string) => {
-    if (type === 'Epic') return '#7c3aed';
-    if (type === 'Bug') return '#dc2626';
-    if (type === 'Chore') return '#64748b';
-    return '#1d4ed8';
-  };
+  const typeColor = (type: string): string => STORY_TYPE_COLORS[type.toLowerCase()] ?? STORY_TYPE_COLORS.feature;
 
   return (
     <div className="mb-4">
