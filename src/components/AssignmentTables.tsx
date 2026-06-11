@@ -1,49 +1,70 @@
 /**
  * Copyright (c) 2026 Dave Woods <dave.woods@slice.com>. All rights reserved.
  *
- * AssignmentTables.tsx — Two collapsible assignment tables. Epic Owner Assignment maps
- * each epic to its team members; Team Member Assignment is the inverse view. Both are
- * sortable, show Done / Ready-for-Release state badges, and highlight ignored users
- * as gray pills when visible.
+ * AssignmentTables.tsx — Three collapsible assignment tables. Epic Owner Assignments maps
+ * each epic to its team members; Team Member Epic Assignments is the inverse view;
+ * Team Member Ticket Assignments lists all open (non-complete) tickets per owner. All are
+ * sortable and highlight ignored users as gray pills when visible.
  */
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useDashboard } from '../context/DashboardContext';
 import { EpicTeamEntry, EpicRef } from '../types';
+import { ResetIcon } from './icons';
+import SortIcon from './SortIcon';
+import { COMPLETE_STATE_NAMES } from '../utils';
 
-const resetIcon = (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style={{ width: '14px', height: '14px', verticalAlign: 'middle', display: 'inline-block' }}>
-    <path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.95-2.05L6.64 18.36A8.955 8.955 0 0 0 13 21a9 9 0 0 0 0-18z"/>
-  </svg>
-);
-
-const donePill = <span style={{ marginLeft: '0.4rem', backgroundColor: '#86efac', borderRadius: '999px', padding: '0.1rem 0.5rem', fontSize: '0.75rem', fontWeight: 500, display: 'inline-block', verticalAlign: 'middle' }}>Done</span>;
-const readyForReleasePill = <span style={{ marginLeft: '0.4rem', backgroundColor: '#bbf7d0', borderRadius: '999px', padding: '0.1rem 0.5rem', fontSize: '0.75rem', fontWeight: 500, display: 'inline-block', verticalAlign: 'middle' }}>Ready for Release</span>;
+const TICKET_STATE_COLORS: Record<string, { bg: string; text: string }> = {
+  'backlog':               { bg: '#d1d5db', text: '#374151' },
+  'ready for development': { bg: '#a7f3d0', text: '#374151' },
+  'in development':        { bg: '#6ee7b7', text: '#374151' },
+  'in review':             { bg: '#4ade80', text: '#374151' },
+};
+const DEFAULT_TICKET_STATE_COLOR = { bg: '#F1F5F9', text: '#475569' };
 
 export default function AssignmentTables(): React.JSX.Element | null {
   const {
+    epics, members, workflowConfig,
     epicTeamData, memberEpicMap,
     sortState, toggleSortState, resetSortState,
-    collapsedCharts, setCollapsedCharts,
-    filterIgnoredInTickets, ignoredUsers,
+    filterByTeam, selectedTeamIds,
+    getEpicStateClass,
+    visibleEpicIds,
+    viewSettings,
   } = useDashboard();
+
+  const memberTicketData = useMemo(() => {
+    const map: Record<string, Array<{ id: number; name: string; app_url?: string; epicName: string; epicAppUrl?: string; stateName: string }>> = {};
+    for (const epic of epics) {
+      if (epic.notFound || !visibleEpicIds.has(epic.id)) continue;
+      const stories = epic.stories || [];
+      const filtered = filterByTeam && selectedTeamIds.length > 0
+        ? stories.filter(s => !s.group_id || selectedTeamIds.includes(s.group_id))
+        : stories;
+      for (const story of filtered) {
+        const stateName = (workflowConfig.states[story.workflow_state_id] || '').toLowerCase().trim();
+        if (COMPLETE_STATE_NAMES.has(stateName)) continue;
+        for (const ownerId of story.owner_ids || []) {
+          const ownerName = members[ownerId] || ownerId;
+          if (!map[ownerName]) map[ownerName] = [];
+          map[ownerName].push({ id: story.id, name: story.name, app_url: story.app_url, epicName: epic.name, epicAppUrl: epic.app_url, stateName: workflowConfig.states[story.workflow_state_id] || '' });
+        }
+      }
+    }
+    return Object.entries(map).map(([member, tickets]) => ({ member, tickets }));
+  }, [epics, visibleEpicIds, members, workflowConfig.states, filterByTeam, selectedTeamIds]);
+
+  const donePill = <span className={`epic-state ${getEpicStateClass('done', 'Done')} !text-[0.75rem] !py-[0.15rem] !px-2 ml-[0.4rem]`}>Done ✓</span>;
+  const blockedPill = <span className={`epic-state ${getEpicStateClass('', 'blocked')} !text-[0.75rem] !py-[0.15rem] !px-2 ml-[0.4rem]`}>Blocked</span>;
 
   if (epicTeamData.length === 0) return null;
 
   const memberEpicData = Object.entries(memberEpicMap).map(([member, epicsForMember]) => ({ member, epics: epicsForMember }));
   if (memberEpicData.length === 0) return null;
 
-  const tableStyle: React.CSSProperties = { width: '100%', tableLayout: 'fixed', borderCollapse: 'separate', borderSpacing: 0, background: 'white', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.08)', border: '1px solid #F0F0F7' };
-  const thBase: React.CSSProperties = { padding: '0.5rem 0.75rem', fontWeight: 600, fontSize: '0.875rem', textAlign: 'left', cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap', color: 'white' };
-  const tdStyle: React.CSSProperties = { padding: '0.4rem 0.75rem', fontSize: '0.875rem', borderBottom: '1px solid #F0F0F7', wordBreak: 'break-word', overflow: 'hidden' };
+  const tableClass = "w-full bg-white rounded-lg shadow-[0_2px_4px_rgba(0,0,0,0.08)] border border-[#F0F0F7]";
+  const thBaseClass = "px-3 py-2 font-semibold text-sm text-left cursor-pointer select-none whitespace-nowrap text-white";
+  const tdClass = "px-3 py-[0.4rem] text-sm border-b border-[#F0F0F7] break-words overflow-hidden";
 
-  const makeSortIcon = (sort: { col: string | null; dir: string }, col: string, isNumeric = false) => {
-    const unsorted = 'Click to sort';
-    const ascLabel = isNumeric ? 'Sorted low→high, click to reverse' : 'Sorted A→Z, click to reverse';
-    const descLabel = isNumeric ? 'Sorted high→low, click to reverse' : 'Sorted Z→A, click to reverse';
-    const label = sort.col !== col ? unsorted : sort.dir === 'asc' ? ascLabel : descLabel;
-    const icon = sort.col !== col ? ' ↕' : sort.dir === 'asc' ? ' ↑' : ' ↓';
-    return <span className="summary-sort-icon" data-tooltip={label}>{icon}</span>;
-  };
 
   const sortedEpicTeam = [...epicTeamData].sort((a, b) => {
     if (!sortState.epicTeam.col) return 0;
@@ -61,126 +82,181 @@ export default function AssignmentTables(): React.JSX.Element | null {
     return 0;
   });
 
-  const epicTeamHead = (
-    <tr style={{ background: '#494BCB' }}>
-      <th style={{ ...thBase, borderRadius: '8px 0 0 0' }} onClick={() => toggleSortState('epicTeam', 'epic')}>
-        Epic{makeSortIcon(sortState.epicTeam, 'epic')}
-        <span className="summary-sort-icon" data-tooltip="Restore original order" onClick={(e) => { e.stopPropagation(); resetSortState('epicTeam'); }} style={{ marginLeft: '6px', cursor: 'pointer', opacity: sortState.epicTeam.col ? 1 : 0.4 }}>
-          {resetIcon}
-        </span>
-      </th>
-      <th style={{ ...thBase, borderRadius: '0 8px 0 0', cursor: 'default' }}>Team Members</th>
-    </tr>
-  );
+  const sortedMemberTicket = [...memberTicketData].sort((a, b) => {
+    if (!sortState.memberTicket.col) return 0;
+    const dir = sortState.memberTicket.dir === 'asc' ? 1 : -1;
+    if (sortState.memberTicket.col === 'member') return dir * a.member.localeCompare(b.member);
+    if (sortState.memberTicket.col === 'count') return dir * (a.tickets.length - b.tickets.length);
+    return 0;
+  });
 
-  const memberEpicHead = (
-    <tr style={{ background: '#494BCB' }}>
-      <th style={{ ...thBase, borderRadius: '8px 0 0 0' }} onClick={() => toggleSortState('memberEpic', 'member')}>
-        Team Member{makeSortIcon(sortState.memberEpic, 'member')}
-      </th>
-      <th style={{ ...thBase, borderRadius: '0 8px 0 0', cursor: 'default' }}>Epics</th>
-    </tr>
-  );
+  // Shared header renderer for the three assignment tables. Each table has a
+  // sortable first column (with restore icon), an optional sortable Count
+  // column in the middle, and a static label column on the right.
+  const renderHead = (
+    sortKey: 'epicTeam' | 'memberEpic' | 'memberTicket',
+    firstCol: { sortField: string; label: string },
+    lastCol: { label: string },
+    showCount: boolean,
+  ): React.JSX.Element => {
+    const sort = sortState[sortKey];
+    return (
+      <tr className="bg-[#494BCB]">
+        <th className={`${thBaseClass} rounded-tl-lg`} onClick={() => toggleSortState(sortKey, firstCol.sortField)}>
+          {firstCol.label}<SortIcon sort={sort} col={firstCol.sortField} />
+          <span className="summary-sort-icon ml-[6px] cursor-pointer" data-tooltip="Restore original order" onClick={(e) => { e.stopPropagation(); resetSortState(sortKey); }} style={{ opacity: sort.col ? 1 : 0.4 }}>
+            {ResetIcon}
+          </span>
+        </th>
+        {showCount && (
+          <th className={`${thBaseClass} text-center`} onClick={() => toggleSortState(sortKey, 'count')}>
+            Count<SortIcon sort={sort} col="count" isNumeric />
+          </th>
+        )}
+        <th className={`${thBaseClass} rounded-tr-lg cursor-default`}>{lastCol.label}</th>
+      </tr>
+    );
+  };
 
-  const renderEpicTeamRow = (row: EpicTeamEntry, idx: number) => (
-    <tr key={row.id as React.Key} style={{ background: row.team.length === 0 ? '#fff9c4' : idx % 2 === 0 ? 'white' : '#fafafa' }}>
-      <td style={{ ...tdStyle, fontWeight: 600 }}>
-        <a href={`#epic-${row.id}`} style={{ color: '#494BCB', textDecoration: 'none' }}>{row.name}</a>
+  const epicTeamHead = renderHead('epicTeam', { sortField: 'epic', label: 'Epic' }, { label: 'Team Members' }, false);
+  const memberEpicHead = renderHead('memberEpic', { sortField: 'member', label: 'Team Member' }, { label: 'Epics' }, true);
+  const memberTicketHead = renderHead('memberTicket', { sortField: 'member', label: 'Team Member' }, { label: 'Open Tickets' }, true);
+
+  const renderEpicTeamRow = (row: EpicTeamEntry) => (
+    <tr key={row.id as React.Key} className={row.team.length === 0 ? 'bg-[#fff9c4]' : ''}>
+      <td className={`${tdClass} whitespace-nowrap`}>
+        <a href={`#epic-${row.id}`} className="text-[#1a202c] no-underline">{row.name}</a>
         {row.isDone && donePill}
-        {row.isReadyForRelease && readyForReleasePill}
+        {row.isBlocked && blockedPill}
       </td>
-      <td style={tdStyle}>
+      <td className={`${tdClass} whitespace-nowrap`}>
         {row.team.length === 0
-          ? <span style={{ color: '#a0aec0', fontStyle: 'italic' }}>None</span>
-          : <ul style={{ margin: 0, paddingLeft: '1.2rem' }}>{[...row.team].sort((a, b) => a.localeCompare(b)).map((m, i) => <li key={i}>{!filterIgnoredInTickets && ignoredUsers.includes(m) ? <span style={{ backgroundColor: '#e5e7eb', borderRadius: '999px', padding: '0.1rem 0.5rem', display: 'inline-block' }}>{m}</span> : m}</li>)}</ul>}
+          ? <span className="text-[#1a202c]">None</span>
+          : <ul className="m-0 pl-0 list-none">{[...row.team].sort((a, b) => a.localeCompare(b)).map((m, i) => <li key={i} className="whitespace-nowrap">{m}</li>)}</ul>}
       </td>
     </tr>
   );
 
-  const renderMemberEpicRow = (row: { member: string; epics: EpicRef[] }, idx: number) => (
-    <tr key={row.member} style={{ background: idx % 2 === 0 ? 'white' : '#fafafa' }}>
-      <td style={{ ...tdStyle, fontWeight: 600 }}>
-        {!filterIgnoredInTickets && ignoredUsers.includes(row.member)
-          ? <span style={{ backgroundColor: '#e5e7eb', borderRadius: '999px', padding: '0.1rem 0.5rem', display: 'inline-block' }}>{row.member}</span>
-          : row.member}{' '}
-        <span style={{ fontWeight: 400, color: '#718096', fontSize: '0.8rem' }}>({row.epics.length})</span>
-      </td>
-      <td style={tdStyle}>
-        <ul style={{ margin: 0, paddingLeft: '1.2rem' }}>
+  const renderMemberEpicRow = (row: { member: string; epics: EpicRef[] }) => (
+    <tr key={row.member}>
+      <td className={`${tdClass} whitespace-nowrap`}>{row.member}</td>
+      <td className={`${tdClass} text-center font-semibold`}>{row.epics.length}</td>
+      <td className={`${tdClass} whitespace-nowrap`}>
+        <ul className="m-0 pl-0 list-none">
           {[...row.epics].sort((a, b) => a.name.localeCompare(b.name)).map((e) => (
-            <li key={e.id as React.Key}><a href={`#epic-${e.id}`} style={{ color: '#494BCB', textDecoration: 'none' }}>{e.name}</a>{e.isDone && donePill}{e.isReadyForRelease && readyForReleasePill}</li>
+            <li key={e.id as React.Key} className="whitespace-nowrap"><a href={`#epic-${e.id}`} className="text-[#1a202c] no-underline">{e.name}</a>{e.isDone && donePill}{e.isBlocked && blockedPill}</li>
           ))}
         </ul>
       </td>
     </tr>
   );
 
+  const renderMemberTicketRow = (row: { member: string; tickets: Array<{ id: number; name: string; app_url?: string; epicName: string; epicAppUrl?: string; stateName: string }> }) => (
+    <tr key={row.member}>
+      <td className={`${tdClass} whitespace-nowrap`}>{row.member}</td>
+      <td className={`${tdClass} text-center font-semibold`}>{row.tickets.length}</td>
+      <td className={`${tdClass} whitespace-nowrap`}>
+        {(() => {
+          const byEpic: Record<string, typeof row.tickets> = {};
+          for (const t of row.tickets) {
+            if (!byEpic[t.epicName]) byEpic[t.epicName] = [];
+            byEpic[t.epicName].push(t);
+          }
+          return Object.entries(byEpic).sort(([a], [b]) => a.localeCompare(b)).map(([epicName, tickets]) => (
+            <div key={epicName} className="mb-1 last:mb-0">
+              <div className="text-[0.85rem] font-semibold text-[#6b7280] mb-[0.1rem] whitespace-nowrap">{tickets[0].epicAppUrl ? <a href={tickets[0].epicAppUrl} className="text-[#6b7280] no-underline" target="_blank" rel="noreferrer">{epicName}</a> : epicName} <span className="font-normal text-[0.75rem]">({tickets.length})</span></div>
+              <ul className="m-0 pl-3 list-none">
+                {[...tickets].sort((a, b) => a.name.localeCompare(b.name)).map((t) => {
+                  const sc = TICKET_STATE_COLORS[t.stateName.toLowerCase()] ?? DEFAULT_TICKET_STATE_COLOR;
+                  return (
+                    <li key={t.id} className="text-[0.7rem] whitespace-nowrap">
+                      {t.app_url
+                        ? <a href={t.app_url} className="text-[#1a202c] no-underline" target="_blank" rel="noreferrer">{t.name}</a>
+                        : <span>{t.name}</span>
+                      }
+                      {t.stateName && <span className="ml-1 text-[0.6rem] font-medium px-1 py-[0.05rem] rounded" style={{ backgroundColor: sc.bg, color: sc.text }}>{t.stateName}</span>}
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ));
+        })()}
+      </td>
+    </tr>
+  );
+
   const epicTeamHalf = Math.ceil(sortedEpicTeam.length / 2);
   const memberEpicHalf = Math.ceil(sortedMemberEpic.length / 2);
-  const colgroup = <colgroup><col style={{ width: '50%' }} /><col style={{ width: '50%' }} /></colgroup>;
+  const memberTicketHalf = Math.ceil(sortedMemberTicket.length / 2);
 
   return (
     <>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1rem' }}>
-        {/* Epic Owner Assignment */}
-        <div>
-          <h3
-            onClick={() => setCollapsedCharts(prev => ({ ...prev, 'assignment-epic': !prev['assignment-epic'] }))}
-            style={{ margin: '0 0 0.5rem', fontSize: '1rem', fontWeight: 600, cursor: 'pointer', userSelect: 'none', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
-            title="Show or hide the Epic Owner Assignment table"
-          >
-            <span>{collapsedCharts['assignment-epic'] ? '▶' : '▼'}</span> Epic Owner Assignment
-          </h3>
-          {!collapsedCharts['assignment-epic'] && (
+      <div className="flex flex-col gap-4 mb-1">
+        {/* Epic Owner Assignments */}
+        {viewSettings.showEpicOwnerAssignments && (
+          <div>
+            <h3 className="m-0 mb-2 text-base font-semibold">Epic Owner Assignments</h3>
             <div className="summary-table-grid">
               <div>
-                <table style={tableStyle}>
-                  {colgroup}
+                <table className={tableClass} style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
                   <thead>{epicTeamHead}</thead>
-                  <tbody>{sortedEpicTeam.slice(0, epicTeamHalf).map((row, idx) => renderEpicTeamRow(row, idx))}</tbody>
+                  <tbody>{sortedEpicTeam.slice(0, epicTeamHalf).map((row) => renderEpicTeamRow(row))}</tbody>
                 </table>
               </div>
               <div>
-                <table style={tableStyle}>
-                  {colgroup}
+                <table className={tableClass} style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
                   <thead>{epicTeamHead}</thead>
-                  <tbody>{sortedEpicTeam.slice(epicTeamHalf).map((row, idx) => renderEpicTeamRow(row, idx))}</tbody>
+                  <tbody>{sortedEpicTeam.slice(epicTeamHalf).map((row) => renderEpicTeamRow(row))}</tbody>
                 </table>
               </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
-        {/* Team Member Assignment */}
-        <div>
-          <h3
-            onClick={() => setCollapsedCharts(prev => ({ ...prev, 'assignment-member': !prev['assignment-member'] }))}
-            style={{ margin: '0 0 0.5rem', fontSize: '1rem', fontWeight: 600, cursor: 'pointer', userSelect: 'none', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
-            title="Show or hide the Team Member Assignment table"
-          >
-            <span>{collapsedCharts['assignment-member'] ? '▶' : '▼'}</span> Team Member Assignment
-          </h3>
-          {!collapsedCharts['assignment-member'] && (
+        {/* Team Member Epic Assignments */}
+        {viewSettings.showTeamMemberEpicAssignments && (
+          <div>
+            <h3 className="m-0 mb-2 text-base font-semibold">Team Member Epic Assignments</h3>
             <div className="summary-table-grid">
               <div>
-                <table style={tableStyle}>
-                  {colgroup}
+                <table className={tableClass} style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
                   <thead>{memberEpicHead}</thead>
-                  <tbody>{sortedMemberEpic.slice(0, memberEpicHalf).map((row, idx) => renderMemberEpicRow(row, idx))}</tbody>
+                  <tbody>{sortedMemberEpic.slice(0, memberEpicHalf).map((row) => renderMemberEpicRow(row))}</tbody>
                 </table>
               </div>
               <div>
-                <table style={tableStyle}>
-                  {colgroup}
+                <table className={tableClass} style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
                   <thead>{memberEpicHead}</thead>
-                  <tbody>{sortedMemberEpic.slice(memberEpicHalf).map((row, idx) => renderMemberEpicRow(row, idx))}</tbody>
+                  <tbody>{sortedMemberEpic.slice(memberEpicHalf).map((row) => renderMemberEpicRow(row))}</tbody>
                 </table>
               </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
+
+        {/* Team Member Ticket Assignments */}
+        {viewSettings.showTeamMemberTicketAssignments && (
+          <div>
+            <h3 className="m-0 mb-2 text-base font-semibold">Team Member Ticket Assignments</h3>
+            <div className="summary-table-grid">
+              <div>
+                <table className={tableClass} style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
+                  <thead>{memberTicketHead}</thead>
+                  <tbody>{sortedMemberTicket.slice(0, memberTicketHalf).map((row) => renderMemberTicketRow(row))}</tbody>
+                </table>
+              </div>
+              <div>
+                <table className={tableClass} style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
+                  <thead>{memberTicketHead}</thead>
+                  <tbody>{sortedMemberTicket.slice(memberTicketHalf).map((row) => renderMemberTicketRow(row))}</tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
-      <hr style={{ border: 'none', borderTop: '2px solid #e2e8f0', margin: '0 0 1rem' }} />
+      <hr className="border-0 border-t-2 border-slate-200 mb-2" />
     </>
   );
 }
