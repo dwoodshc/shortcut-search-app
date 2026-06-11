@@ -1,8 +1,9 @@
 /**
  * Copyright (c) 2026 Dave Woods <dave.woods@slice.com>. All rights reserved.
  *
- * SetupWizard.tsx — 6-step guided setup modal. Steps: API token (verified against the
- * API), workspace URL, workflow selection, team selection, ignored users, and epic list.
+ * SetupWizard.tsx — 7-step guided setup modal. Steps: API token (verified against the
+ * API), workspace URL, workflow selection, team selection, my Shortcut name
+ * (for unwatched ticket detection), Cycle 1 start date, and epic list.
  * Local form state is initialised from storage on mount; each step persists to
  * localStorage before advancing.
  */
@@ -19,7 +20,6 @@ interface Props {
 
 export default function SetupWizard({ step, onStepChange, onClose }: Props): React.JSX.Element {
   const {
-    ignoredUsers, setIgnoredUsers,
     selectedTeams, setSelectedTeams, selectedTeamIds,
     shortcutWebUrl, setShortcutWebUrl,
     workflowConfig, setWorkflowField,
@@ -29,6 +29,7 @@ export default function SetupWizard({ step, onStepChange, onClose }: Props): Rea
     loading,
     successMessage,
     searchEpics,
+    incrementApiCalls,
   } = useDashboard();
 
   const [apiToken, setApiToken] = useState('');
@@ -37,11 +38,32 @@ export default function SetupWizard({ step, onStepChange, onClose }: Props): Rea
   const [epicListError, setEpicListError] = useState('');
   const [epicsText, setEpicsText] = useState(() => (storage.getEpicsConfig()?.epics || []).map(e => e.name).join('\n'));
   const [allTeams, setAllTeams] = useState<Team[]>([]);
+  const [myName, setMyName] = useState(() => storage.getMyName());
+  const [cycle1Start, setCycle1Start] = useState(() => {
+    const stored = storage.getCycle1Start();
+    if (stored) return stored;
+    // Default: first weekday of the current year (YYYY-MM-DD)
+    const d = new Date(new Date().getFullYear(), 0, 1);
+    while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() + 1);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  });
 
   const handleSaveEpicList = () => {
     setEpicListError('');
     try {
       const epics = epicsText.split('\n').filter(name => name.trim() !== '').map(name => ({ name: name.trim() }));
+      const seen = new Set<string>();
+      const duplicateLowers = new Set<string>();
+      for (const e of epics) {
+        const lower = e.name.toLowerCase();
+        if (seen.has(lower)) duplicateLowers.add(lower);
+        else seen.add(lower);
+      }
+      if (duplicateLowers.size > 0) {
+        const displayNames = [...duplicateLowers].map(lower => epics.find(e => e.name.toLowerCase() === lower)!.name);
+        setEpicListError(`Duplicate epic${displayNames.length > 1 ? 's' : ''}: ${displayNames.join(', ')}`);
+        return false;
+      }
       storage.setEpicsConfig({ epics });
       setFilteredEpicNames(epics.map(e => e.name));
       return true;
@@ -49,6 +71,85 @@ export default function SetupWizard({ step, onStepChange, onClose }: Props): Rea
       setEpicListError('Failed to save epics configuration. Please try again.');
       return false;
     }
+  };
+
+  const handleStep1Next = async () => {
+    const existingToken = storage.getApiToken();
+    if (!apiToken.trim() && !existingToken) {
+      setTokenError('Please enter an API token');
+      return;
+    }
+    const tokenToVerify = apiToken.trim() || existingToken;
+    if (apiToken.trim()) storage.setApiToken(apiToken.trim());
+    try {
+      setTokenError('Verifying token...');
+      const response = await fetch(`${getApiBaseUrl()}/api/workflows`, {
+        headers: { 'Authorization': `Bearer ${tokenToVerify}` }
+      });
+      if (!response.ok) {
+        setTokenError(response.status === 401 || response.status === 403
+          ? 'Invalid API token. Please check your token and try again.'
+          : 'Failed to verify token. Please check your connection and try again.');
+        return;
+      }
+      incrementApiCalls('GET /api/workflows', 1);
+      setTokenError('');
+      onStepChange(2);
+    } catch (err) {
+      setTokenError('Exception - Failed to verify token. Please check your connection and try again.');
+    }
+  };
+
+  const handleStep2Next = async () => {
+    const savedUrl = handleSaveShortcutUrl();
+    if (savedUrl === false) return;
+    try {
+      const token = storage.getApiToken();
+      const workflowsResponse = await fetch(`${getApiBaseUrl()}/api/workflows`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (workflowsResponse.ok) {
+        incrementApiCalls('GET /api/workflows', 1);
+        setWorkflowField('workflows', await workflowsResponse.json());
+      } else {
+        setError('Failed to load workflows. You may need to go back and retry.');
+      }
+    } catch (err) {
+      setError('Failed to load workflows. Check your connection and try again.');
+    }
+    onStepChange(3);
+  };
+
+  const handleStep3Next = async () => {
+    if (!workflowConfig.selectedId) { setError('Please select a workflow'); return; }
+    const selectedWorkflow = workflowConfig.workflows.find(w => w.id === workflowConfig.selectedId);
+    if (!selectedWorkflow) return;
+    handleSelectWorkflow(selectedWorkflow);
+    try {
+      const token = storage.getApiToken();
+      const teamsRes = await fetch(`${getApiBaseUrl()}/api/teams`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (teamsRes.ok) {
+        incrementApiCalls('GET /api/teams', 1);
+        setAllTeams(await teamsRes.json());
+      } else {
+        setError('Failed to load teams. You can still proceed and skip team selection.');
+      }
+    } catch (err) {
+      setError('Failed to load teams. Check your connection and try again.');
+    }
+    onStepChange(4);
+  };
+
+  const handleNext = async () => {
+    if (step === 1) { await handleStep1Next(); }
+    else if (step === 2) { await handleStep2Next(); }
+    else if (step === 3) { await handleStep3Next(); }
+    else if (step === 4) { storage.setTeamConfig(selectedTeams); onStepChange(5); }
+    else if (step === 5) { storage.setMyName(myName.trim()); onStepChange(6); }
+    else if (step === 6) { storage.setCycle1Start(cycle1Start); onStepChange(7); }
+    else if (step === 7) { const saved = handleSaveEpicList(); if (saved) { onClose(); searchEpics(); } }
   };
 
   return (
@@ -61,14 +162,14 @@ export default function SetupWizard({ step, onStepChange, onClose }: Props): Rea
 
         {/* Step Indicator */}
         <div className="flex justify-between mb-8 relative">
-          {[1, 2, 3, 4, 5, 6].map((stepNum) => (
+          {[1, 2, 3, 4, 5, 6, 7].map((stepNum) => (
             <div
               key={stepNum}
               className="flex-1 flex flex-col items-center relative cursor-pointer"
               onClick={() => onStepChange(stepNum)}
             >
               <div
-                className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-base transition-all duration-300 z-10 border-2"
+                className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 z-10 border-2"
                 style={{
                   backgroundColor: step === stepNum ? '#494BCB' : step > stepNum ? '#22c55e' : '#e2e8f0',
                   color: step >= stepNum ? 'white' : '#94a3b8',
@@ -78,20 +179,21 @@ export default function SetupWizard({ step, onStepChange, onClose }: Props): Rea
                 {step > stepNum ? '✓' : stepNum}
               </div>
               <div
-                className={`mt-2 text-xs text-center select-none ${step === stepNum ? 'text-[#494BCB] font-semibold' : 'text-[#64748b] font-normal'}`}
+                className={`mt-2 text-[0.65rem] text-center select-none ${step === stepNum ? 'text-[#494BCB] font-semibold' : 'text-[#64748b] font-normal'}`}
               >
                 {stepNum === 1 && 'API Token'}
                 {stepNum === 2 && 'Shortcut URL'}
                 {stepNum === 3 && 'Workflow'}
                 {stepNum === 4 && 'Select Team'}
-                {stepNum === 5 && 'Ignore Users'}
-                {stepNum === 6 && 'Epic List'}
+                {stepNum === 5 && 'My Name'}
+                {stepNum === 6 && 'Cycle 1 Start'}
+                {stepNum === 7 && 'Epic List'}
               </div>
-              {stepNum < 6 && (
+              {stepNum < 7 && (
                 <div
-                  className="absolute top-5 left-[60%] h-[2px] transition-all duration-300 z-0"
+                  className="absolute top-4 left-[60%] h-[2px] transition-all duration-300 z-0"
                   style={{
-                    width: 'calc(100% - 20px)',
+                    width: 'calc(100% - 16px)',
                     backgroundColor: step > stepNum ? '#22c55e' : '#e2e8f0',
                   }}
                 />
@@ -264,8 +366,15 @@ export default function SetupWizard({ step, onStepChange, onClose }: Props): Rea
                         const teamsRes = await fetch(`${getApiBaseUrl()}/api/teams`, {
                           headers: { 'Authorization': `Bearer ${token}` }
                         });
-                        if (teamsRes.ok) setAllTeams(await teamsRes.json());
-                      } catch (err) {}
+                        if (teamsRes.ok) {
+                          incrementApiCalls('GET /api/teams', 1);
+                          setAllTeams(await teamsRes.json());
+                        } else {
+                          setError('Failed to load teams. Check your connection and try again.');
+                        }
+                      } catch (err) {
+                        setError('Failed to load teams. Check your connection and try again.');
+                      }
                     }}
                   >
                     Retry
@@ -311,26 +420,53 @@ export default function SetupWizard({ step, onStepChange, onClose }: Props): Rea
             </div>
           )}
 
-          {/* Step 5: Ignore Users */}
+          {/* Step 5: My Name */}
           {step === 5 && (
-            <div className="flex flex-col h-full">
-              <h3 className="text-[#1e293b] mb-[0.4rem]">Step 5: Ignore Users</h3>
-              <p className="mb-[0.15rem]">Enter the names of Shortcut users to exclude from the assignment tables (one per line).</p>
-              <div className="flex-1 flex flex-col min-h-0">
-                <textarea
-                  className="input-field flex-1 w-full resize-none font-inherit text-base px-3 py-2 box-border"
-                  value={ignoredUsers.join('\n')}
-                  onChange={(e) => setIgnoredUsers(e.target.value.split('\n').filter(u => u.trim() !== ''))}
-                  placeholder={"John Smith\nJane Doe"}
+            <div>
+              <h3 className="text-[#1e293b] mb-4">Step 5: Your Shortcut Name</h3>
+              <p className="mb-6">Enter your name exactly as it appears in Shortcut. This will be used to find open tickets in your selected teams that you are not watching.</p>
+              <div className="form-group">
+                <label htmlFor="myName">Your name in Shortcut:</label>
+                <input
+                  type="text"
+                  id="myName"
+                  value={myName}
+                  onChange={(e) => setMyName(e.target.value)}
+                  className="input-field"
+                  placeholder="e.g. Jane Smith"
                 />
+                <p className="text-xs text-[#64748b] mt-2">
+                  This is optional. Leave blank to skip unwatched ticket tracking.
+                </p>
               </div>
             </div>
           )}
 
-          {/* Step 6: Epic List */}
+          {/* Step 6: Cycle 1 Start Date */}
           {step === 6 && (
+            <div>
+              <h3 className="text-[#1e293b] mb-4">Step 6: Cycle 1 Start Date</h3>
+              <p className="mb-6">Pick the calendar date that <strong>Cycle 1</strong> begins. Each cycle is 6 weeks (42 days), and the dates of the remaining cycles in the year are calculated from this anchor.</p>
+              <div className="form-group">
+                <label htmlFor="cycle1Start">Cycle 1 start date:</label>
+                <input
+                  type="date"
+                  id="cycle1Start"
+                  value={cycle1Start}
+                  onChange={(e) => setCycle1Start(e.target.value)}
+                  className="input-field"
+                />
+                <p className="text-xs text-[#64748b] mt-2">
+                  Defaults to the first weekday of the current year. You can change this anytime by re-running the wizard.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Step 7: Epic List */}
+          {step === 7 && (
             <div className="flex flex-col h-full">
-              <h3 className="text-[#1e293b] mb-[0.4rem]">Step 6: Epic List</h3>
+              <h3 className="text-[#1e293b] mb-[0.4rem]">Step 7: Epic List</h3>
               <p className="mb-[0.15rem]">Add the epics you want to track.</p>
 
               <div className="flex-1 flex flex-col min-h-0">
@@ -379,90 +515,10 @@ export default function SetupWizard({ step, onStepChange, onClose }: Props): Rea
             )}
             <button
               type="button"
-              onClick={async () => {
-                if (step === 1) {
-                  const existingToken = storage.getApiToken();
-                  if (!apiToken.trim() && !existingToken) {
-                    setTokenError('Please enter an API token');
-                    return;
-                  }
-
-                  const tokenToVerify = apiToken.trim() || existingToken;
-
-                  if (apiToken.trim()) {
-                    storage.setApiToken(apiToken);
-                  }
-
-                  try {
-                    setTokenError('Verifying token...');
-                    const response = await fetch(`${getApiBaseUrl()}/api/workflows`, {
-                      headers: { 'Authorization': `Bearer ${tokenToVerify}` }
-                    });
-
-                    if (!response.ok) {
-                      if (response.status === 401 || response.status === 403) {
-                        setTokenError('Invalid API token. Please check your token and try again.');
-                      } else {
-                        setTokenError('Failed to verify token. Please check your connection and try again.');
-                      }
-                      return;
-                    }
-
-                    setTokenError('');
-                    onStepChange(2);
-                  } catch (err) {
-                    setTokenError('Exception - Failed to verify token. Please check your connection and try again.');
-                    return;
-                  }
-                } else if (step === 2) {
-                  const savedUrl = handleSaveShortcutUrl();
-                  if (savedUrl !== false) {
-                    try {
-                      const token = storage.getApiToken();
-                      const workflowsResponse = await fetch(`${getApiBaseUrl()}/api/workflows`, {
-                        headers: { 'Authorization': `Bearer ${token}` }
-                      });
-                      if (workflowsResponse.ok) {
-                        const workflows = await workflowsResponse.json();
-                        setWorkflowField('workflows', workflows);
-                      }
-                    } catch (err) {}
-                    onStepChange(3);
-                  }
-                } else if (step === 3) {
-                  if (!workflowConfig.selectedId) {
-                    setError('Please select a workflow');
-                    return;
-                  }
-                  const selectedWorkflow = workflowConfig.workflows.find(w => w.id === workflowConfig.selectedId);
-                  if (selectedWorkflow) {
-                    handleSelectWorkflow(selectedWorkflow);
-                    try {
-                      const token = storage.getApiToken();
-                      const teamsRes = await fetch(`${getApiBaseUrl()}/api/teams`, {
-                        headers: { 'Authorization': `Bearer ${token}` }
-                      });
-                      if (teamsRes.ok) setAllTeams(await teamsRes.json());
-                    } catch (err) {}
-                    onStepChange(4);
-                  }
-                } else if (step === 4) {
-                  storage.setTeamConfig(selectedTeams);
-                  onStepChange(5);
-                } else if (step === 5) {
-                  storage.setIgnoredUsers(ignoredUsers);
-                  onStepChange(6);
-                } else if (step === 6) {
-                  const saved = handleSaveEpicList();
-                  if (saved) {
-                    onClose();
-                    searchEpics();
-                  }
-                }
-              }}
+              onClick={handleNext}
               className="btn-primary"
             >
-              {step < 6 ? 'Next' : 'Finish'}
+              {step < 7 ? 'Next' : 'Finish'}
             </button>
           </div>
         </div>

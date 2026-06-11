@@ -7,6 +7,8 @@
  */
 import React from 'react';
 import { Epic, Story, SortEntry } from '../types';
+import { ResetIcon } from './icons';
+import SortIcon from './SortIcon';
 
 interface Props {
   filter: string | null;
@@ -50,17 +52,6 @@ export default function StoryDetailModal({
     return 0;
   });
 
-  const sortIcon = (col: string) => {
-    const label = sort.col !== col ? 'Click to sort' : sort.dir === 'asc' ? 'Sorted A→Z, click to reverse' : 'Sorted Z→A, click to reverse';
-    const icon = sort.col !== col ? ' ↕' : sort.dir === 'asc' ? ' ↑' : ' ↓';
-    return <span className="summary-sort-icon" data-tooltip={label}>{icon}</span>;
-  };
-
-  const resetIcon = (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-[14px] h-[14px] align-middle inline-block">
-      <path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.95-2.05L6.64 18.36A8.955 8.955 0 0 0 13 21a9 9 0 0 0 0-18z"/>
-    </svg>
-  );
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -74,22 +65,19 @@ export default function StoryDetailModal({
           <table className="w-full border border-[#F0F0F7] rounded-lg" style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
             <thead>
               <tr className="bg-[#494BCB] text-white sticky top-0">
-                <th onClick={() => onSort('story')} className="cursor-pointer select-none px-3 py-2 text-left font-semibold text-sm rounded-tl-lg">
-                  Story{sortIcon('story')}
-                  {sort.col === 'story' && (
-                    <span className="summary-sort-icon ml-[6px] cursor-pointer" data-tooltip="Restore original order" onClick={e => { e.stopPropagation(); onResetSort(); }}>
-                      {resetIcon}
-                    </span>
-                  )}
-                </th>
-                <th onClick={() => onSort('epic')} className="cursor-pointer select-none px-3 py-2 text-left font-semibold text-sm whitespace-nowrap rounded-tr-lg">
-                  Epic{sortIcon('epic')}
-                  {sort.col === 'epic' && (
-                    <span className="summary-sort-icon ml-[6px] cursor-pointer" data-tooltip="Restore original order" onClick={e => { e.stopPropagation(); onResetSort(); }}>
-                      {resetIcon}
-                    </span>
-                  )}
-                </th>
+                {[
+                  { col: 'story', label: 'Story', extra: 'rounded-tl-lg' },
+                  { col: 'epic',  label: 'Epic',  extra: 'whitespace-nowrap rounded-tr-lg' },
+                ].map(({ col, label, extra }) => (
+                  <th key={col} onClick={() => onSort(col)} className={`cursor-pointer select-none px-3 py-2 text-left font-semibold text-sm ${extra}`}>
+                    {label}<SortIcon sort={sort} col={col} />
+                    {sort.col === col && (
+                      <span className="summary-sort-icon ml-[6px] cursor-pointer" data-tooltip="Restore original order" onClick={e => { e.stopPropagation(); onResetSort(); }}>
+                        {ResetIcon}
+                      </span>
+                    )}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody>

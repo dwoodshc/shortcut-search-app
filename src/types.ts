@@ -5,6 +5,17 @@
  * Epic, Story, Workflow, WorkflowConfig, ModalState, SortState, DashboardContextValue,
  * and the supporting types referenced by hooks and components.
  */
+import type { Dispatch, SetStateAction } from 'react';
+
+export interface PullRequest {
+  id: number;
+  number: number;
+  url: string;
+  title?: string;
+  closed?: boolean;
+  draft?: boolean;
+  merged?: boolean;
+}
 
 export interface Story {
   id: number;
@@ -12,9 +23,18 @@ export interface Story {
   story_type: 'feature' | 'bug' | 'chore';
   workflow_state_id: number;
   owner_ids: string[];
+  follower_ids?: string[];
   group_id: string | null;
   app_url?: string;
   description?: string;
+  archived?: boolean;
+  updated_at?: string;
+}
+
+export interface Objective {
+  id: number;
+  name: string;
+  state?: string;
   archived?: boolean;
 }
 
@@ -24,10 +44,13 @@ export interface Epic {
   state: string;
   epic_state_id?: number;
   owner_ids?: string[];
+  follower_ids?: string[];
+  objective_ids?: number[];
   stories?: Story[];
   notFound?: boolean;
   app_url?: string;
   stats?: { num_stories_total?: number };
+  updated_at?: string;
 }
 
 export interface WorkflowState {
@@ -61,6 +84,7 @@ export interface EpicState {
 export interface LoadStats {
   loadTime: number;
   apiCallCount: number;
+  apiCallBreakdown: Record<string, number>;
   loadedAt: Date;
 }
 
@@ -73,7 +97,6 @@ export interface EpicTeamEntry {
   id: number | string;
   name: string;
   isDone: boolean;
-  isReadyForRelease: boolean;
   isBlocked: boolean;
   team: string[];
 }
@@ -82,8 +105,26 @@ export interface EpicRef {
   id: number | string;
   name: string;
   isDone: boolean;
-  isReadyForRelease: boolean;
   isBlocked: boolean;
+}
+
+export interface ViewSettings {
+  showObjectivesFilter: boolean;
+  showDoneEpics: boolean;
+  showBlockedOnly: boolean;
+  showEpicObjective: boolean;
+  showEpicOwners: boolean;
+  showEpicStoryCount: boolean;
+  showEpicOwnerAssignments: boolean;
+  showTeamMemberEpicAssignments: boolean;
+  showTeamMemberTicketAssignments: boolean;
+  showTicketStatusBreakdown: boolean;
+  showStoryOwners: boolean;
+  showTeamOpenTickets: boolean;
+  showWorkflowStatusPieChart: boolean;
+  showStoryTypeBreakdown: boolean;
+  showTopOfPageLink: boolean;
+  showCycleProgress: boolean;
 }
 
 export interface ModalState {
@@ -95,6 +136,8 @@ export interface ModalState {
   setupWizard: boolean;
   rateLimit: boolean;
   storyDetailFilter: string | null;
+  themeSelector: boolean;
+  viewSettings: boolean;
 }
 
 export type ModalKey = keyof ModalState;
@@ -108,7 +151,11 @@ export interface SortState {
   summary: SortEntry;
   epicTeam: SortEntry;
   memberEpic: SortEntry;
+  memberTicket: SortEntry;
   storyDetail: SortEntry;
+  epicPrs: SortEntry;
+  storyOwners: SortEntry;
+  teamOpenTickets: SortEntry;
 }
 
 export type SortStateKey = keyof SortState;
@@ -139,10 +186,12 @@ export interface Team {
 export interface DashboardContextValue {
   // Data
   epics: Epic[];
+  objectives: Objective[];
   members: Record<string, string>;
   epicStates: Record<number, EpicState>;
   teamMemberIds: Set<string>;
   loadStats: LoadStats | null;
+  incrementApiCalls: (endpoint: string, count: number) => void;
   workflowConfig: WorkflowConfig;
   setWorkflowField: (key: keyof WorkflowConfig, value: WorkflowConfig[keyof WorkflowConfig]) => void;
   // UI state
@@ -151,47 +200,43 @@ export interface DashboardContextValue {
   sortState: SortState;
   toggleSortState: (key: SortStateKey, col: string) => void;
   resetSortState: (key: SortStateKey) => void;
-  collapsedCharts: Record<string, boolean>;
-  setCollapsedCharts: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
-  toggleChart: (epicId: number | string, chartType: string) => void;
   filterByTeam: boolean;
-  setFilterByTeam: React.Dispatch<React.SetStateAction<boolean>>;
-  ignoredUsers: string[];
-  setIgnoredUsers: React.Dispatch<React.SetStateAction<string[]>>;
-  filterIgnoredInTickets: boolean;
-  setFilterIgnoredInTickets: React.Dispatch<React.SetStateAction<boolean>>;
+  setFilterByTeam: Dispatch<SetStateAction<boolean>>;
   selectedTeams: TeamConfig[];
-  setSelectedTeams: React.Dispatch<React.SetStateAction<TeamConfig[]>>;
+  teamNameMap: Record<string, string>;
+  setSelectedTeams: Dispatch<SetStateAction<TeamConfig[]>>;
   selectedTeamIds: string[];
   selectedTeamLabel: string;
   shortcutWebUrl: string;
-  setShortcutWebUrl: React.Dispatch<React.SetStateAction<string>>;
-  showSidebar: boolean;
-  setShowSidebar: React.Dispatch<React.SetStateAction<boolean>>;
+  setShortcutWebUrl: Dispatch<SetStateAction<string>>;
   error: string | null;
-  setError: React.Dispatch<React.SetStateAction<string | null>>;
+  setError: Dispatch<SetStateAction<string | null>>;
   loading: boolean;
   successMessage: string | null;
   filteredEpicNames: string[];
-  setFilteredEpicNames: React.Dispatch<React.SetStateAction<string[]>>;
+  setFilteredEpicNames: Dispatch<SetStateAction<string[]>>;
   setupWizardStep: number;
-  setSetupWizardStep: React.Dispatch<React.SetStateAction<number>>;
+  setSetupWizardStep: Dispatch<SetStateAction<number>>;
+  epicSearchQuery: string;
+  setEpicSearchQuery: Dispatch<SetStateAction<string>>;
+  deselectedObjectiveIds: Set<number | -1>;
+  setDeselectedObjectiveIds: Dispatch<SetStateAction<Set<number | -1>>>;
+  visibleEpicIds: Set<number | string>;
   // Derived / callbacks
   getDisplayStories: (epic: Epic) => Story[];
   generateShortcutUrl: (epicId: number | string, stateName?: string) => string;
   getEpicStateInfo: (epic: Epic) => EpicState;
   getEpicStateClass: (stateType: string, stateName: string) => string;
   filteredStateIds: number[];
-  summaryStateIds: number[];
   epicTeamData: EpicTeamEntry[];
   memberEpicMap: Record<string, EpicRef[]>;
   allDisplayStories: Story[];
   searchEpics: () => void;
-  scrollToEpic: (epicId: number | string) => void;
   handleSaveShortcutUrl: () => boolean | void;
   handleSelectWorkflow: (workflow: Workflow) => void;
-  toggleAllCharts: () => void;
   handleOpenReadme: () => Promise<void>;
-  darkMode: boolean;
-  toggleDarkMode: () => void;
+  displayTheme: 'normal' | 'dark' | 'star-trek' | 'matrix';
+  selectTheme: (theme: 'normal' | 'dark' | 'star-trek' | 'matrix') => void;
+  viewSettings: ViewSettings;
+  setViewSettings: (s: ViewSettings) => void;
 }
