@@ -12,8 +12,6 @@ import { Epic, Story, SortState, SortStateKey, TeamConfig } from '../types';
 
 export function useFilters() {
   const [filterByTeam, setFilterByTeam] = useState(false);
-  const [filterIgnoredInTickets, setFilterIgnoredInTickets] = useState(true);
-  const [ignoredUsers, setIgnoredUsers] = useState<string[]>(() => storage.getIgnoredUsers());
   const [selectedTeams, setSelectedTeams] = useState<TeamConfig[]>(() => storage.getTeamConfig());
   const [sortState, setSortState] = useState<SortState>({
     summary:     { col: null, dir: 'asc' },
@@ -21,8 +19,10 @@ export function useFilters() {
     memberEpic:  { col: 'member', dir: 'asc' },
     memberTicket:{ col: 'member', dir: 'asc' },
     storyDetail: { col: null, dir: 'asc' },
+    epicPrs:     { col: null, dir: 'asc' },
+    storyOwners: { col: 'count', dir: 'desc' },
+    teamOpenTickets: { col: 'count', dir: 'desc' },
   });
-  const [collapsedCharts, setCollapsedCharts] = useState<Record<string, boolean>>({});
   const [epicSearchQuery, setEpicSearchQuery] = useState('');
   const [deselectedObjectiveIds, setDeselectedObjectiveIds] = useState<Set<number | -1>>(new Set());
 
@@ -36,13 +36,6 @@ export function useFilters() {
 
   const resetSortState = useCallback((key: SortStateKey) => setSortState(prev => ({ ...prev, [key]: { col: null, dir: 'asc' as const } })), []);
 
-  const toggleChart = useCallback((epicId: number | string, chartType: string) => {
-    setCollapsedCharts(prev => ({
-      ...prev,
-      [`${epicId}-${chartType}`]: !prev[`${epicId}-${chartType}`]
-    }));
-  }, []);
-
   const getDisplayStories = useCallback((epic: Epic): Story[] => {
     if (!filterByTeam || selectedTeamIds.length === 0) return epic.stories || [];
     return (epic.stories || []).filter(story => !story.group_id || selectedTeamIds.includes(story.group_id));
@@ -50,13 +43,10 @@ export function useFilters() {
 
   return {
     filterByTeam, setFilterByTeam,
-    filterIgnoredInTickets, setFilterIgnoredInTickets,
-    ignoredUsers, setIgnoredUsers,
     selectedTeams, setSelectedTeams,
     selectedTeamIds,
     selectedTeamLabel,
     sortState, toggleSortState, resetSortState,
-    collapsedCharts, setCollapsedCharts, toggleChart,
     epicSearchQuery, setEpicSearchQuery,
     deselectedObjectiveIds, setDeselectedObjectiveIds,
     getDisplayStories,

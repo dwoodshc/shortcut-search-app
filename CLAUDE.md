@@ -47,7 +47,7 @@ Cross-hook logic (things that need outputs from two or more hooks) lives in `App
 
 All persistence is browser localStorage, accessed exclusively through the `storage` facade in `src/utils.ts`. Keys are defined in `STORAGE_KEYS` — never use raw string keys. All `JSON.parse` calls in getters are wrapped in try/catch, returning safe defaults on parse failure (corrupted data shows the setup wizard rather than crashing).
 
-`COMPLETE_STATE_NAMES` (also in `utils.ts`) is the shared Set `{'complete', 'ready for release'}` used by `UnwatchedTickets`, `AssignmentTables`, and `EpicCard` to identify terminal states. Keeping these consistent is important — do not define local copies.
+`COMPLETE_STATE_NAMES` (also in `utils.ts`) is the shared Set `{'complete'}` used by `UnwatchedTickets`, `AssignmentTables`, and `EpicCard` to identify terminal states. Keeping these consistent is important — do not define local copies.
 
 ### Theming
 

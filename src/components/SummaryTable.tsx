@@ -8,10 +8,13 @@
 import React, { useState, useEffect } from 'react';
 import { useDashboard } from '../context/DashboardContext';
 import { Epic, Story, ViewSettings } from '../types';
-import { ResetIcon } from './icons';
-import { COMPLETE_STATE_NAMES } from '../utils';
+import { ResetIcon, TargetActiveIcon, CheckCircleIcon, BlockedIcon } from './icons';
+import { COMPLETE_STATE_NAMES, daysAgo, formatDaysAgo } from '../utils';
+import SortIcon from './SortIcon';
+import PeekButton from './PeekButton';
+import CycleProgress from './CycleProgress';
 
-const STATE_ORDER = ['Backlog', 'Ready for Development', 'In Development', 'In Review', 'Ready for Release', 'Complete'];
+const STATE_ORDER = ['Backlog', 'Ready for Development', 'In Development', 'In Review', 'Complete'];
 const BACKLOG_STATES = ['backlog'];
 const IN_PROGRESS_STATES = ['ready for development', 'in development', 'in review'];
 
@@ -20,7 +23,6 @@ const STATE_PILL_COLORS: Record<string, { bg: string; text: string }> = {
   'ready for development': { bg: '#a7f3d0', text: '#374151' },
   'in development':        { bg: '#6ee7b7', text: '#374151' },
   'in review':             { bg: '#4ade80', text: '#374151' },
-  'ready for release':     { bg: '#22c55e', text: '#374151' },
   'complete':              { bg: '#16a34a', text: '#ffffff' },
 };
 const DEFAULT_PILL = { bg: '#F1F5F9', text: '#475569' };
@@ -38,19 +40,18 @@ function getGroupCounts(
   stories: Story[],
   filteredStateIds: number[],
   stateNames: Record<number, string>,
-): { backlogCount: number; inProgressCount: number; completeCount: number; readyForReleaseCount: number } {
+): { backlogCount: number; inProgressCount: number; completeCount: number } {
   const stateCounts: Record<number, number> = {};
   stories.forEach(s => { stateCounts[s.workflow_state_id] = (stateCounts[s.workflow_state_id] || 0) + 1; });
-  let backlogCount = 0, inProgressCount = 0, completeCount = 0, readyForReleaseCount = 0;
+  let backlogCount = 0, inProgressCount = 0, completeCount = 0;
   filteredStateIds.forEach(id => {
     const count = stateCounts[id] || 0;
-    if ((stateNames[id] || '').toLowerCase().trim() === 'ready for release') { readyForReleaseCount += count; return; }
     const group = getGroup(stateNames[id]);
     if (group === 'backlog') backlogCount += count;
     else if (group === 'inprogress') inProgressCount += count;
     else if (group === 'complete') completeCount += count;
   });
-  return { backlogCount, inProgressCount, completeCount, readyForReleaseCount };
+  return { backlogCount, inProgressCount, completeCount };
 }
 
 function applyTeamFilter(stories: Story[], filterByTeam: boolean, selectedTeamIds: string[]): Story[] {
@@ -65,15 +66,12 @@ interface ProgressBarProps {
   total: number;
   completeCount: number;
   inProgressCount: number;
-  readyForReleaseCount: number;
   backlogCount: number;
   noTooltip?: boolean;
   stateBreakdown?: Array<{ stateName: string; count: number }>;
 }
 
-function ProgressBar({ completePct, inProgressPct, backlogPct, total, completeCount, inProgressCount, readyForReleaseCount, backlogCount, noTooltip, stateBreakdown }: ProgressBarProps): React.JSX.Element {
-  const readyForReleasePct = total > 0 ? (readyForReleaseCount / total) * 100 : 0;
-  const combinedInProgressPct = inProgressPct + readyForReleasePct;
+function ProgressBar({ completePct, inProgressPct, backlogPct, total, completeCount, inProgressCount, backlogCount, noTooltip, stateBreakdown }: ProgressBarProps): React.JSX.Element {
   return (
     <div className="summary-bar-wrapper">
       <div className="flex h-[22px] rounded-full overflow-hidden border border-slate-200">
@@ -81,8 +79,8 @@ function ProgressBar({ completePct, inProgressPct, backlogPct, total, completeCo
           <div className="w-full bg-slate-100 progress-bar-empty" />
         ) : (
           <>
-            {completePct > 0 && <div style={{ ...(combinedInProgressPct > 0 || backlogPct > 0 ? { width: `${completePct}%`, clipPath: 'polygon(0 0, calc(100% - 7px) 0, 100% 50%, calc(100% - 7px) 100%, 0 100%)', marginRight: '-7px' } : { flex: 1 }), background: '#059669', height: '100%', minWidth: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', zIndex: 3 }}>{completePct >= 8 && <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#ffffff', whiteSpace: 'nowrap', paddingRight: combinedInProgressPct > 0 || backlogPct > 0 ? '7px' : '0' }}>{Math.round(completePct)}%</span>}</div>}
-            {combinedInProgressPct > 0 && <div style={{ ...(backlogPct > 0 ? { width: `${combinedInProgressPct}%`, clipPath: 'polygon(0 0, calc(100% - 7px) 0, 100% 50%, calc(100% - 7px) 100%, 0 100%)', marginRight: '-7px' } : { flex: 1 }), background: '#fde68a', height: '100%', minWidth: '2px', position: 'relative', zIndex: 2 }} />}
+            {completePct > 0 && <div style={{ ...(inProgressPct > 0 || backlogPct > 0 ? { width: `${completePct}%`, clipPath: 'polygon(0 0, calc(100% - 7px) 0, 100% 50%, calc(100% - 7px) 100%, 0 100%)', marginRight: '-7px' } : { flex: 1 }), background: '#059669', height: '100%', minWidth: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', zIndex: 3 }}>{completePct >= 8 && <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#ffffff', whiteSpace: 'nowrap', paddingRight: inProgressPct > 0 || backlogPct > 0 ? '7px' : '0' }}>{Math.round(completePct)}%</span>}</div>}
+            {inProgressPct > 0 && <div style={{ ...(backlogPct > 0 ? { width: `${inProgressPct}%`, clipPath: 'polygon(0 0, calc(100% - 7px) 0, 100% 50%, calc(100% - 7px) 100%, 0 100%)', marginRight: '-7px' } : { flex: 1 }), background: '#fde68a', height: '100%', minWidth: '2px', position: 'relative', zIndex: 2 }} />}
             {backlogPct > 0 && <div className="progress-bar-backlog" style={{ flex: 1, background: '#f1f5f9', height: '100%', minWidth: '2px', position: 'relative', zIndex: 1 }} />}
           </>
         )}
@@ -104,7 +102,6 @@ function ProgressBar({ completePct, inProgressPct, backlogPct, total, completeCo
           <>
             {[
               { label: 'Complete', count: completeCount, pct: completePct, color: '#059669' },
-              { label: 'Ready for Release', count: readyForReleaseCount, pct: readyForReleasePct, color: '#22c55e' },
               { label: 'In Progress', count: inProgressCount, pct: inProgressPct, color: '#fde68a' },
               { label: 'Backlog', count: backlogCount, pct: backlogPct, color: '#f1f5f9' },
             ].filter(({ count }) => count > 0).map(({ label, count, pct, color }) => (
@@ -135,7 +132,6 @@ function StoryTotalsSummary(): React.JSX.Element | null {
 
   const total = allDisplayStories.length;
   const completeCount = stateCounts['Complete'] || 0;
-  const readyForReleaseCount = stateCounts['Ready for Release'] || 0;
   const inProgressCount = (stateCounts['Ready for Development'] || 0) + (stateCounts['In Development'] || 0) + (stateCounts['In Review'] || 0);
   const backlogCount = stateCounts['Backlog'] || 0;
   const completePct = total > 0 ? (completeCount / total) * 100 : 0;
@@ -143,10 +139,19 @@ function StoryTotalsSummary(): React.JSX.Element | null {
   const backlogPct = total > 0 ? (backlogCount / total) * 100 : 0;
 
   return (
-    <div className="mb-6">
-      <h2 className="m-0 mb-3 text-[1.1rem] font-semibold text-[#1a202c]">Story Summary</h2>
+    <div className="mb-1">
+      <h2 className="m-0 mb-1 text-[1.1rem] font-semibold text-[#1a202c]">Story Summary</h2>
       <div className="overflow-x-auto">
-      <table className="w-full border-separate border-spacing-0 bg-white rounded-lg shadow-[0_2px_4px_rgba(0,0,0,0.08)] border border-[#F0F0F7]" style={{ borderCollapse: 'separate' }}>
+      <table className="w-full border-separate border-spacing-0 bg-white rounded-lg shadow-[0_2px_4px_rgba(0,0,0,0.08)] border border-[#F0F0F7]" style={{ borderCollapse: 'separate', tableLayout: 'fixed' }}>
+        <colgroup>
+          <col style={{ width: '10%' }} />
+          <col style={{ width: '10%' }} />
+          <col style={{ width: '10%' }} />
+          <col style={{ width: '10%' }} />
+          <col style={{ width: '10%' }} />
+          <col style={{ width: '10%' }} />
+          <col style={{ width: '40%' }} />
+        </colgroup>
         <thead>
           <tr className="bg-[#494BCB] text-white">
             {STATE_ORDER.map((s, i) => (
@@ -155,7 +160,7 @@ function StoryTotalsSummary(): React.JSX.Element | null {
               </th>
             ))}
             <th className="px-2 py-2 text-center font-semibold text-[0.8rem]">Total</th>
-            <th className="px-2 py-2 text-center font-semibold text-[0.8rem] rounded-tr-lg min-w-[100px]">Overall Progress</th>
+            <th className="px-2 py-2 text-center font-semibold text-[0.8rem] rounded-tr-lg">Overall Progress</th>
           </tr>
         </thead>
         <tbody>
@@ -180,7 +185,6 @@ function StoryTotalsSummary(): React.JSX.Element | null {
                 backlogPct={backlogPct}
                 total={total}
                 completeCount={completeCount}
-                readyForReleaseCount={readyForReleaseCount}
                 inProgressCount={inProgressCount}
                 backlogCount={backlogCount}
                 noTooltip
@@ -190,26 +194,11 @@ function StoryTotalsSummary(): React.JSX.Element | null {
         </tbody>
       </table>
       </div>
+      <hr className="border-0 border-t-2 border-slate-200 mt-4 mb-4" />
     </div>
   );
 }
 
-
-function daysAgo(dateStr: string | undefined): number | null {
-  if (!dateStr) return null;
-  const now = new Date();
-  const then = new Date(dateStr);
-  const nowDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const thenDay = new Date(then.getFullYear(), then.getMonth(), then.getDate());
-  return Math.round((nowDay.getTime() - thenDay.getTime()) / 86_400_000);
-}
-
-function formatDaysAgo(days: number | null): string {
-  if (days === null) return '—';
-  if (days === 0) return 'Today';
-  if (days === 1) return '1d ago';
-  return `${days}d ago`;
-}
 
 function getEpicLastChanged(stories: Story[]): number | null {
   const candidates: (string | undefined)[] = stories.map(s => s.updated_at);
@@ -223,10 +212,11 @@ function getEpicLastChanged(stories: Story[]): number | null {
 }
 
 function EpicStatusTable(): React.JSX.Element | null {
-  const { epics, objectives, members, workflowConfig, filteredStateIds, getDisplayStories, getEpicStateInfo, getEpicStateClass, sortState, toggleSortState, resetSortState, filterByTeam, selectedTeamIds, viewSettings, setViewSettings, epicSearchQuery, setEpicSearchQuery, deselectedObjectiveIds, setDeselectedObjectiveIds, visibleEpicIds } = useDashboard();
+  const { epics, objectives, members, workflowConfig, filteredStateIds, filteredEpicNames, getDisplayStories, getEpicStateInfo, getEpicStateClass, sortState, toggleSortState, resetSortState, filterByTeam, selectedTeamIds, viewSettings, setViewSettings, epicSearchQuery, setEpicSearchQuery, deselectedObjectiveIds, setDeselectedObjectiveIds, visibleEpicIds } = useDashboard();
   const updateViewSetting = (key: keyof ViewSettings, value: boolean) =>
     setViewSettings({ ...viewSettings, [key]: value });
   const [openPopover, setOpenPopover] = useState<number | string | null>(null);
+  const [objectiveSearchQuery, setObjectiveSearchQuery] = useState('');
   useEffect(() => {
     if (!openPopover) return;
     const close = () => setOpenPopover(null);
@@ -273,18 +263,9 @@ function EpicStatusTable(): React.JSX.Element | null {
     return 0;
   });
 
-  const sortIcon = (col: string, isNumeric = false) => {
-    const unsorted = 'Click to sort';
-    const ascLabel = isNumeric ? 'Sorted low→high, click to reverse' : 'Sorted A→Z, click to reverse';
-    const descLabel = isNumeric ? 'Sorted high→low, click to reverse' : 'Sorted Z→A, click to reverse';
-    const label = sortState.summary.col !== col ? unsorted : sortState.summary.dir === 'asc' ? ascLabel : descLabel;
-    const icon = sortState.summary.col !== col ? ' ↕' : sortState.summary.dir === 'asc' ? ' ↑' : ' ↓';
-    return <span className="summary-sort-icon" data-tooltip={label}>{icon}</span>;
-  };
-
   const renderRow = (epic: Epic) => {
     const epicDisplayStories = getDisplayStories(epic);
-    const { backlogCount, inProgressCount, completeCount, readyForReleaseCount } = getGroupCounts(epicDisplayStories, filteredStateIds, workflowConfig.states);
+    const { backlogCount, inProgressCount, completeCount } = getGroupCounts(epicDisplayStories, filteredStateIds, workflowConfig.states);
     const total = epicDisplayStories.length;
     const backlogPct = total > 0 ? (backlogCount / total) * 100 : 0;
     const inProgressPct = total > 0 ? (inProgressCount / total) * 100 : 0;
@@ -386,7 +367,6 @@ function EpicStatusTable(): React.JSX.Element | null {
             backlogPct={backlogPct}
             total={total}
             completeCount={completeCount}
-            readyForReleaseCount={readyForReleaseCount}
             inProgressCount={inProgressCount}
             backlogCount={backlogCount}
             stateBreakdown={stateBreakdown}
@@ -406,58 +386,118 @@ function EpicStatusTable(): React.JSX.Element | null {
   const theadRow = (
     <tr className="bg-[#494BCB] text-white">
       <th className="cursor-pointer select-none px-3 py-2 text-left font-semibold text-sm rounded-tl-lg w-[35%]">
-        <span onClick={() => toggleSortState('summary', 'name')} className="cursor-pointer select-none">Epic Name{sortIcon('name')}</span>
+        <span onClick={() => toggleSortState('summary', 'name')} className="cursor-pointer select-none">Epic Name<SortIcon sort={sortState.summary} col="name" /></span>
         <span className="summary-sort-icon ml-[6px] cursor-pointer" data-tooltip="Restore original order" onClick={(e) => { e.stopPropagation(); resetSortState('summary'); }} style={{ opacity: sortState.summary.col ? 1 : 0.4 }}>
           {ResetIcon}
         </span>
       </th>
-      <th onClick={() => toggleSortState('summary', 'status')} className="cursor-pointer select-none px-3 py-2 text-center font-semibold text-sm w-[20%] whitespace-nowrap">Epic Status{sortIcon('status')}</th>
-      <th onClick={() => toggleSortState('summary', 'lastchanged')} className="cursor-pointer select-none px-3 py-2 text-center font-semibold text-sm whitespace-nowrap w-[15%]">Last Changed{sortIcon('lastchanged')}</th>
-      <th onClick={() => toggleSortState('summary', 'progress')} className="cursor-pointer select-none px-3 py-2 text-center font-semibold text-sm rounded-tr-lg w-[33%]">Epic Progress{sortIcon('progress', true)}</th>
+      <th onClick={() => toggleSortState('summary', 'status')} className="cursor-pointer select-none px-3 py-2 text-center font-semibold text-sm w-[20%] whitespace-nowrap">Epic Status<SortIcon sort={sortState.summary} col="status" /></th>
+      <th onClick={() => toggleSortState('summary', 'lastchanged')} className="cursor-pointer select-none px-3 py-2 text-center font-semibold text-sm whitespace-nowrap w-[15%]">Last Changed<SortIcon sort={sortState.summary} col="lastchanged" /></th>
+      <th onClick={() => toggleSortState('summary', 'progress')} className="cursor-pointer select-none px-3 py-2 text-center font-semibold text-sm rounded-tr-lg w-[33%]">Epic Progress<SortIcon sort={sortState.summary} col="progress" isNumeric /></th>
     </tr>
   );
 
   return (
     <div id="summary-table" className="mb-4">
       <div className="flex flex-col gap-2 mb-3">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <h2 className="m-0 text-[1.1rem] font-semibold text-[#1a202c]">Epic Status</h2>
-          {!viewSettings.showEpicFilter && (
-            <button className="view-peek-btn" onClick={() => updateViewSetting('showEpicFilter', true)} title="Show filter">👁</button>
+          {showObjectiveFilter && (
+            <PeekButton
+              icon={TargetActiveIcon}
+              label="Filter Objectives"
+              tooltip={viewSettings.showObjectivesFilter ? 'Hide Objectives Filter' : 'Show Objectives Filter'}
+              onClick={() => updateViewSetting('showObjectivesFilter', !viewSettings.showObjectivesFilter)}
+              hidden={!viewSettings.showObjectivesFilter}
+              activeColor={deselectedObjectiveIds.size > 0 ? '#dc2626' : undefined}
+            />
           )}
-          {!viewSettings.showObjectivesFilter && showObjectiveFilter && (
-            <button className="view-peek-btn" onClick={() => updateViewSetting('showObjectivesFilter', true)} title="Show objectives filter">👁</button>
+          <PeekButton
+            icon={BlockedIcon}
+            label={viewSettings.showBlockedOnly ? 'Hide Blocked' : 'Show Blocked'}
+            tooltip={viewSettings.showBlockedOnly ? 'Show all epics' : 'Show only blocked epics'}
+            onClick={() => {
+              const next = !viewSettings.showBlockedOnly;
+              setViewSettings({
+                ...viewSettings,
+                showBlockedOnly: next,
+                // Mutually exclusive with "Hide Done": turning Show Blocked on restores Done visibility
+                showDoneEpics: next ? true : viewSettings.showDoneEpics,
+              });
+            }}
+            activeColor={viewSettings.showBlockedOnly ? '#dc2626' : undefined}
+          />
+          <PeekButton
+            icon={CheckCircleIcon}
+            label={viewSettings.showDoneEpics ? 'Hide Done' : 'Show Done'}
+            tooltip={viewSettings.showDoneEpics ? 'Hide Done epics' : 'Show Done epics'}
+            onClick={() => {
+              const nextShowDone = !viewSettings.showDoneEpics;
+              setViewSettings({
+                ...viewSettings,
+                showDoneEpics: nextShowDone,
+                // Mutually exclusive with "Show Blocked": enabling Hide Done disables Show Blocked
+                showBlockedOnly: !nextShowDone ? false : viewSettings.showBlockedOnly,
+              });
+            }}
+            activeColor={viewSettings.showDoneEpics ? undefined : '#16a34a'}
+          />
+          <input
+            type="text"
+            placeholder="Filter epics…"
+            value={epicSearchQuery}
+            onChange={e => setEpicSearchQuery(e.target.value)}
+            className="border border-[#E2E8F0] rounded px-2 py-[0.2rem] text-sm text-[#1a202c] bg-white focus:outline-none focus:border-[#494BCB]"
+            style={{ width: '200px' }}
+          />
+          {epicSearchQuery && (
+            <button
+              onClick={() => setEpicSearchQuery('')}
+              className="text-[0.75rem] text-[#94a3b8] bg-transparent border-0 cursor-pointer p-0 hover:text-[#475569]"
+              title="Clear filter"
+            >✕ clear</button>
           )}
         </div>
-        {viewSettings.showEpicFilter && (
-          <div className="flex items-center gap-3">
-            <input
-              type="text"
-              placeholder="Filter epics…"
-              value={epicSearchQuery}
-              onChange={e => setEpicSearchQuery(e.target.value)}
-              className="border border-[#E2E8F0] rounded px-2 py-[0.2rem] text-sm text-[#1a202c] bg-white focus:outline-none focus:border-[#494BCB]"
-              style={{ width: '200px' }}
-            />
-            {epicSearchQuery && (
-              <button
-                onClick={() => setEpicSearchQuery('')}
-                className="text-[0.75rem] text-[#94a3b8] bg-transparent border-0 cursor-pointer p-0 hover:text-[#475569]"
-                title="Clear filter"
-              >✕ clear</button>
-            )}
-            <button
-              onClick={() => { updateViewSetting('showEpicFilter', false); setEpicSearchQuery(''); }}
-              className="text-[0.75rem] text-[#94a3b8] bg-transparent border-0 cursor-pointer p-0 hover:text-[#475569]"
-              title="Hide filter"
-            >✕ hide</button>
-          </div>
-        )}
       </div>
-      {viewSettings.showObjectivesFilter && showObjectiveFilter && (
+      {viewSettings.showObjectivesFilter && showObjectiveFilter && (() => {
+        const trimmed = objectiveSearchQuery.trim().toLowerCase();
+        const visibleObjectives = trimmed
+          ? relevantObjectives.filter(o => o.name.toLowerCase().includes(trimmed))
+          : relevantObjectives;
+        const showUnObjectivedRow = hasUnObjectived && (!trimmed || 'no objective'.includes(trimmed));
+        const handleObjectiveSearchChange = (text: string) => {
+          setObjectiveSearchQuery(text);
+          const t = text.trim().toLowerCase();
+          if (!t) {
+            setDeselectedObjectiveIds(new Set());
+            return;
+          }
+          const nonMatching = new Set<number | -1>();
+          relevantObjectives.forEach(o => {
+            if (!o.name.toLowerCase().includes(t)) nonMatching.add(o.id);
+          });
+          if (hasUnObjectived && !'no objective'.includes(t)) nonMatching.add(-1);
+          setDeselectedObjectiveIds(nonMatching);
+        };
+        return (
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-3">
           <span className="text-xs font-semibold text-[#64748b] uppercase tracking-wide whitespace-nowrap">Objectives:</span>
-          {relevantObjectives.map(obj => (
+          <input
+            type="text"
+            placeholder="Filter objectives…"
+            value={objectiveSearchQuery}
+            onChange={e => handleObjectiveSearchChange(e.target.value)}
+            className="border border-[#E2E8F0] rounded px-2 py-[0.2rem] text-sm text-[#1a202c] bg-white focus:outline-none focus:border-[#494BCB]"
+            style={{ width: '160px' }}
+          />
+          {objectiveSearchQuery && (
+            <button
+              onClick={() => handleObjectiveSearchChange('')}
+              className="text-[0.75rem] text-[#94a3b8] bg-transparent border-0 cursor-pointer p-0 hover:text-[#475569] whitespace-nowrap"
+              title="Clear filter"
+            >✕ clear</button>
+          )}
+          {visibleObjectives.map(obj => (
             <label key={obj.id} className="flex items-center gap-1 cursor-pointer text-sm text-[#1a202c] whitespace-nowrap">
               <input
                 type="checkbox"
@@ -468,7 +508,7 @@ function EpicStatusTable(): React.JSX.Element | null {
               {obj.name}
             </label>
           ))}
-          {hasUnObjectived && (
+          {showUnObjectivedRow && (
             <label className="flex items-center gap-1 cursor-pointer text-sm text-[#94a3b8] italic whitespace-nowrap">
               <input
                 type="checkbox"
@@ -495,8 +535,9 @@ function EpicStatusTable(): React.JSX.Element | null {
             title="Hide objectives filter"
           >✕ hide</button>
         </div>
-      )}
-      {epicSearchQuery.trim() || deselectedObjectiveIds.size > 0 ? (
+        );
+      })()}
+      {epicSearchQuery.trim() || deselectedObjectiveIds.size > 0 || !viewSettings.showDoneEpics || viewSettings.showBlockedOnly ? (
         <table className={tableClass} style={{ borderCollapse: 'separate', borderSpacing: 0, width: '100%' }}>
           <thead>{theadRow}</thead>
           <tbody>
@@ -518,6 +559,24 @@ function EpicStatusTable(): React.JSX.Element | null {
                     ? <span className="ml-3 text-[#3b82f6]">Objectives: <span className="italic">{selectedNames.join(', ')}</span></span>
                     : null;
                 })()}
+                {viewSettings.showBlockedOnly && (
+                  <span className="ml-3 text-[#3b82f6]">Showing <span className="italic">Blocked</span> epics only</span>
+                )}
+                {!viewSettings.showDoneEpics && (
+                  <span className="ml-3 text-[#3b82f6]">Hiding <span className="italic">Done</span> epics</span>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEpicSearchQuery('');
+                    setDeselectedObjectiveIds(new Set());
+                    setViewSettings({ ...viewSettings, showDoneEpics: true, showBlockedOnly: false });
+                  }}
+                  className="ml-3 text-[#1e40af] underline decoration-dotted bg-transparent border-0 cursor-pointer p-0 font-semibold"
+                  title="Clear all filters and show all epics"
+                >
+                  ✕ Clear all filters
+                </button>
               </td>
             </tr>
           </tbody>
@@ -538,16 +597,28 @@ function EpicStatusTable(): React.JSX.Element | null {
           </div>
         </div>
       )}
-      <hr className="border-0 border-t-2 border-slate-200 mt-4" />
+      <div className="mt-2 text-[0.78rem] text-[#475569]">
+        {epics.filter(e => !e.notFound).length === filteredEpicNames.length ? '✅ ' : '⚠️ '}
+        Tracking {epics.filter(e => !e.notFound).length} of {filteredEpicNames.length} Epic{filteredEpicNames.length !== 1 ? 's' : ''}
+      </div>
+      {epics.filter(e => e.notFound).map(e => (
+        <div key={e.id as React.Key} className="epic-not-found mt-2">
+          <h3>{e.name}</h3>
+          <p>Epic not found in Shortcut</p>
+        </div>
+      ))}
+      <hr className="border-0 border-t-2 border-slate-200 mt-1" />
     </div>
   );
 }
 
 export default function SummaryTable(): React.JSX.Element {
+  const { viewSettings } = useDashboard();
   return (
     <>
-      <StoryTotalsSummary />
       <EpicStatusTable />
+      <StoryTotalsSummary />
+      {viewSettings.showCycleProgress && <CycleProgress />}
     </>
   );
 }

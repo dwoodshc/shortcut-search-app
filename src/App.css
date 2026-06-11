@@ -233,7 +233,7 @@ body {
   max-width: 2063px;
   width: 100%;
   margin: 0 auto;
-  padding: 0.4rem 2rem 1.25rem;
+  padding: 0rem 2rem 1.25rem;
   box-sizing: border-box;
 }
 
@@ -317,7 +317,7 @@ textarea.input-field {
 /* .filter-checkbox-container, .filter-checkbox-label removed — not used */
 
 .epic-card {
-  scroll-margin-top: 150px; /* Clears the sticky header plus comfortable breathing room */
+  scroll-margin-top: 170px; /* Clears the sticky header (logo + title + team subtitle + actions row) plus comfortable breathing room */
   background: white;
   border-radius: 8px;
   padding: 1rem;
@@ -330,6 +330,10 @@ textarea.input-field {
 .epic-card:hover {
   box-shadow: 0 4px 12px rgba(73, 75, 203, 0.15);
   border-color: #494BCB;
+}
+
+.epic-card-collapsed .epic-header {
+  margin-bottom: 0;
 }
 
 .epic-not-found {
@@ -392,6 +396,30 @@ textarea.input-field {
   text-decoration: underline;
 }
 
+.epic-copy-link-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #94a3b8;
+  padding: 0 2px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  transition: color 0.15s;
+  flex-shrink: 0;
+}
+
+.epic-copy-link-btn:hover {
+  color: #494BCB;
+}
+
+.epic-copy-link-copied {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #16a34a;
+  white-space: nowrap;
+}
+
 .epic-meta {
   display: flex;
   gap: 0.5rem;
@@ -418,8 +446,8 @@ textarea.input-field {
 }
 
 .epic-state-done {
-  background-color: #86efac;
-  color: #14532d;
+  background-color: #059669;
+  color: #ffffff;
 }
 
 .epic-state-default {
@@ -751,9 +779,35 @@ textarea.input-field {
   padding: 0.1rem 0.4rem;
   line-height: 1.4;
   transition: color 0.15s;
+  position: relative;
 }
 .view-peek-btn:hover {
   color: #64748b;
+}
+.view-peek-btn[data-tooltip]::after,
+.view-peek-board-btn[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(26, 32, 44, 0.92);
+  color: white;
+  font-size: 0.72rem;
+  white-space: nowrap;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+  transition-delay: 0s;
+  z-index: 100;
+  font-weight: 400;
+}
+.view-peek-btn[data-tooltip]:hover::after,
+.view-peek-board-btn[data-tooltip]:hover::after {
+  opacity: 1;
+  transition-delay: 0.1s;
 }
 .view-peek-board-btn {
   background: none;
@@ -765,6 +819,7 @@ textarea.input-field {
   margin-top: 0.5rem;
   display: inline-block;
   transition: color 0.15s;
+  position: relative;
 }
 .view-peek-board-btn:hover {
   color: #64748b;
@@ -788,7 +843,17 @@ textarea.input-field {
   flex: 1 1 240px;
   min-width: 0;
   max-width: 100%;
-  overflow-x: auto;
+}
+
+.story-owners-table table,
+.email-ticket-counts-table table {
+  table-layout: fixed;
+}
+
+.story-owners-table td,
+.email-ticket-counts-table td {
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .story-owners-table h4,
@@ -797,63 +862,6 @@ textarea.input-field {
   font-weight: 700;
   margin-bottom: 0rem;
   font-size: 1.1rem;
-}
-
-.story-owners-table table,
-.email-ticket-counts-table table {
-  width: 100%;
-  border-collapse: collapse;
-  background: white;
-  border-radius: 6px;
-  overflow: hidden;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
-  border: 1px solid #F0F0F7;
-}
-
-.story-owners-table thead,
-.email-ticket-counts-table thead {
-  background: #494BCB;
-  color: white;
-}
-
-.story-owners-table th,
-.email-ticket-counts-table th {
-  padding: 0.4rem 1rem;
-  text-align: left;
-  font-weight: 600;
-  font-size: 0.875rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.story-owners-table th:last-child,
-.email-ticket-counts-table th:last-child {
-  text-align: right;
-}
-
-.story-owners-table td,
-.email-ticket-counts-table td {
-  padding: 0.4rem 1rem;
-  border-bottom: 1px solid #F0F0F7;
-  color: #03045E;
-  font-size: 0.875rem;
-}
-
-.story-owners-table td:last-child,
-.email-ticket-counts-table td:last-child {
-  text-align: right;
-  font-weight: 600;
-  color: #494BCB;
-}
-
-.story-owners-table tbody tr:hover,
-.email-ticket-counts-table tbody tr:hover {
-  background-color: #F6F6FA;
-}
-
-.story-owners-table tbody tr:last-child td,
-.email-ticket-counts-table tbody tr:last-child td {
-  border-bottom: none;
 }
 
 .email-ticket-counts-table tbody tr.zero-count-row {
@@ -870,7 +878,8 @@ textarea.input-field {
   margin-top: 0.75rem;
 }
 
-.stories-section h4 {
+.stories-section h4,
+.pull-requests-section h4 {
   color: #03045E;
   font-weight: 700;
   margin-bottom: 0.5rem;
@@ -887,7 +896,7 @@ textarea.input-field {
 /* Column-based story layout */
 .stories-columns {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 1rem;
   margin-top: 1rem;
 }
@@ -1195,6 +1204,7 @@ textarea.input-field {
 
   .epic-card {
     padding: 0.75rem;
+    scroll-margin-top: 320px; /* Mobile/stacked header is taller */
   }
 
   .settings-icon {
@@ -1229,19 +1239,6 @@ textarea.input-field {
   .workflow-status-chart {
     gap: 0.25rem;
     padding: 0.5rem 0.5rem 1rem 0.5rem;
-  }
-
-  .story-owners-table th,
-  .email-ticket-counts-table th,
-  .story-owners-table td,
-  .email-ticket-counts-table td {
-    padding: 0.5rem 0.6rem;
-    font-size: 0.8125rem;
-  }
-
-  .story-owners-table th,
-  .email-ticket-counts-table th {
-    font-size: 0.75rem;
   }
 
   .stories-columns {
@@ -1549,6 +1546,20 @@ textarea.input-field {
   100% { width: 0%; margin-left: 100%; }
 }
 
+@keyframes egg-timer-flip {
+  0%   { transform: rotate(0deg); }
+  10%  { transform: rotate(36deg); }
+  20%  { transform: rotate(72deg); }
+  30%  { transform: rotate(108deg); }
+  40%  { transform: rotate(144deg); }
+  50%  { transform: rotate(180deg); }
+  60%  { transform: rotate(216deg); }
+  70%  { transform: rotate(252deg); }
+  80%  { transform: rotate(288deg); }
+  90%  { transform: rotate(324deg); }
+  100% { transform: rotate(360deg); }
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -1691,15 +1702,11 @@ textarea.input-field {
   color: #fca5a5;
 }
 
-[data-theme="dark"] .epic-state-ready-for-release {
-  background-color: rgba(187, 247, 208, 0.12);
-  color: #86efac;
-}
-
 [data-theme="dark"] .workflow-status-chart-container h4,
 [data-theme="dark"] .story-owners-table h4,
 [data-theme="dark"] .email-ticket-counts-table h4,
-[data-theme="dark"] .stories-section h4 {
+[data-theme="dark"] .stories-section h4,
+[data-theme="dark"] .pull-requests-section h4 {
   color: #E8F5E9;
 }
 
@@ -2149,7 +2156,6 @@ textarea.input-field {
 [data-theme="star-trek"] .epic-state-in-progress { background-color: rgba(153, 153, 255, 0.15); color: #9999FF; }
 [data-theme="star-trek"] .epic-state-done { background-color: rgba(153, 204, 153, 0.15); color: #99CC99; }
 [data-theme="star-trek"] .epic-state-blocked { background-color: rgba(204, 51, 0, 0.2); color: #FF6633; }
-[data-theme="star-trek"] .epic-state-ready-for-release { background-color: rgba(204, 153, 204, 0.15); color: #CC99CC; }
 
 [data-theme="star-trek"] h2 {
   color: #FF9900;
@@ -2161,7 +2167,8 @@ textarea.input-field {
 [data-theme="star-trek"] .workflow-status-chart-container h4,
 [data-theme="star-trek"] .story-owners-table h4,
 [data-theme="star-trek"] .email-ticket-counts-table h4,
-[data-theme="star-trek"] .stories-section h4 {
+[data-theme="star-trek"] .stories-section h4,
+[data-theme="star-trek"] .pull-requests-section h4 {
   color: #FFCC99;
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -2499,7 +2506,6 @@ textarea.input-field {
 [data-theme="matrix"] .epic-state-in-progress { background-color: rgba(0, 60, 0, 0.6); color: #00FF41; text-shadow: 0 0 6px #00FF41; }
 [data-theme="matrix"] .epic-state-done { background-color: rgba(0, 100, 0, 0.3); color: #88FF88; }
 [data-theme="matrix"] .epic-state-blocked { background-color: rgba(100, 0, 0, 0.3); color: #FF4444; }
-[data-theme="matrix"] .epic-state-ready-for-release { background-color: rgba(0, 80, 40, 0.4); color: #00FFAA; }
 
 [data-theme="matrix"] h2 {
   color: #00FF41;
@@ -2512,7 +2518,8 @@ textarea.input-field {
 [data-theme="matrix"] .workflow-status-chart-container h4,
 [data-theme="matrix"] .story-owners-table h4,
 [data-theme="matrix"] .email-ticket-counts-table h4,
-[data-theme="matrix"] .stories-section h4 {
+[data-theme="matrix"] .stories-section h4,
+[data-theme="matrix"] .pull-requests-section h4 {
   color: #00CC33;
   font-family: 'Courier New', Courier, monospace;
   text-transform: uppercase;
