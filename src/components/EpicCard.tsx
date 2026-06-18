@@ -645,6 +645,13 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
                 (() => {
                   const totalPrs = prsLoaded ? Object.values(storyPrs).reduce((sum, arr) => sum + arr.length, 0) : 0;
                   const prSort = sortState.epicPrs;
+                  // Open=0 Draft=1 Merged=2 Closed=3 — lower rank sorts first ascending
+                  const prStatusRank = (pr: PullRequest) => pr.merged ? 2 : pr.closed ? 3 : pr.draft ? 1 : 0;
+                  const storyStatusRank = (id: number) => {
+                    const prs = storyPrs[id];
+                    if (!prs || prs.length === 0) return 4;
+                    return Math.min(...prs.map(prStatusRank));
+                  };
                   const sortedStories = (() => {
                     if (!prSort.col || !epic.stories) return epic.stories || [];
                     const dir = prSort.dir === 'asc' ? 1 : -1;
@@ -653,15 +660,23 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
                       arr.sort((a, b) => dir * a.name.localeCompare(b.name));
                     } else if (prSort.col === 'prs') {
                       arr.sort((a, b) => dir * ((storyPrs[a.id]?.length || 0) - (storyPrs[b.id]?.length || 0)));
+                    } else if (prSort.col === 'status') {
+                      arr.sort((a, b) => dir * (storyStatusRank(a.id) - storyStatusRank(b.id)));
                     }
                     return arr;
                   })();
                   return (
-                    <table className="w-full bg-white rounded-lg shadow-[0_2px_4px_rgba(0,0,0,0.08)] border border-[#F0F0F7]" style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
+                    <table className="w-full bg-white rounded-lg shadow-[0_2px_4px_rgba(0,0,0,0.08)] border border-[#F0F0F7]" style={{ borderCollapse: 'separate', borderSpacing: 0, tableLayout: 'fixed' }}>
+                      <colgroup>
+                        <col style={{ width: '70%' }} />
+                        <col style={{ width: '20%' }} />
+                        <col style={{ width: '10%' }} />
+                      </colgroup>
                       <thead className="bg-[#494BCB] text-white">
                         <tr>
-                          <th onClick={() => toggleSortState('epicPrs', 'ticket')} className="cursor-pointer select-none px-3 py-2 text-left font-semibold text-sm rounded-tl-lg w-1/2">Ticket<SortIcon sort={prSort} col="ticket" /></th>
-                          <th onClick={() => toggleSortState('epicPrs', 'prs')} className="cursor-pointer select-none px-3 py-2 text-left font-semibold text-sm rounded-tr-lg w-1/2">Pull Requests<SortIcon sort={prSort} col="prs" isNumeric /></th>
+                          <th onClick={() => toggleSortState('epicPrs', 'ticket')} className="cursor-pointer select-none px-3 py-2 text-left font-semibold text-sm rounded-tl-lg">Ticket<SortIcon sort={prSort} col="ticket" /></th>
+                          <th onClick={() => toggleSortState('epicPrs', 'prs')} className="cursor-pointer select-none px-3 py-2 text-center font-semibold text-sm">Pull Requests<SortIcon sort={prSort} col="prs" isNumeric /></th>
+                          <th onClick={() => toggleSortState('epicPrs', 'status')} className="cursor-pointer select-none px-3 py-2 text-center font-semibold text-sm rounded-tr-lg">Status<SortIcon sort={prSort} col="status" /></th>
                         </tr>
                       </thead>
                       <tbody>
@@ -674,7 +689,7 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
                                   ? <a href={story.app_url} target="_blank" rel="noopener noreferrer" className="text-[#494BCB] hover:underline">{story.name}</a>
                                   : story.name}
                               </td>
-                              <td className="px-3 py-2 text-sm border-b border-[#F0F0F7] align-top">
+                              <td className="px-3 py-2 text-sm border-b border-[#F0F0F7] align-top text-center">
                                 {prsLoading && !prsLoaded
                                   ? <span className="text-[#94a3b8] italic">Loading…</span>
                                   : prs.length === 0
@@ -682,15 +697,31 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
                                     : prs.map((pr, i) => (
                                         <span key={pr.id}>
                                           {i > 0 && ', '}
-                                          <a
-                                            href={pr.url}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="text-[#494BCB] hover:underline"
-                                            title={pr.title}
-                                          >#{pr.number}{pr.merged ? ' ✓' : pr.closed ? ' ✕' : pr.draft ? ' (draft)' : ''}</a>
+                                          <a href={pr.url} target="_blank" rel="noopener noreferrer" className="text-[#494BCB] hover:underline" title={pr.title}>#{pr.number}</a>
                                         </span>
                                       ))}
+                              </td>
+                              <td className="px-3 py-2 text-sm border-b border-[#F0F0F7] align-top text-center">
+                                {prsLoading && !prsLoaded
+                                  ? null
+                                  : prs.length === 0
+                                    ? <span className="text-[#94a3b8]">—</span>
+                                    : <span className="flex flex-col gap-[2px] items-center">
+                                        {prs.map(pr => {
+                                          const s = pr.merged
+                                            ? { label: 'Merged', color: '#166534', bg: '#dcfce7' }
+                                            : pr.closed
+                                              ? { label: 'Closed', color: '#991b1b', bg: '#fee2e2' }
+                                              : pr.draft
+                                                ? { label: 'Draft', color: '#374151', bg: '#e5e7eb' }
+                                                : { label: 'Open', color: '#1e40af', bg: '#dbeafe' };
+                                          return (
+                                            <span key={pr.id} style={{ fontSize: '0.7rem', fontWeight: 600, color: s.color, background: s.bg, borderRadius: '4px', padding: '1px 6px', display: 'inline-block', whiteSpace: 'nowrap' }}>
+                                              {s.label}
+                                            </span>
+                                          );
+                                        })}
+                                      </span>}
                               </td>
                             </tr>
                           );
@@ -702,9 +733,10 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
                             <td className="px-3 py-2 text-sm font-semibold text-[#1e40af] rounded-bl-lg" style={{ background: '#dbeafe' }}>
                               Ticket Count: {epic.stories.length}
                             </td>
-                            <td className="px-3 py-2 text-sm font-semibold text-[#1e40af] rounded-br-lg" style={{ background: '#dbeafe' }}>
+                            <td className="px-3 py-2 text-sm font-semibold text-[#1e40af]" style={{ background: '#dbeafe' }}>
                               Pull Request Count: {totalPrs}
                             </td>
+                            <td className="px-3 py-2 rounded-br-lg" style={{ background: '#dbeafe' }} />
                           </tr>
                         </tfoot>
                       )}
