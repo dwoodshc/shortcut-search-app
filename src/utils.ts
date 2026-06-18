@@ -20,6 +20,7 @@ export const STORAGE_KEYS = {
   DISPLAY_MODE: 'shortcut_display_mode',
   MY_NAME: 'shortcut_my_name',
   CYCLE1_START: 'shortcut_cycle1_start',
+  CYCLE_WEEKS: 'shortcut_cycle_weeks',
   MIGRATION_COMPLETED: 'migration_completed',
   VIEW_SETTINGS: 'shortcut_view_settings',
 } as const;
@@ -115,6 +116,18 @@ export const storage = {
   getCycle1Start: (): string => localStorage.getItem(STORAGE_KEYS.CYCLE1_START) || '',
   setCycle1Start: (date: string): void => { localStorage.setItem(STORAGE_KEYS.CYCLE1_START, date); },
 
+  getCycleWeeks: (): number[] => {
+    const data = localStorage.getItem(STORAGE_KEYS.CYCLE_WEEKS);
+    if (data) {
+      try {
+        const arr: unknown = JSON.parse(data);
+        if (Array.isArray(arr) && arr.length === 8 && arr.every((n): n is number => typeof n === 'number' && n > 0)) return arr;
+      } catch {}
+    }
+    return [6, 6, 6, 7, 6, 7, 6, 6];
+  },
+  setCycleWeeks: (weeks: number[]): void => { localStorage.setItem(STORAGE_KEYS.CYCLE_WEEKS, JSON.stringify(weeks)); },
+
   getViewSettings: (): ViewSettings => {
     const data = localStorage.getItem(STORAGE_KEYS.VIEW_SETTINGS);
     const defaults: ViewSettings = { showObjectivesFilter: true, showDoneEpics: true, showBlockedOnly: false, showEpicObjective: true, showEpicOwners: true, showEpicStoryCount: true, showEpicOwnerAssignments: false, showTeamMemberEpicAssignments: false, showTeamMemberTicketAssignments: false, showTicketStatusBreakdown: true, showStoryOwners: true, showTeamOpenTickets: true, showWorkflowStatusPieChart: true, showStoryTypeBreakdown: true, showTopOfPageLink: false, showCycleProgress: true };
@@ -138,7 +151,8 @@ export const STORY_TYPE_COLORS: Record<string, string> = {
   epic:    '#7c3aed',  // violet-600
 };
 
-export const CYCLE_LENGTH_DAYS = 42;
+/** Default weeks per cycle: 8 cycles, cycles 5 & 6 are 7 weeks, rest are 6. */
+export const DEFAULT_CYCLE_WEEKS = [6, 6, 6, 7, 6, 7, 6, 6];
 
 /** Returns the Cycle 1 start date stored by the Setup Wizard (YYYY-MM-DD),
  *  or the first weekday of the current year as a fallback. */
@@ -155,19 +169,30 @@ export function getCycle1StartDate(): Date {
   return d;
 }
 
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+/** Returns the start (inclusive), end (inclusive), and length in days for cycle `n` (1-indexed). */
+export function getCycleWindow(n: number, cycle1: Date, weeks: number[]): { start: Date; end: Date; lengthDays: number } {
+  let offsetDays = 0;
+  for (let i = 0; i < n - 1; i++) offsetDays += (weeks[i] ?? 6) * 7;
+  const start = new Date(cycle1.getTime() + offsetDays * MS_PER_DAY);
+  const lengthDays = (weeks[n - 1] ?? 6) * 7;
+  const end = new Date(start.getTime() + (lengthDays - 1) * MS_PER_DAY);
+  return { start, end, lengthDays };
+}
+
 /** Returns the start (inclusive), end (inclusive), and 1-indexed number of the
- *  6-week cycle that contains `today`, anchored at the configured Cycle 1 start. */
+ *  cycle that contains `today`, using the per-cycle week counts from storage. */
 export function getCurrentCycleWindow(today: Date = new Date()): { start: Date; end: Date; number: number } {
   const cycle1 = getCycle1StartDate();
+  const weeks = storage.getCycleWeeks();
   const t = new Date(today); t.setHours(0, 0, 0, 0);
-  const msPerDay = 24 * 60 * 60 * 1000;
-  const daysSince = Math.floor((t.getTime() - cycle1.getTime()) / msPerDay);
-  const number = Math.max(1, Math.floor(daysSince / CYCLE_LENGTH_DAYS) + 1);
-  const start = new Date(cycle1);
-  start.setDate(cycle1.getDate() + (number - 1) * CYCLE_LENGTH_DAYS);
-  const end = new Date(start);
-  end.setDate(start.getDate() + CYCLE_LENGTH_DAYS - 1);
-  return { start, end, number };
+  for (let n = 1; n <= 8; n++) {
+    const { start, end } = getCycleWindow(n, cycle1, weeks);
+    if (t.getTime() <= end.getTime()) return { start, end, number: n };
+  }
+  const last = getCycleWindow(8, cycle1, weeks);
+  return { start: last.start, end: last.end, number: 8 };
 }
 
 export function daysAgo(dateStr: string | undefined): number | null {

@@ -8,7 +8,7 @@
  * percentage progress bar.
  */
 import React, { useMemo } from 'react';
-import { CYCLE_LENGTH_DAYS, getCurrentCycleWindow, getCycle1StartDate } from '../utils';
+import { getCurrentCycleWindow, getCycle1StartDate, storage } from '../utils';
 import PercentBar from './PercentBar';
 
 function isWeekend(d: Date): boolean {
@@ -39,10 +39,11 @@ export default function CycleProgress(): React.JSX.Element {
   // All cycle math is pure, deterministic for the current day, and depends only
   // on localStorage. Compute once per mount; storage changes happen only via the
   // Setup Wizard which forces a full reload.
-  const { cycle1Start, cycleNumber, cycleStart, cycleEnd, totalDays, daysElapsed, daysRemaining, pctRounded } = useMemo(() => {
+  const { cycle1Start, cycleNumber, cycleStart, cycleEnd, totalDays, daysElapsed, daysRemaining, pctRounded, cycleLengthWeeks } = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const c1 = getCycle1StartDate();
+    const weeks = storage.getCycleWeeks();
     const { start, end, number } = getCurrentCycleWindow(today);
     // Weekday-only counts (Mon–Fri); excludes Saturdays and Sundays.
     const total = countWeekdays(start, end);
@@ -59,6 +60,7 @@ export default function CycleProgress(): React.JSX.Element {
       daysElapsed: elapsed,
       daysRemaining: remaining,
       pctRounded: Math.round(pct),
+      cycleLengthWeeks: weeks[number - 1] ?? 6,
     };
   }, []);
 
@@ -89,7 +91,7 @@ export default function CycleProgress(): React.JSX.Element {
           </thead>
           <tbody>
             <tr>
-              <td className="px-3 py-2 text-center text-sm font-semibold text-[#1a202c] border-b border-[#F0F0F7]" title={`Cycles are 6 weeks (${CYCLE_LENGTH_DAYS} days) starting from ${formatDate(cycle1Start)}.`}>
+              <td className="px-3 py-2 text-center text-sm font-semibold text-[#1a202c] border-b border-[#F0F0F7]" title={`Cycle ${cycleNumber} is ${cycleLengthWeeks} weeks (${cycleLengthWeeks * 7} days) starting from ${formatDate(cycle1Start)}.`}>
                 Cycle {cycleNumber}
               </td>
               <td className="px-3 py-2 text-center text-sm border-b border-[#F0F0F7] whitespace-nowrap">{formatDate(cycleStart)}</td>

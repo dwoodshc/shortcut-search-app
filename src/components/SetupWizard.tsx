@@ -3,12 +3,12 @@
  *
  * SetupWizard.tsx — 7-step guided setup modal. Steps: API token (verified against the
  * API), workspace URL, workflow selection, team selection, my Shortcut name
- * (for unwatched ticket detection), Cycle 1 start date, and epic list.
+ * (for unwatched ticket detection), cycle setup (start date + per-cycle week counts), and epic list.
  * Local form state is initialised from storage on mount; each step persists to
  * localStorage before advancing.
  */
 import React, { useState } from 'react';
-import { storage, getApiBaseUrl } from '../utils';
+import { storage, getApiBaseUrl, DEFAULT_CYCLE_WEEKS } from '../utils';
 import { useDashboard } from '../context/DashboardContext';
 import { Team } from '../types';
 
@@ -47,6 +47,7 @@ export default function SetupWizard({ step, onStepChange, onClose }: Props): Rea
     while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() + 1);
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   });
+  const [cycleWeeks, setCycleWeeks] = useState<number[]>(() => storage.getCycleWeeks());
 
   const handleSaveEpicList = () => {
     setEpicListError('');
@@ -148,7 +149,7 @@ export default function SetupWizard({ step, onStepChange, onClose }: Props): Rea
     else if (step === 3) { await handleStep3Next(); }
     else if (step === 4) { storage.setTeamConfig(selectedTeams); onStepChange(5); }
     else if (step === 5) { storage.setMyName(myName.trim()); onStepChange(6); }
-    else if (step === 6) { storage.setCycle1Start(cycle1Start); onStepChange(7); }
+    else if (step === 6) { storage.setCycle1Start(cycle1Start); storage.setCycleWeeks(cycleWeeks); onStepChange(7); }
     else if (step === 7) { const saved = handleSaveEpicList(); if (saved) { onClose(); searchEpics(); } }
   };
 
@@ -186,7 +187,7 @@ export default function SetupWizard({ step, onStepChange, onClose }: Props): Rea
                 {stepNum === 3 && 'Workflow'}
                 {stepNum === 4 && 'Select Team'}
                 {stepNum === 5 && 'My Name'}
-                {stepNum === 6 && 'Cycle 1 Start'}
+                {stepNum === 6 && 'Cycle Setup'}
                 {stepNum === 7 && 'Epic List'}
               </div>
               {stepNum < 7 && (
@@ -442,24 +443,97 @@ export default function SetupWizard({ step, onStepChange, onClose }: Props): Rea
             </div>
           )}
 
-          {/* Step 6: Cycle 1 Start Date */}
+          {/* Step 6: Cycle Setup */}
           {step === 6 && (
             <div>
-              <h3 className="text-[#1e293b] mb-4">Step 6: Cycle 1 Start Date</h3>
-              <p className="mb-6">Pick the calendar date that <strong>Cycle 1</strong> begins. Each cycle is 6 weeks (42 days), and the dates of the remaining cycles in the year are calculated from this anchor.</p>
-              <div className="form-group">
-                <label htmlFor="cycle1Start">Cycle 1 start date:</label>
-                <input
-                  type="date"
-                  id="cycle1Start"
-                  value={cycle1Start}
-                  onChange={(e) => setCycle1Start(e.target.value)}
-                  className="input-field"
-                />
-                <p className="text-xs text-[#64748b] mt-2">
-                  Defaults to the first weekday of the current year. You can change this anytime by re-running the wizard.
-                </p>
+              <h3 className="text-[#1e293b] mb-2">Step 6: Cycle Setup</h3>
+              <p className="mb-4">Set the start date of Cycle 1 and the number of weeks in each cycle.</p>
+              <div className="flex items-center gap-2 mb-4 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <label htmlFor="cycle1Start" className="text-sm font-semibold whitespace-nowrap">Cycle 1 start date:</label>
+                  <input
+                    type="date"
+                    id="cycle1Start"
+                    value={cycle1Start}
+                    onChange={(e) => setCycle1Start(e.target.value)}
+                    className="input-field"
+                    style={{ maxWidth: '165px', marginBottom: 0, padding: '3px 8px' }}
+                  />
+                </div>
               </div>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
+                <thead>
+                  <tr style={{ background: '#494BCB', color: 'white' }}>
+                    <th style={{ padding: '4px 10px', textAlign: 'left', borderRadius: '6px 0 0 0' }}>Cycle</th>
+                    <th style={{ padding: '4px 10px', textAlign: 'center' }}>Weeks</th>
+                    <th style={{ padding: '4px 10px', textAlign: 'center' }}>Start</th>
+                    <th style={{ padding: '4px 10px', textAlign: 'center', borderRadius: '0 6px 0 0' }}>End</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(() => {
+                    const msPerDay = 86400000;
+                    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(cycle1Start);
+                    const currentYear = new Date().getFullYear();
+                    let anyOverflow = false;
+                    const rows = cycleWeeks.map((w, i) => {
+                      let startStr = '', endStr = '', overflows = false;
+                      if (m) {
+                        let offsetDays = 0;
+                        for (let j = 0; j < i; j++) offsetDays += (cycleWeeks[j] ?? 6) * 7;
+                        const c1 = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+                        const s = new Date(c1.getTime() + offsetDays * msPerDay);
+                        const e = new Date(s.getTime() + (w * 7 - 1) * msPerDay);
+                        startStr = s.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+                        endStr = e.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+                        overflows = e.getFullYear() > currentYear;
+                        if (overflows) anyOverflow = true;
+                      }
+                      return { w, i, startStr, endStr, overflows };
+                    });
+                    return (
+                      <>
+                        {rows.map(({ w, i, startStr, endStr, overflows }) => (
+                          <tr key={i} style={{ background: overflows ? '#fef9c3' : i % 2 === 0 ? '#f8fafc' : 'white' }}>
+                            <td style={{ padding: '3px 10px', fontWeight: 600, color: overflows ? '#92400e' : '#1e293b' }}>
+                              Cycle {i + 1}
+                            </td>
+                            <td style={{ padding: '3px 10px', textAlign: 'center' }}>
+                              <input
+                                type="number"
+                                min={1}
+                                max={26}
+                                value={w}
+                                onChange={(e) => {
+                                  const val = Math.max(1, Math.min(26, Number(e.target.value) || 1));
+                                  setCycleWeeks(prev => prev.map((x, idx) => idx === i ? val : x));
+                                }}
+                                style={{ width: '50px', textAlign: 'center', border: `1px solid ${overflows ? '#fbbf24' : '#cbd5e1'}`, borderRadius: '4px', padding: '1px 4px' }}
+                              />
+                            </td>
+                            <td style={{ padding: '3px 10px', textAlign: 'center', color: overflows ? '#92400e' : '#475569' }}>{startStr}</td>
+                            <td style={{ padding: '3px 10px', textAlign: 'center', color: overflows ? '#92400e' : '#475569' }}>{endStr}</td>
+                          </tr>
+                        ))}
+                        {anyOverflow && (
+                          <tr>
+                            <td colSpan={4} style={{ padding: '5px 10px', background: '#fef3c7', color: '#92400e', fontSize: '0.75rem', borderTop: '1px solid #fde68a', borderRadius: '0 0 6px 6px' }}>
+                              ⚠️ One or more cycles extend beyond {currentYear}. Adjust the start date or week counts.
+                            </td>
+                          </tr>
+                        )}
+                      </>
+                    );
+                  })()}
+                </tbody>
+              </table>
+              <button
+                  type="button"
+                  onClick={() => setCycleWeeks([...DEFAULT_CYCLE_WEEKS])}
+                  style={{ fontSize: '0.75rem', color: '#494BCB', background: 'none', border: 'none', cursor: 'pointer', padding: 0, textDecoration: 'underline', whiteSpace: 'nowrap' }}
+                >
+                  Reset to defaults
+                </button>
             </div>
           )}
 
