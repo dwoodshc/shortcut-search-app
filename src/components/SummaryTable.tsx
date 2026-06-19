@@ -275,6 +275,7 @@ function EpicStatusTable(): React.JSX.Element | null {
     const stateBreakdown = filteredStateIds
       .map(id => ({ stateName: workflowConfig.states[id] || String(id), count: epicStateCounts[id] || 0 }))
       .filter(s => s.count > 0);
+    const hasBlockedTickets = epicDisplayStories.some(s => s.blocked);
     const si = getEpicStateInfo(epic);
     const teamFilteredStories = applyTeamFilter(epic.stories || [], filterByTeam, selectedTeamIds);
     const lastChanged = getEpicLastChanged(teamFilteredStories);
@@ -293,9 +294,17 @@ function EpicStatusTable(): React.JSX.Element | null {
     return (
       <tr key={epic.id as React.Key} className="relative">
         <td className="px-3 py-2 text-sm sm:whitespace-nowrap border-b border-[#F0F0F7]">
-          <a href={`#epic-${epic.id}`} className="text-[#1a202c] no-underline">
-            {epic.name}
-          </a>
+          {hasBlockedTickets ? (
+            <span className="has-tooltip" data-tooltip="This Epic has Blocked Tickets">
+              <a href={`#epic-${epic.id}`} className="no-underline text-white font-semibold px-2 py-[0.15rem] rounded-full" style={{ backgroundColor: '#dc2626' }}>
+                {epic.name}
+              </a>
+            </span>
+          ) : (
+            <a href={`#epic-${epic.id}`} className="text-[#1a202c] no-underline">
+              {epic.name}
+            </a>
+          )}
         </td>
         <td className="px-3 py-[0.4rem] text-center border-b border-[#F0F0F7] whitespace-nowrap">
           {si.name ? (

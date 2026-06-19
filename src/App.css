@@ -142,7 +142,13 @@ body {
   margin-left: 4px;
 }
 
-.summary-sort-icon::after {
+.has-tooltip {
+  position: relative;
+  display: inline-block;
+}
+
+.summary-sort-icon::after,
+.has-tooltip::after {
   content: attr(data-tooltip);
   position: absolute;
   top: calc(100% + 6px);
@@ -162,7 +168,8 @@ body {
   font-weight: 400;
 }
 
-.summary-sort-icon:hover::after {
+.summary-sort-icon:hover::after,
+.has-tooltip:hover::after {
   opacity: 1;
   transition-delay: 0.5s;
 }
