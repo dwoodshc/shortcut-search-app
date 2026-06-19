@@ -414,7 +414,7 @@ function EpicStatusTable(): React.JSX.Element | null {
           )}
           <PeekButton
             icon={BlockedIcon}
-            label={viewSettings.showBlockedOnly ? 'Hide Blocked' : 'Show Blocked'}
+            label={viewSettings.showBlockedOnly ? 'Hide Blocked Epics' : 'Show Blocked Epics'}
             tooltip={viewSettings.showBlockedOnly ? 'Show all epics' : 'Show only blocked epics'}
             onClick={() => {
               const next = !viewSettings.showBlockedOnly;
@@ -429,7 +429,7 @@ function EpicStatusTable(): React.JSX.Element | null {
           />
           <PeekButton
             icon={CheckCircleIcon}
-            label={viewSettings.showDoneEpics ? 'Hide Done' : 'Show Done'}
+            label={viewSettings.showDoneEpics ? 'Hide Done Epics' : 'Show Done Epics'}
             tooltip={viewSettings.showDoneEpics ? 'Hide Done epics' : 'Show Done epics'}
             onClick={() => {
               const nextShowDone = !viewSettings.showDoneEpics;
