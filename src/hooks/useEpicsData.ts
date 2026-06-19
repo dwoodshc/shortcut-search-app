@@ -173,6 +173,23 @@ export function useEpicsData({ epicNames, loadSelectedWorkflow, onRateLimit, set
         setTeamMemberIds(allMemberIds);
       }
 
+      let blockedCustomFieldId: string | null = null;
+      let customFieldsApiCall = false;
+      try {
+        const cfRes = await fetch(`${getApiBaseUrl()}/api/custom-fields`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+          signal: controller.signal
+        });
+        if (cfRes.ok) {
+          customFieldsApiCall = true;
+          const customFields: Array<{ id: string; name: string }> = await cfRes.json();
+          const blockedField = customFields.find(f => f.name.toLowerCase() === 'blocked');
+          if (blockedField) blockedCustomFieldId = blockedField.id;
+        }
+      } catch (err) {
+        if (err instanceof Error && err.name !== 'AbortError') console.warn('Failed to fetch custom fields:', err);
+      }
+
       let objectivesApiCall = false;
       try {
         const objRes = await fetch(`${getApiBaseUrl()}/api/objectives`, {
@@ -277,6 +294,21 @@ export function useEpicsData({ epicNames, loadSelectedWorkflow, onRateLimit, set
       const allEpics: Epic[] = epicNamesToSearch.map((name, i) =>
         epicsWithStories[i] || { id: `not-found-${name}`, name, notFound: true, state: '' }
       );
+
+      if (blockedCustomFieldId) {
+        allEpics.forEach(epic => {
+          (epic.stories || []).forEach(story => {
+            if (!story.blocked && story.custom_fields) {
+              const entry = story.custom_fields.find(cf => cf.field_id === blockedCustomFieldId);
+              if (entry) {
+                const v = entry.value.toLowerCase().trim();
+                story.blocked = v !== '' && v !== 'false' && v !== 'no' && v !== 'none';
+              }
+            }
+          });
+        });
+      }
+
       setEpics(allEpics);
 
       const allOwnerIds = new Set<string>();
@@ -287,6 +319,7 @@ export function useEpicsData({ epicNames, loadSelectedWorkflow, onRateLimit, set
       const cachedMemberIds = Object.keys(storage.getMembersCache());
       const uncachedMemberCalls = [...allOwnerIds].filter(id => !cachedMemberIds.includes(id)).length;
       const apiCallBreakdown: Record<string, number> = {};
+      if (customFieldsApiCall) apiCallBreakdown['GET /api/custom-fields'] = 1;
       if (teamApiCall) apiCallBreakdown['GET /api/teams'] = 1;
       if (objectivesApiCall) apiCallBreakdown['GET /api/objectives'] = 1;
       if (workflowApiCall) apiCallBreakdown['GET /api/epic-workflow'] = 1;

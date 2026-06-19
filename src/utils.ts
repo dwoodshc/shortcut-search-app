@@ -130,7 +130,7 @@ export const storage = {
 
   getViewSettings: (): ViewSettings => {
     const data = localStorage.getItem(STORAGE_KEYS.VIEW_SETTINGS);
-    const defaults: ViewSettings = { showObjectivesFilter: true, showDoneEpics: true, showBlockedOnly: false, showEpicObjective: true, showEpicOwners: true, showEpicStoryCount: true, showEpicOwnerAssignments: false, showTeamMemberEpicAssignments: false, showTeamMemberTicketAssignments: false, showTicketStatusBreakdown: true, showStoryOwners: true, showTeamOpenTickets: true, showWorkflowStatusPieChart: true, showStoryTypeBreakdown: true, showTopOfPageLink: false, showCycleProgress: true };
+    const defaults: ViewSettings = { showObjectivesFilter: true, showDoneEpics: true, showBlockedOnly: false, showEpicObjective: true, showEpicOwners: true, showEpicStoryCount: true, showEpicOwnerAssignments: false, showTeamMemberEpicAssignments: false, showTeamMemberTicketAssignments: false, showTicketStatusBreakdown: true, showStoryOwners: true, showTeamOpenTickets: true, showWorkflowStatusPieChart: true, showStoryTypeBreakdown: true, showTopOfPageLink: false, showCycleProgress: true, showBlockedTickets: false };
     if (!data) return defaults;
     try { return { ...defaults, ...JSON.parse(data) }; } catch { return defaults; }
   },

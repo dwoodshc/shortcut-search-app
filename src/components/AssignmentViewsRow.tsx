@@ -7,7 +7,7 @@
  */
 import React from 'react';
 import { useDashboard } from '../context/DashboardContext';
-import { TargetIcon, UsersIcon, TicketIcon } from './icons';
+import { TargetIcon, UsersIcon, TicketIcon, BlockedIcon } from './icons';
 import PeekButton from './PeekButton';
 import { ViewSettings } from '../types';
 
@@ -39,6 +39,14 @@ export default function AssignmentViewsRow(): React.JSX.Element {
         tooltip={viewSettings.showTeamMemberTicketAssignments ? 'Hide Team Member Ticket Assignments' : 'Show Team Member Ticket Assignments'}
         onClick={() => updateViewSetting('showTeamMemberTicketAssignments', !viewSettings.showTeamMemberTicketAssignments)}
         hidden={!viewSettings.showTeamMemberTicketAssignments}
+      />
+      <span className="text-[0.8rem] font-semibold text-[#64748b] ml-2">Ticket Views:</span>
+      <PeekButton
+        icon={BlockedIcon}
+        label="Blocked Tickets"
+        tooltip={viewSettings.showBlockedTickets ? 'Hide Blocked Tickets' : 'Show tickets marked as "Blocked", or have a blocked relationship to another ticket'}
+        onClick={() => updateViewSetting('showBlockedTickets', !viewSettings.showBlockedTickets)}
+        hidden={!viewSettings.showBlockedTickets}
       />
     </div>
   );

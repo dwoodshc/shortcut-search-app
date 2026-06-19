@@ -22,6 +22,7 @@ export function useFilters() {
     epicPrs:     { col: null, dir: 'asc' },
     storyOwners: { col: 'count', dir: 'desc' },
     teamOpenTickets: { col: 'count', dir: 'desc' },
+    blockedTickets:  { col: 'epic', dir: 'asc' },
   });
   const [epicSearchQuery, setEpicSearchQuery] = useState('');
   const [deselectedObjectiveIds, setDeselectedObjectiveIds] = useState<Set<number | -1>>(new Set());

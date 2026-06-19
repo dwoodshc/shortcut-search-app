@@ -17,6 +17,12 @@ export interface PullRequest {
   merged?: boolean;
 }
 
+export interface StoryCustomField {
+  field_id: string;
+  value: string;
+  value_id: string;
+}
+
 export interface Story {
   id: number;
   name: string;
@@ -30,6 +36,7 @@ export interface Story {
   archived?: boolean;
   updated_at?: string;
   blocked?: boolean;
+  custom_fields?: StoryCustomField[];
 }
 
 export interface Objective {
@@ -126,6 +133,7 @@ export interface ViewSettings {
   showStoryTypeBreakdown: boolean;
   showTopOfPageLink: boolean;
   showCycleProgress: boolean;
+  showBlockedTickets: boolean;
 }
 
 export interface ModalState {
@@ -157,6 +165,7 @@ export interface SortState {
   epicPrs: SortEntry;
   storyOwners: SortEntry;
   teamOpenTickets: SortEntry;
+  blockedTickets: SortEntry;
 }
 
 export type SortStateKey = keyof SortState;

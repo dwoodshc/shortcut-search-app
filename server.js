@@ -196,6 +196,21 @@ app.get('/api/objectives', async (req, res) => {
   }
 });
 
+// Get workspace custom field definitions
+app.get('/api/custom-fields', async (req, res) => {
+  try {
+    const token = getTokenFromHeader(req);
+    if (!token) return res.status(401).json({ error: 'Authorization token required' });
+    const response = await axios.get(`${SHORTCUT_API_BASE}/custom-fields`, {
+      headers: { 'Shortcut-Token': token, 'Content-Type': 'application/json' }
+    });
+    res.json(response.data);
+  } catch (error) {
+    console.error('Error fetching custom fields:', error.response?.data || error.message);
+    res.status(error.response?.status || 500).json({ error: error.response?.data || 'Failed to fetch custom fields' });
+  }
+});
+
 // Get a single story by ID (includes branches with nested pull_requests)
 app.get('/api/stories/:id', async (req, res) => {
   try {

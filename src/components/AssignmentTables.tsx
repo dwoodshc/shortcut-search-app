@@ -32,8 +32,32 @@ export default function AssignmentTables(): React.JSX.Element | null {
     viewSettings,
   } = useDashboard();
 
+  const blockedTicketsData = useMemo(() => {
+    const map: Record<string, { epicId: number | string; epicName: string; epicAppUrl?: string; tickets: Array<{ id: number; name: string; app_url?: string; owners: string[]; stateName: string }> }> = {};
+    for (const epic of epics) {
+      if (epic.notFound || !visibleEpicIds.has(epic.id)) continue;
+      const stories = epic.stories || [];
+      const filtered = filterByTeam && selectedTeamIds.length > 0
+        ? stories.filter(s => !s.group_id || selectedTeamIds.includes(s.group_id))
+        : stories;
+      for (const story of filtered) {
+        if (!story.blocked) continue;
+        const key = String(epic.id);
+        if (!map[key]) map[key] = { epicId: epic.id, epicName: epic.name, epicAppUrl: epic.app_url, tickets: [] };
+        map[key].tickets.push({
+          id: story.id,
+          name: story.name,
+          app_url: story.app_url,
+          owners: (story.owner_ids || []).map(id => members[id] || id),
+          stateName: workflowConfig.states[story.workflow_state_id] || '',
+        });
+      }
+    }
+    return Object.values(map);
+  }, [epics, visibleEpicIds, members, workflowConfig.states, filterByTeam, selectedTeamIds]);
+
   const memberTicketData = useMemo(() => {
-    const map: Record<string, Array<{ id: number; name: string; app_url?: string; epicName: string; epicAppUrl?: string; stateName: string }>> = {};
+    const map: Record<string, Array<{ id: number; name: string; app_url?: string; epicName: string; epicAppUrl?: string; stateName: string; blocked?: boolean }>> = {};
     for (const epic of epics) {
       if (epic.notFound || !visibleEpicIds.has(epic.id)) continue;
       const stories = epic.stories || [];
@@ -46,7 +70,7 @@ export default function AssignmentTables(): React.JSX.Element | null {
         for (const ownerId of story.owner_ids || []) {
           const ownerName = members[ownerId] || ownerId;
           if (!map[ownerName]) map[ownerName] = [];
-          map[ownerName].push({ id: story.id, name: story.name, app_url: story.app_url, epicName: epic.name, epicAppUrl: epic.app_url, stateName: workflowConfig.states[story.workflow_state_id] || '' });
+          map[ownerName].push({ id: story.id, name: story.name, app_url: story.app_url, epicName: epic.name, epicAppUrl: epic.app_url, stateName: workflowConfig.states[story.workflow_state_id] || '', blocked: story.blocked });
         }
       }
     }
@@ -90,11 +114,19 @@ export default function AssignmentTables(): React.JSX.Element | null {
     return 0;
   });
 
+  const sortedBlockedTickets = [...blockedTicketsData].sort((a, b) => {
+    if (!sortState.blockedTickets.col) return 0;
+    const dir = sortState.blockedTickets.dir === 'asc' ? 1 : -1;
+    if (sortState.blockedTickets.col === 'epic') return dir * a.epicName.localeCompare(b.epicName);
+    if (sortState.blockedTickets.col === 'count') return dir * (a.tickets.length - b.tickets.length);
+    return 0;
+  });
+
   // Shared header renderer for the three assignment tables. Each table has a
   // sortable first column (with restore icon), an optional sortable Count
   // column in the middle, and a static label column on the right.
   const renderHead = (
-    sortKey: 'epicTeam' | 'memberEpic' | 'memberTicket',
+    sortKey: 'epicTeam' | 'memberEpic' | 'memberTicket' | 'blockedTickets',
     firstCol: { sortField: string; label: string },
     lastCol: { label: string },
     showCount: boolean,
@@ -121,6 +153,7 @@ export default function AssignmentTables(): React.JSX.Element | null {
   const epicTeamHead = renderHead('epicTeam', { sortField: 'epic', label: 'Epic' }, { label: 'Team Members' }, false);
   const memberEpicHead = renderHead('memberEpic', { sortField: 'member', label: 'Team Member' }, { label: 'Epics' }, true);
   const memberTicketHead = renderHead('memberTicket', { sortField: 'member', label: 'Team Member' }, { label: 'Open Tickets' }, true);
+  const blockedTicketsHead = renderHead('blockedTickets', { sortField: 'epic', label: 'Epic' }, { label: 'Blocked Tickets' }, true);
 
   const renderEpicTeamRow = (row: EpicTeamEntry) => (
     <tr key={row.id as React.Key} className={row.team.length === 0 ? 'bg-[#fff9c4]' : ''}>
@@ -151,7 +184,7 @@ export default function AssignmentTables(): React.JSX.Element | null {
     </tr>
   );
 
-  const renderMemberTicketRow = (row: { member: string; tickets: Array<{ id: number; name: string; app_url?: string; epicName: string; epicAppUrl?: string; stateName: string }> }) => (
+  const renderMemberTicketRow = (row: { member: string; tickets: Array<{ id: number; name: string; app_url?: string; epicName: string; epicAppUrl?: string; stateName: string; blocked?: boolean }> }) => (
     <tr key={row.member}>
       <td className={`${tdClass} whitespace-nowrap`}>{row.member}</td>
       <td className={`${tdClass} text-center font-semibold`}>{row.tickets.length}</td>
@@ -170,6 +203,7 @@ export default function AssignmentTables(): React.JSX.Element | null {
                   const sc = TICKET_STATE_COLORS[t.stateName.toLowerCase()] ?? DEFAULT_TICKET_STATE_COLOR;
                   return (
                     <li key={t.id} className="text-[0.7rem] whitespace-nowrap">
+                      {t.blocked && <span className="text-[0.6rem] font-bold px-1.5 py-[0.1rem] rounded-full text-white mr-1" style={{ backgroundColor: '#dc2626', whiteSpace: 'nowrap' }}>Blocked</span>}
                       {t.app_url
                         ? <a href={t.app_url} className="text-[#1a202c] no-underline" target="_blank" rel="noreferrer">{t.name}</a>
                         : <span>{t.name}</span>
@@ -186,9 +220,37 @@ export default function AssignmentTables(): React.JSX.Element | null {
     </tr>
   );
 
+  const renderBlockedTicketRow = (row: typeof sortedBlockedTickets[number]) => (
+    <tr key={String(row.epicId)}>
+      <td className={`${tdClass} whitespace-nowrap`}>
+        {row.epicAppUrl
+          ? <a href={`#epic-${row.epicId}`} className="text-[#1a202c] no-underline">{row.epicName}</a>
+          : <span>{row.epicName}</span>}
+      </td>
+      <td className={`${tdClass} text-center font-semibold`}>{row.tickets.length}</td>
+      <td className={`${tdClass} whitespace-nowrap`}>
+        <ul className="m-0 pl-0 list-none">
+          {[...row.tickets].sort((a, b) => a.name.localeCompare(b.name)).map((t) => {
+            const sc = TICKET_STATE_COLORS[t.stateName.toLowerCase()] ?? DEFAULT_TICKET_STATE_COLOR;
+            return (
+              <li key={t.id} className="text-[0.7rem] whitespace-nowrap">
+                {t.app_url
+                  ? <a href={t.app_url} className="text-[#1a202c] no-underline" target="_blank" rel="noreferrer">{t.name}</a>
+                  : <span>{t.name}</span>}
+                {t.stateName && <span className="ml-1 text-[0.6rem] font-medium px-1 py-[0.05rem] rounded" style={{ backgroundColor: sc.bg, color: sc.text }}>{t.stateName}</span>}
+                {t.owners.length > 0 && <span className="ml-1 text-[0.6rem] text-[#6b7280]">{t.owners.join(', ')}</span>}
+              </li>
+            );
+          })}
+        </ul>
+      </td>
+    </tr>
+  );
+
   const epicTeamHalf = Math.ceil(sortedEpicTeam.length / 2);
   const memberEpicHalf = Math.ceil(sortedMemberEpic.length / 2);
   const memberTicketHalf = Math.ceil(sortedMemberTicket.length / 2);
+  const blockedTicketsHalf = Math.ceil(sortedBlockedTickets.length / 2);
 
   return (
     <>
@@ -253,6 +315,31 @@ export default function AssignmentTables(): React.JSX.Element | null {
                 </table>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Blocked Tickets */}
+        {viewSettings.showBlockedTickets && (
+          <div>
+            <h3 className="m-0 mb-2 text-base font-semibold">Blocked Tickets</h3>
+            {sortedBlockedTickets.length === 0
+              ? <p className="text-sm text-[#6b7280] italic">No blocked tickets found.</p>
+              : (
+                <div className="summary-table-grid">
+                  <div>
+                    <table className={tableClass} style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
+                      <thead>{blockedTicketsHead}</thead>
+                      <tbody>{sortedBlockedTickets.slice(0, blockedTicketsHalf).map((row) => renderBlockedTicketRow(row))}</tbody>
+                    </table>
+                  </div>
+                  <div>
+                    <table className={tableClass} style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
+                      <thead>{blockedTicketsHead}</thead>
+                      <tbody>{sortedBlockedTickets.slice(blockedTicketsHalf).map((row) => renderBlockedTicketRow(row))}</tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
           </div>
         )}
       </div>
