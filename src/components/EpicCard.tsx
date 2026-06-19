@@ -409,11 +409,16 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
                               </span>
                             </td>
                             <td className="py-[0.3rem] pr-2 align-middle" style={{ width: '99%' }}>
-                              {story.app_url ? (
-                                <a href={story.app_url} target="_blank" rel="noopener noreferrer" className="text-[#494BCB] text-xs hover:underline">{story.name}</a>
-                              ) : (
-                                <span className="text-xs text-[#1a202c]">{story.name}</span>
-                              )}
+                              <span className="inline-flex items-center gap-1 flex-wrap">
+                                {story.blocked && (
+                                  <span className="text-[0.6rem] font-bold px-1.5 py-[0.1rem] rounded-full text-white" style={{ backgroundColor: '#dc2626', whiteSpace: 'nowrap' }}>Blocked</span>
+                                )}
+                                {story.app_url ? (
+                                  <a href={story.app_url} target="_blank" rel="noopener noreferrer" className="text-[#494BCB] text-xs hover:underline">{story.name}</a>
+                                ) : (
+                                  <span className="text-xs text-[#1a202c]">{story.name}</span>
+                                )}
+                              </span>
                             </td>
                             <td className="py-[0.3rem] pr-2 align-middle" style={{ width: '1%', whiteSpace: 'nowrap' }}>
                               <span className="text-[0.65rem] text-[#475569]">

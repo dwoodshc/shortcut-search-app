@@ -29,6 +29,7 @@ export interface Story {
   description?: string;
   archived?: boolean;
   updated_at?: string;
+  blocked?: boolean;
 }
 
 export interface Objective {
