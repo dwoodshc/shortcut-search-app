@@ -23,6 +23,13 @@ export interface StoryCustomField {
   value_id: string;
 }
 
+export interface StoryLink {
+  id: number;
+  subject_id: number;
+  object_id: number;
+  verb: 'blocks' | 'duplicates' | 'relates to';
+}
+
 export interface Story {
   id: number;
   name: string;
@@ -37,6 +44,7 @@ export interface Story {
   updated_at?: string;
   blocked?: boolean;
   custom_fields?: StoryCustomField[];
+  story_links?: StoryLink[];
 }
 
 export interface Objective {
@@ -134,6 +142,7 @@ export interface ViewSettings {
   showTopOfPageLink: boolean;
   showCycleProgress: boolean;
   showBlockedTickets: boolean;
+  showTopBlockingTickets: boolean;
 }
 
 export interface ModalState {
@@ -166,6 +175,7 @@ export interface SortState {
   storyOwners: SortEntry;
   teamOpenTickets: SortEntry;
   blockedTickets: SortEntry;
+  topBlockingTickets: SortEntry;
 }
 
 export type SortStateKey = keyof SortState;

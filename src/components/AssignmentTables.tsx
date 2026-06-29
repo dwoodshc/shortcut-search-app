@@ -56,6 +56,38 @@ export default function AssignmentTables(): React.JSX.Element | null {
     return Object.values(map);
   }, [epics, visibleEpicIds, members, workflowConfig.states, filterByTeam, selectedTeamIds]);
 
+  const topBlockingTicketsData = useMemo(() => {
+    const storyMap = new Map<number, { name: string; app_url?: string }>();
+    for (const epic of epics) {
+      for (const story of epic.stories || []) storyMap.set(story.id, { name: story.name, app_url: story.app_url });
+    }
+    const result: Array<{ id: number; name: string; app_url?: string; epicId: number | string; epicName: string; blockingCount: number; blockedTickets: Array<{ id: number; name: string; app_url?: string }> }> = [];
+    for (const epic of epics) {
+      if (epic.notFound || !visibleEpicIds.has(epic.id)) continue;
+      const stories = epic.stories || [];
+      const filtered = (filterByTeam && selectedTeamIds.length > 0
+        ? stories.filter(s => !s.group_id || selectedTeamIds.includes(s.group_id))
+        : stories).filter(s => !s.archived);
+      for (const story of filtered) {
+        const blockingLinks = (story.story_links || []).filter(l => l.verb === 'blocks' && l.subject_id === story.id);
+        const blockedTickets = blockingLinks
+          .map(l => { const s = storyMap.get(l.object_id); return s ? { id: l.object_id, name: s.name, app_url: s.app_url } : null; })
+          .filter((t): t is NonNullable<typeof t> => t !== null);
+        if (blockedTickets.length < 2) continue;
+        result.push({
+          id: story.id,
+          name: story.name,
+          app_url: story.app_url,
+          epicId: epic.id,
+          epicName: epic.name,
+          blockingCount: blockedTickets.length,
+          blockedTickets,
+        });
+      }
+    }
+    return result;
+  }, [epics, visibleEpicIds, filterByTeam, selectedTeamIds]);
+
   const memberTicketData = useMemo(() => {
     const map: Record<string, Array<{ id: number; name: string; app_url?: string; epicName: string; epicAppUrl?: string; stateName: string; blocked?: boolean }>> = {};
     for (const epic of epics) {
@@ -114,6 +146,14 @@ export default function AssignmentTables(): React.JSX.Element | null {
     return 0;
   });
 
+  const sortedTopBlockingTickets = [...topBlockingTicketsData].sort((a, b) => {
+    if (!sortState.topBlockingTickets.col) return 0;
+    const dir = sortState.topBlockingTickets.dir === 'asc' ? 1 : -1;
+    if (sortState.topBlockingTickets.col === 'name') return dir * a.name.localeCompare(b.name);
+    if (sortState.topBlockingTickets.col === 'count') return dir * (a.blockingCount - b.blockingCount);
+    return 0;
+  });
+
   const sortedBlockedTickets = [...blockedTicketsData].sort((a, b) => {
     if (!sortState.blockedTickets.col) return 0;
     const dir = sortState.blockedTickets.dir === 'asc' ? 1 : -1;
@@ -126,10 +166,11 @@ export default function AssignmentTables(): React.JSX.Element | null {
   // sortable first column (with restore icon), an optional sortable Count
   // column in the middle, and a static label column on the right.
   const renderHead = (
-    sortKey: 'epicTeam' | 'memberEpic' | 'memberTicket' | 'blockedTickets',
+    sortKey: 'epicTeam' | 'memberEpic' | 'memberTicket' | 'blockedTickets' | 'topBlockingTickets',
     firstCol: { sortField: string; label: string },
     lastCol: { label: string },
     showCount: boolean,
+    countLabel = 'Count',
   ): React.JSX.Element => {
     const sort = sortState[sortKey];
     return (
@@ -142,7 +183,7 @@ export default function AssignmentTables(): React.JSX.Element | null {
         </th>
         {showCount && (
           <th className={`${thBaseClass} text-center`} onClick={() => toggleSortState(sortKey, 'count')}>
-            Count<SortIcon sort={sort} col="count" isNumeric />
+            {countLabel}<SortIcon sort={sort} col="count" isNumeric />
           </th>
         )}
         <th className={`${thBaseClass} rounded-tr-lg cursor-default`}>{lastCol.label}</th>
@@ -154,6 +195,7 @@ export default function AssignmentTables(): React.JSX.Element | null {
   const memberEpicHead = renderHead('memberEpic', { sortField: 'member', label: 'Team Member' }, { label: 'Epics' }, true);
   const memberTicketHead = renderHead('memberTicket', { sortField: 'member', label: 'Team Member' }, { label: 'Open Tickets' }, true);
   const blockedTicketsHead = renderHead('blockedTickets', { sortField: 'epic', label: 'Epic' }, { label: 'Blocked Tickets' }, true);
+  const topBlockingTicketsHead = renderHead('topBlockingTickets', { sortField: 'name', label: 'Blocking Ticket' }, { label: 'Blocked Tickets' }, true, '# Blocked');
 
   const renderEpicTeamRow = (row: EpicTeamEntry) => (
     <tr key={row.id as React.Key} className={row.team.length === 0 ? 'bg-[#fff9c4]' : ''}>
@@ -220,6 +262,28 @@ export default function AssignmentTables(): React.JSX.Element | null {
     </tr>
   );
 
+  const renderTopBlockingTicketRow = (row: typeof sortedTopBlockingTickets[number]) => (
+    <tr key={row.id}>
+      <td className={tdClass}>
+        {row.app_url
+          ? <a href={row.app_url} className="text-[#1a202c] no-underline" target="_blank" rel="noreferrer">{row.name}</a>
+          : <span>{row.name}</span>}
+      </td>
+      <td className={`${tdClass} text-center font-semibold`}>{row.blockingCount}</td>
+      <td className={tdClass}>
+        <ul className="m-0 pl-0 list-none">
+          {row.blockedTickets.map((t) => (
+            <li key={t.id} className="text-[0.7rem]">
+              {t.app_url
+                ? <a href={t.app_url} className="text-[#1a202c] no-underline" target="_blank" rel="noreferrer">{t.name}</a>
+                : <span>{t.name}</span>}
+            </li>
+          ))}
+        </ul>
+      </td>
+    </tr>
+  );
+
   const renderBlockedTicketRow = (row: typeof sortedBlockedTickets[number]) => (
     <tr key={String(row.epicId)}>
       <td className={`${tdClass} whitespace-nowrap`}>
@@ -251,6 +315,7 @@ export default function AssignmentTables(): React.JSX.Element | null {
   const memberEpicHalf = Math.ceil(sortedMemberEpic.length / 2);
   const memberTicketHalf = Math.ceil(sortedMemberTicket.length / 2);
   const blockedTicketsHalf = Math.ceil(sortedBlockedTickets.length / 2);
+  const topBlockingTicketsHalf = Math.ceil(sortedTopBlockingTickets.length / 2);
 
   return (
     <>
@@ -315,6 +380,31 @@ export default function AssignmentTables(): React.JSX.Element | null {
                 </table>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Top Blocking Tickets */}
+        {viewSettings.showTopBlockingTickets && (
+          <div>
+            <h3 className="m-0 mb-2 text-base font-semibold">Top Blocking Tickets</h3>
+            {sortedTopBlockingTickets.length === 0
+              ? <p className="text-sm text-[#6b7280] italic">No tickets blocking 2 or more others found.</p>
+              : (
+                <div className="summary-table-grid">
+                  <div>
+                    <table className={tableClass} style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
+                      <thead>{topBlockingTicketsHead}</thead>
+                      <tbody>{sortedTopBlockingTickets.slice(0, topBlockingTicketsHalf).map((row) => renderTopBlockingTicketRow(row))}</tbody>
+                    </table>
+                  </div>
+                  <div>
+                    <table className={tableClass} style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
+                      <thead>{topBlockingTicketsHead}</thead>
+                      <tbody>{sortedTopBlockingTickets.slice(topBlockingTicketsHalf).map((row) => renderTopBlockingTicketRow(row))}</tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
           </div>
         )}
 
