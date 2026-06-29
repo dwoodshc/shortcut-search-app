@@ -69,6 +69,8 @@ export default function AssignmentTables(): React.JSX.Element | null {
         ? stories.filter(s => !s.group_id || selectedTeamIds.includes(s.group_id))
         : stories).filter(s => !s.archived);
       for (const story of filtered) {
+        const stateName = (workflowConfig.states[story.workflow_state_id] || '').toLowerCase().trim();
+        if (COMPLETE_STATE_NAMES.has(stateName)) continue;
         const blockingLinks = (story.story_links || []).filter(l => l.verb === 'blocks' && l.subject_id === story.id);
         const blockedTickets = blockingLinks
           .map(l => { const s = storyMap.get(l.object_id); return s ? { id: l.object_id, name: s.name, app_url: s.app_url } : null; })
@@ -86,7 +88,7 @@ export default function AssignmentTables(): React.JSX.Element | null {
       }
     }
     return result;
-  }, [epics, visibleEpicIds, filterByTeam, selectedTeamIds]);
+  }, [epics, visibleEpicIds, workflowConfig.states, filterByTeam, selectedTeamIds]);
 
   const memberTicketData = useMemo(() => {
     const map: Record<string, Array<{ id: number; name: string; app_url?: string; epicName: string; epicAppUrl?: string; stateName: string; blocked?: boolean }>> = {};
