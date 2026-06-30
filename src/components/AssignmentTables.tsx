@@ -410,12 +410,12 @@ export default function AssignmentTables(): React.JSX.Element | null {
           </div>
         )}
 
-        {/* Blocked Tickets */}
-        {viewSettings.showBlockedTickets && (
+        {/* Blocked Epics */}
+        {viewSettings.showBlockedEpics && (
           <div>
-            <h3 className="m-0 mb-2 text-base font-semibold">Blocked Tickets</h3>
+            <h3 className="m-0 mb-2 text-base font-semibold">Blocked Epics</h3>
             {sortedBlockedTickets.length === 0
-              ? <p className="text-sm text-[#6b7280] italic">No blocked tickets found.</p>
+              ? <p className="text-sm text-[#6b7280] italic">No blocked epics found.</p>
               : (
                 <div className="summary-table-grid">
                   <div>

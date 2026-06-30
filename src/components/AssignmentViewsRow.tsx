@@ -81,10 +81,10 @@ export default function AssignmentViewsRow(): React.JSX.Element {
       <span className="inline-flex items-center gap-1">
         <PeekButton
           icon={BlockedIcon}
-          label="Blocked Tickets"
-          tooltip={viewSettings.showBlockedTickets ? 'Hide Blocked Tickets' : 'Show tickets marked as "Blocked", or have a blocked relationship to another ticket'}
-          onClick={() => updateViewSetting('showBlockedTickets', !viewSettings.showBlockedTickets)}
-          hidden={!viewSettings.showBlockedTickets}
+          label="Blocked Epics"
+          tooltip={viewSettings.showBlockedEpics ? 'Hide Blocked Epics' : 'Show epics marked as "Blocked", or have a blocked relationship to another ticket'}
+          onClick={() => updateViewSetting('showBlockedEpics', !viewSettings.showBlockedEpics)}
+          hidden={!viewSettings.showBlockedEpics}
         />
         {blockedTicketsCount > 0 && (
           <span className="text-[0.6rem] font-bold px-1.5 py-[0.1rem] rounded-full text-white" style={{ backgroundColor: '#dc2626' }}>
