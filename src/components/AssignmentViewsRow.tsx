@@ -10,9 +10,10 @@ import { useDashboard } from '../context/DashboardContext';
 import { TargetIcon, UsersIcon, TicketIcon, BlockedIcon, LinkIcon } from './icons';
 import PeekButton from './PeekButton';
 import { ViewSettings } from '../types';
+import { COMPLETE_STATE_NAMES } from '../utils';
 
 export default function AssignmentViewsRow(): React.JSX.Element {
-  const { viewSettings, setViewSettings, epics, visibleEpicIds, filterByTeam, selectedTeamIds } = useDashboard();
+  const { viewSettings, setViewSettings, epics, visibleEpicIds, filterByTeam, selectedTeamIds, workflowConfig } = useDashboard();
   const updateViewSetting = (key: keyof ViewSettings, value: boolean) =>
     setViewSettings({ ...viewSettings, [key]: value });
 
@@ -44,6 +45,8 @@ export default function AssignmentViewsRow(): React.JSX.Element {
         ? stories.filter(s => !s.group_id || selectedTeamIds.includes(s.group_id))
         : stories).filter(s => !s.archived);
       for (const story of filtered) {
+        const stateName = (workflowConfig.states[story.workflow_state_id] || '').toLowerCase().trim();
+        if (COMPLETE_STATE_NAMES.has(stateName)) continue;
         const resolvedBlockingCount = (story.story_links || [])
           .filter(l => l.verb === 'blocks' && l.subject_id === story.id && storyMap.has(l.object_id))
           .length;
@@ -51,7 +54,7 @@ export default function AssignmentViewsRow(): React.JSX.Element {
       }
     }
     return count;
-  }, [epics, visibleEpicIds, filterByTeam, selectedTeamIds]);
+  }, [epics, visibleEpicIds, workflowConfig.states, filterByTeam, selectedTeamIds]);
 
   return (
     <div className="flex flex-wrap items-center gap-2 mb-1">
