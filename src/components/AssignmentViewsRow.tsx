@@ -13,9 +13,11 @@ import { ViewSettings } from '../types';
 import { COMPLETE_STATE_NAMES } from '../utils';
 
 export default function AssignmentViewsRow(): React.JSX.Element {
-  const { viewSettings, setViewSettings, epics, visibleEpicIds, filterByTeam, selectedTeamIds, workflowConfig } = useDashboard();
+  const { viewSettings, setViewSettings, epics, visibleEpicIds, filterByTeam, selectedTeamIds, workflowConfig, epicTeamData } = useDashboard();
   const updateViewSetting = (key: keyof ViewSettings, value: boolean) =>
     setViewSettings({ ...viewSettings, [key]: value });
+
+  const unownedEpicsCount = epicTeamData.filter(e => e.team.length === 0).length;
 
   const blockedTicketsCount = useMemo(() => {
     let count = 0;
@@ -59,13 +61,20 @@ export default function AssignmentViewsRow(): React.JSX.Element {
   return (
     <div className="flex flex-wrap items-center gap-2 mb-1">
       <span className="text-[0.8rem] font-semibold text-[#64748b]">Assignments Views:</span>
-      <PeekButton
-        icon={TargetIcon}
-        label="Epic Owner Assignments"
-        tooltip={viewSettings.showEpicOwnerAssignments ? 'Hide Epic Owner Assignments' : 'Show Epic Owner Assignments'}
-        onClick={() => updateViewSetting('showEpicOwnerAssignments', !viewSettings.showEpicOwnerAssignments)}
-        hidden={!viewSettings.showEpicOwnerAssignments}
-      />
+      <span className="inline-flex items-center gap-1">
+        <PeekButton
+          icon={TargetIcon}
+          label="Epic Owner Assignments"
+          tooltip={viewSettings.showEpicOwnerAssignments ? 'Hide Epic Owner Assignments' : 'Show Epic Owner Assignments'}
+          onClick={() => updateViewSetting('showEpicOwnerAssignments', !viewSettings.showEpicOwnerAssignments)}
+          hidden={!viewSettings.showEpicOwnerAssignments}
+        />
+        {unownedEpicsCount > 0 && (
+          <span className="text-[0.6rem] font-bold px-1.5 py-[0.1rem] rounded-full text-white" style={{ backgroundColor: '#dc2626' }}>
+            {unownedEpicsCount}
+          </span>
+        )}
+      </span>
       <PeekButton
         icon={UsersIcon}
         label="Team Member Epic Assignments"
