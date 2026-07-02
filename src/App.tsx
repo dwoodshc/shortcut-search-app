@@ -307,15 +307,11 @@ function App(): React.JSX.Element {
   const visibleEpicIds = useMemo(() => {
     const trimmed = epicSearchQuery.trim().toLowerCase();
     const ids = new Set<number | string>();
-    // "Blocked" lives in the workspace's custom epic-workflow names, not in Shortcut's
-    // coarse epic.state grouping. If the epic-workflow cache hasn't populated yet,
-    // skip the blocked filter rather than hiding every epic.
-    const hasEpicStateInfo = Object.keys(epicStates).length > 0;
     for (const epic of epics) {
       if (epic.notFound) continue;
       if (trimmed && !epic.name.toLowerCase().includes(trimmed)) continue;
       const info = getEpicStateInfo(epic);
-      if (viewSettings.showBlockedOnly && hasEpicStateInfo && info.name.toLowerCase().trim() !== 'blocked') continue;
+      if (viewSettings.showBlockedOnly && !(epic.stories || []).some(s => s.blocked)) continue;
       if (!viewSettings.showDoneEpics && info.type.toLowerCase() === 'done') continue;
       if (deselectedObjectiveIds.size > 0) {
         const objIds = epic.objective_ids || [];
@@ -328,7 +324,7 @@ function App(): React.JSX.Element {
       ids.add(epic.id);
     }
     return ids;
-  }, [epics, epicStates, epicSearchQuery, deselectedObjectiveIds, viewSettings.showDoneEpics, viewSettings.showBlockedOnly, getEpicStateInfo]);
+  }, [epics, epicSearchQuery, deselectedObjectiveIds, viewSettings.showDoneEpics, viewSettings.showBlockedOnly, getEpicStateInfo]);
 
   const allDisplayStories = useMemo(() => {
     const result: Story[] = [];

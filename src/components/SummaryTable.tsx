@@ -423,8 +423,8 @@ function EpicStatusTable(): React.JSX.Element | null {
           )}
           <PeekButton
             icon={BlockedIcon}
-            label={viewSettings.showBlockedOnly ? 'Hide Blocked Epics' : 'Show Blocked Epics'}
-            tooltip={viewSettings.showBlockedOnly ? 'Show all epics' : 'Show only blocked epics'}
+            label={viewSettings.showBlockedOnly ? 'Show All Epics' : 'Show Only Blocked Epics'}
+            tooltip={viewSettings.showBlockedOnly ? 'Show all epics' : 'Show only epics that have blocked tickets'}
             onClick={() => {
               const next = !viewSettings.showBlockedOnly;
               setViewSettings({
@@ -569,7 +569,7 @@ function EpicStatusTable(): React.JSX.Element | null {
                     : null;
                 })()}
                 {viewSettings.showBlockedOnly && (
-                  <span className="ml-3 text-[#3b82f6]">Showing <span className="italic">Blocked</span> epics only</span>
+                  <span className="ml-3 text-[#3b82f6]">Showing only epics with <span className="italic">blocked tickets</span></span>
                 )}
                 {!viewSettings.showDoneEpics && (
                   <span className="ml-3 text-[#3b82f6]">Hiding <span className="italic">Done</span> epics</span>
