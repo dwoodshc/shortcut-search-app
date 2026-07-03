@@ -10,9 +10,10 @@ import React, { useState, useEffect } from 'react';
 import { useDashboard } from '../context/DashboardContext';
 import { createPieSlice, COMPLETE_STATE_NAMES, STORY_TYPE_COLORS, daysAgo, formatDaysAgo, storage, getApiBaseUrl } from '../utils';
 import { Epic, ViewSettings, PullRequest } from '../types';
-import { TargetActiveIcon, UserActiveIcon, HashActiveIcon, KanbanIcon, PieIcon, ChartIcon, PullRequestIcon, BarChartIcon, UsersIcon, TicketIcon, ClipboardCopyIcon } from './icons';
+import { TargetActiveIcon, UserActiveIcon, HashActiveIcon, CheckerFlagActiveIcon, KanbanIcon, PieIcon, ChartIcon, PullRequestIcon, BarChartIcon, UsersIcon, TicketIcon, ClipboardCopyIcon } from './icons';
 import PeekButton from './PeekButton';
 import SortIcon from './SortIcon';
+import { ProgressBar, getGroupCounts } from './ProgressBar';
 
 interface Props {
   epic: Epic;
@@ -123,6 +124,16 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
 
   const displayStories = getDisplayStories(epic);
   const si = getEpicStateInfo(epic);
+  const { backlogCount: progBacklog, inProgressCount: progInProgress, completeCount: progComplete } = getGroupCounts(displayStories, filteredStateIds, workflowConfig.states);
+  const progTotal = displayStories.length;
+  const progCompletePct = progTotal > 0 ? (progComplete / progTotal) * 100 : 0;
+  const progInProgressPct = progTotal > 0 ? (progInProgress / progTotal) * 100 : 0;
+  const progBacklogPct = progTotal > 0 ? (progBacklog / progTotal) * 100 : 0;
+  const epicStateCounts: Record<number, number> = {};
+  displayStories.forEach(s => { epicStateCounts[s.workflow_state_id] = (epicStateCounts[s.workflow_state_id] || 0) + 1; });
+  const progStateBreakdown = filteredStateIds
+    .map(id => ({ stateName: workflowConfig.states[id] || String(id), count: epicStateCounts[id] || 0 }))
+    .filter(s => s.count > 0);
   const updateViewSetting = (key: keyof ViewSettings, value: boolean) =>
     setViewSettings({ ...viewSettings, [key]: value });
   const objectiveNames = (epic.objective_ids || [])
@@ -285,6 +296,21 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
           {viewSettings.showEpicStoryCount
             ? <span className="story-count" style={{ cursor: 'pointer' }} onClick={() => updateViewSetting('showEpicStoryCount', false)} title="Click to hide">{displayStories.length} stories</span>
             : <PeekButton icon={HashActiveIcon} tooltip="Show Story Count" onClick={() => updateViewSetting('showEpicStoryCount', true)} />
+          }
+          {viewSettings.showEpicProgress
+            ? <div style={{ width: '100px', flexShrink: 0, cursor: 'pointer' }} onClick={() => updateViewSetting('showEpicProgress', false)} title="Click to hide">
+                <ProgressBar
+                  completePct={progCompletePct}
+                  inProgressPct={progInProgressPct}
+                  backlogPct={progBacklogPct}
+                  total={progTotal}
+                  completeCount={progComplete}
+                  inProgressCount={progInProgress}
+                  backlogCount={progBacklog}
+                  stateBreakdown={progStateBreakdown}
+                />
+              </div>
+            : <PeekButton icon={CheckerFlagActiveIcon} tooltip="Show Epic Progress" onClick={() => updateViewSetting('showEpicProgress', true)} />
           }
           <span className={`epic-state ${getEpicStateClass(si.type, si.name)}`}>
             {si.type.toLowerCase() === 'done' ? 'Done ✓' : si.name}

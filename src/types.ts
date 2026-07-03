@@ -141,6 +141,7 @@ export interface ViewSettings {
   showStoryTypeBreakdown: boolean;
   showTopOfPageLink: boolean;
   showCycleProgress: boolean;
+  showEpicProgress: boolean;
   showBlockedEpics: boolean;
   showTopBlockingTickets: boolean;
 }

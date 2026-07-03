@@ -140,6 +140,23 @@ export const TicketIcon = (
   </svg>
 );
 
+export const CheckerFlagActiveIcon = (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-[14px] h-[14px] align-middle inline-block">
+    <line x1="5" y1="3" x2="5" y2="21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    {/* Wavy flag outline using a clip path so checkers stay inside */}
+    <clipPath id="flag-wave">
+      <path d="M5 3 Q9 1 13 4 Q17 7 21 5 L21 14 Q17 16 13 13 Q9 10 5 12 Z" />
+    </clipPath>
+    <path d="M5 3 Q9 1 13 4 Q17 7 21 5 L21 14 Q17 16 13 13 Q9 10 5 12 Z" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+    <g clipPath="url(#flag-wave)">
+      <rect x="5" y="3" width="4" height="4.5" fill="currentColor" />
+      <rect x="13" y="4.5" width="4" height="4.5" fill="currentColor" />
+      <rect x="9" y="7.5" width="4" height="4.5" fill="currentColor" />
+      <rect x="17" y="9" width="4" height="4.5" fill="currentColor" />
+    </g>
+  </svg>
+);
+
 export const LinkIcon = (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-[14px] h-[14px] align-middle inline-block">
     <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
