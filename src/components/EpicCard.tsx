@@ -310,7 +310,7 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
                   stateBreakdown={progStateBreakdown}
                 />
               </div>
-            : <PeekButton icon={CheckerFlagActiveIcon} tooltip="Show Epic Progress" onClick={() => updateViewSetting('showEpicProgress', true)} />
+            : <PeekButton icon={<CheckerFlagActiveIcon />} tooltip="Show Epic Progress" onClick={() => updateViewSetting('showEpicProgress', true)} />
           }
           <span className={`epic-state ${getEpicStateClass(si.type, si.name)}`}>
             {si.type.toLowerCase() === 'done' ? 'Done ✓' : si.name}
