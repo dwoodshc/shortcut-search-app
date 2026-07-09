@@ -1034,6 +1034,82 @@ textarea.input-field {
   }
 }
 
+/* Responsive Epic Status table — adjust columns on smaller screens */
+#summary-table {
+  width: 100%;
+}
+
+#summary-table table {
+  table-layout: fixed;
+  width: 100%;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+#summary-table thead,
+#summary-table tbody {
+  width: 100%;
+}
+
+#summary-table th,
+#summary-table td {
+  overflow: hidden;
+  word-break: break-word;
+}
+
+#summary-table td:nth-child(4) {
+  min-width: 200px;
+  flex: 1;
+}
+
+@media (max-width: 1400px) {
+  #summary-table th,
+  #summary-table td {
+    padding: 0.5rem 0.3rem;
+    font-size: 0.8rem;
+  }
+
+  #summary-table th:nth-child(3),
+  #summary-table td:nth-child(3) {
+    display: none;
+  }
+
+  /* Adjust column widths when Last Changed is hidden */
+  #summary-table th:nth-child(1),
+  #summary-table td:nth-child(1) {
+    width: 40% !important;
+  }
+
+  #summary-table th:nth-child(2),
+  #summary-table td:nth-child(2) {
+    width: 20% !important;
+  }
+
+  #summary-table th:nth-child(4),
+  #summary-table td:nth-child(4) {
+    width: 40% !important;
+    min-width: auto;
+  }
+
+  .summary-bar-wrapper {
+    width: 100%;
+    min-height: 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  #summary-table th,
+  #summary-table td {
+    padding: 0.4rem 0.2rem;
+    font-size: 0.75rem;
+  }
+
+  #summary-table .summary-bar-wrapper {
+    width: 100%;
+    min-height: 18px;
+  }
+}
+
 /* lg ≤ 1024px — tablet portrait/landscape */
 @media (max-width: 1024px) {
   .App-header {
