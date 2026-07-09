@@ -266,14 +266,14 @@ export default function AssignmentTables(): React.JSX.Element | null {
 
   const renderTopBlockingTicketRow = (row: typeof sortedTopBlockingTickets[number]) => (
     <tr key={row.id}>
-      <td className={tdClass}>
+      <td className={tdClass} style={{ width: '30%' }}>
         {row.app_url
           ? <a href={row.app_url} className="text-[#1a202c] no-underline" target="_blank" rel="noreferrer">{row.name}</a>
           : <span>{row.name}</span>}
       </td>
-      <td className={`${tdClass} text-center font-semibold`}>{row.blockingCount}</td>
-      <td className={tdClass}>
-        <ul className="m-0 pl-0 list-none">
+      <td className={`${tdClass} text-center font-semibold`} style={{ width: '10%' }}>{row.blockingCount}</td>
+      <td className={tdClass} style={{ width: '60%' }}>
+        <ul className="m-0 pl-4 list-disc">
           {row.blockedTickets.map((t) => (
             <li key={t.id} className="text-[0.7rem]">
               {t.app_url
@@ -288,18 +288,18 @@ export default function AssignmentTables(): React.JSX.Element | null {
 
   const renderBlockedTicketRow = (row: typeof sortedBlockedTickets[number]) => (
     <tr key={String(row.epicId)}>
-      <td className={`${tdClass} whitespace-nowrap`}>
+      <td className={`${tdClass} whitespace-nowrap`} style={{ width: '30%' }}>
         {row.epicAppUrl
           ? <a href={`#epic-${row.epicId}`} className="text-[#1a202c] no-underline">{row.epicName}</a>
           : <span>{row.epicName}</span>}
       </td>
-      <td className={`${tdClass} text-center font-semibold`}>{row.tickets.length}</td>
-      <td className={`${tdClass} whitespace-nowrap`}>
-        <ul className="m-0 pl-0 list-none">
+      <td className={`${tdClass} text-center font-semibold`} style={{ width: '10%' }}>{row.tickets.length}</td>
+      <td className={tdClass} style={{ width: '60%' }}>
+        <ul className="m-0 pl-4 list-disc">
           {[...row.tickets].sort((a, b) => a.name.localeCompare(b.name)).map((t) => {
             const sc = TICKET_STATE_COLORS[t.stateName.toLowerCase()] ?? DEFAULT_TICKET_STATE_COLOR;
             return (
-              <li key={t.id} className="text-[0.7rem] whitespace-nowrap">
+              <li key={t.id} className="text-[0.7rem]">
                 {t.app_url
                   ? <a href={t.app_url} className="text-[#1a202c] no-underline" target="_blank" rel="noreferrer">{t.name}</a>
                   : <span>{t.name}</span>}
