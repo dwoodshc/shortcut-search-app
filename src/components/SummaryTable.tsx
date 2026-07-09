@@ -9,22 +9,13 @@ import React, { useState, useEffect } from 'react';
 import { useDashboard } from '../context/DashboardContext';
 import { Epic, Story, ViewSettings } from '../types';
 import { ResetIcon, TargetActiveIcon, CheckCircleIcon, BlockedIcon } from './icons';
-import { daysAgo, formatDaysAgo } from '../utils';
+import { daysAgo, formatDaysAgo, STATE_PILL_COLORS, DEFAULT_PILL } from '../utils';
 import SortIcon from './SortIcon';
 import PeekButton from './PeekButton';
 import CycleProgress from './CycleProgress';
 import { ProgressBar, getGroupCounts } from './ProgressBar';
 
 const STATE_ORDER = ['Backlog', 'Ready for Development', 'In Development', 'In Review', 'Complete'];
-
-const STATE_PILL_COLORS: Record<string, { bg: string; text: string }> = {
-  'backlog':               { bg: '#d1d5db', text: '#374151' },
-  'ready for development': { bg: '#a7f3d0', text: '#374151' },
-  'in development':        { bg: '#6ee7b7', text: '#374151' },
-  'in review':             { bg: '#4ade80', text: '#374151' },
-  'complete':              { bg: '#16a34a', text: '#ffffff' },
-};
-const DEFAULT_PILL = { bg: '#F1F5F9', text: '#475569' };
 
 
 

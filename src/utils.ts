@@ -9,6 +9,16 @@ import { WorkflowStorageConfig, EpicConfig, TeamConfig, ViewSettings } from './t
 
 export const COMPLETE_STATE_NAMES = new Set(['complete']);
 
+export const STATE_PILL_COLORS: Record<string, { bg: string; text: string }> = {
+  'backlog':               { bg: '#d1d5db', text: '#374151' },
+  'ready for development': { bg: '#a7f3d0', text: '#374151' },
+  'in development':        { bg: '#6ee7b7', text: '#374151' },
+  'in review':             { bg: '#4ade80', text: '#374151' },
+  'complete':              { bg: '#16a34a', text: '#ffffff' },
+};
+
+export const DEFAULT_PILL = { bg: '#F1F5F9', text: '#475569' };
+
 export const STORAGE_KEYS = {
   API_TOKEN: 'shortcut_api_token',
   WORKFLOW_CONFIG: 'shortcut_workflow_config',

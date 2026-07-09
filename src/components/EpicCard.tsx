@@ -6,7 +6,7 @@
  * a team open-tickets table, and a collapsible six-column kanban story board
  * (Backlog → Complete).
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useDashboard } from '../context/DashboardContext';
 import { createPieSlice, COMPLETE_STATE_NAMES, STORY_TYPE_COLORS, daysAgo, formatDaysAgo, storage, getApiBaseUrl } from '../utils';
 import { Epic, ViewSettings, PullRequest } from '../types';
@@ -79,6 +79,17 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
   const [prsLoading, setPrsLoading] = useState(false);
   const [prsLoaded, setPrsLoaded] = useState(false);
 
+  const styles = useMemo(() => ({
+    pointerCursor: { cursor: 'pointer' } as const,
+    progressDiv: { width: '100px', flexShrink: 0, cursor: 'pointer' } as const,
+    popover: { top: 'calc(100% + 8px)', left: 0, minWidth: '560px' } as const,
+    popoverTable: { borderCollapse: 'collapse', tableLayout: 'auto' } as const,
+    popoverScroll: { maxHeight: '220px', overflowY: 'auto' } as const,
+    storyTypeCell: { width: '1%', whiteSpace: 'nowrap', textAlign: 'center' } as const,
+    storyNameCell: { width: '99%' } as const,
+    blockedBadge: { backgroundColor: '#dc2626', whiteSpace: 'nowrap' } as const,
+  }), []);
+
   useEffect(() => {
     if (!showPRs || prsLoaded || !epic.stories || epic.stories.length === 0) return;
     const token = storage.getApiToken();
@@ -142,7 +153,7 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
   const objectiveEl = objectiveNames.length === 0 ? null
     : !viewSettings.showEpicObjective
       ? <PeekButton icon={TargetActiveIcon} tooltip="Show Objective" onClick={() => updateViewSetting('showEpicObjective', true)} />
-      : <span className="epic-owner" style={{ cursor: 'pointer' }} onClick={() => updateViewSetting('showEpicObjective', false)} title="Click to hide">
+      : <span className="epic-owner" style={styles.pointerCursor} onClick={() => updateViewSetting('showEpicObjective', false)} title="Click to hide">
           <strong>{objectiveNames.length > 1 ? 'Objectives: ' : 'Objective: '}</strong>{objectiveNames.join(', ')}
         </span>;
 
@@ -156,7 +167,11 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
   const clickedStories = clickedBarStateId !== null
     ? displayStories
         .filter(s => s.workflow_state_id === clickedBarStateId)
-        .sort((a, b) => new Date(b.updated_at || 0).getTime() - new Date(a.updated_at || 0).getTime())
+        .sort((a, b) => {
+          const aTime = a.updated_at ? new Date(a.updated_at).getTime() : 0;
+          const bTime = b.updated_at ? new Date(b.updated_at).getTime() : 0;
+          return bTime - aTime;
+        })
     : [];
 
   // --- Workflow pie chart ---
@@ -287,18 +302,18 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
         <div className="epic-meta">
           {objectiveEl}
           {viewSettings.showEpicOwners
-            ? <span className="epic-owner" style={{ cursor: 'pointer' }} onClick={() => updateViewSetting('showEpicOwners', false)} title="Click to hide">
+            ? <span className="epic-owner" style={styles.pointerCursor} onClick={() => updateViewSetting('showEpicOwners', false)} title="Click to hide">
                 <strong>{epic.owner_ids && epic.owner_ids.length > 1 ? 'Owners: ' : 'Owner: '}</strong>
                 {epic.owner_ids && epic.owner_ids.length > 0 ? epic.owner_ids.map(id => members[id] || id).join(', ') : 'No Owner'}
               </span>
             : <PeekButton icon={UserActiveIcon} tooltip="Show Owners" onClick={() => updateViewSetting('showEpicOwners', true)} />
           }
           {viewSettings.showEpicStoryCount
-            ? <span className="story-count" style={{ cursor: 'pointer' }} onClick={() => updateViewSetting('showEpicStoryCount', false)} title="Click to hide">{displayStories.length} stories</span>
+            ? <span className="story-count" style={styles.pointerCursor} onClick={() => updateViewSetting('showEpicStoryCount', false)} title="Click to hide">{displayStories.length} stories</span>
             : <PeekButton icon={HashActiveIcon} tooltip="Show Story Count" onClick={() => updateViewSetting('showEpicStoryCount', true)} />
           }
           {viewSettings.showEpicProgress
-            ? <div style={{ width: '100px', flexShrink: 0, cursor: 'pointer' }} onClick={() => updateViewSetting('showEpicProgress', false)} title="Click to hide">
+            ? <div style={styles.progressDiv} onClick={() => updateViewSetting('showEpicProgress', false)} title="Click to hide">
                 <ProgressBar
                   completePct={progCompletePct}
                   inProgressPct={progInProgressPct}
@@ -416,7 +431,7 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
                 <div
                   onClick={(e) => e.stopPropagation()}
                   className="absolute z-50 bg-white rounded-lg shadow-[0_4px_16px_rgba(0,0,0,0.15)] border border-[#E2E8F0] p-3 text-left"
-                  style={{ top: 'calc(100% + 8px)', left: 0, minWidth: '560px' }}
+                  style={styles.popover}
                 >
                   <div className="text-xs font-semibold text-[#64748b] mb-2 uppercase tracking-wide">
                     {clickedStateName} — {clickedStories.length} ticket{clickedStories.length !== 1 ? 's' : ''}
@@ -424,20 +439,20 @@ export default function EpicCard({ epic }: Props): React.JSX.Element {
                   {clickedStories.length === 0 ? (
                     <p className="text-xs text-[#94a3b8] italic">No tickets in this state</p>
                   ) : (
-                    <div style={clickedStories.length > 5 ? { maxHeight: '220px', overflowY: 'auto' } : undefined}>
-                    <table className="w-full" style={{ borderCollapse: 'collapse', tableLayout: 'auto' }}>
+                    <div style={clickedStories.length > 5 ? styles.popoverScroll : undefined}>
+                    <table className="w-full" style={styles.popoverTable}>
                       <tbody>
                         {clickedStories.map(story => (
                           <tr key={story.id} className="border-b border-[#F0F0F7] last:border-0">
-                            <td className="py-[0.3rem] pr-2 align-middle" style={{ width: '1%', whiteSpace: 'nowrap', textAlign: 'center' }}>
+                            <td className="py-[0.3rem] pr-2 align-middle" style={styles.storyTypeCell}>
                               <span className="text-[0.65rem] font-semibold px-1.5 py-[0.1rem] rounded-full text-white" style={{ backgroundColor: STORY_TYPE_COLORS[story.story_type] ?? STORY_TYPE_COLORS.feature }}>
                                 {story.story_type.charAt(0).toUpperCase() + story.story_type.slice(1)}
                               </span>
                             </td>
-                            <td className="py-[0.3rem] pr-2 align-middle" style={{ width: '99%' }}>
+                            <td className="py-[0.3rem] pr-2 align-middle" style={styles.storyNameCell}>
                               <span className="inline-flex items-center gap-1 flex-wrap">
                                 {story.blocked && (
-                                  <span className="text-[0.6rem] font-bold px-1.5 py-[0.1rem] rounded-full text-white" style={{ backgroundColor: '#dc2626', whiteSpace: 'nowrap' }}>Blocked</span>
+                                  <span className="text-[0.6rem] font-bold px-1.5 py-[0.1rem] rounded-full text-white" style={styles.blockedBadge}>Blocked</span>
                                 )}
                                 {story.app_url ? (
                                   <a href={story.app_url} target="_blank" rel="noopener noreferrer" className="text-[#494BCB] text-xs hover:underline">{story.name}</a>

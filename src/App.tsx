@@ -235,6 +235,7 @@ function App(): React.JSX.Element {
           try {
             const migrationResponse = await fetch(`${getApiBaseUrl()}/api/migrate-data`);
             if (migrationResponse.ok) {
+              incrementApiCalls('GET /api/migrate-data', 1);
               const migrationData = await migrationResponse.json();
               if (migrationData.apiToken && !storage.getApiToken()) storage.setApiToken(migrationData.apiToken);
               if (migrationData.workflowConfig && !storage.getWorkflowConfig()) storage.setWorkflowConfig(migrationData.workflowConfig);

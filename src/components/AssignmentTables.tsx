@@ -8,18 +8,18 @@
  */
 import React, { useMemo } from 'react';
 import { useDashboard } from '../context/DashboardContext';
-import { EpicTeamEntry, EpicRef } from '../types';
+import { EpicTeamEntry, EpicRef, Story } from '../types';
 import { ResetIcon } from './icons';
 import SortIcon from './SortIcon';
-import { COMPLETE_STATE_NAMES } from '../utils';
+import { COMPLETE_STATE_NAMES, STATE_PILL_COLORS, DEFAULT_PILL } from '../utils';
 
-const TICKET_STATE_COLORS: Record<string, { bg: string; text: string }> = {
-  'backlog':               { bg: '#d1d5db', text: '#374151' },
-  'ready for development': { bg: '#a7f3d0', text: '#374151' },
-  'in development':        { bg: '#6ee7b7', text: '#374151' },
-  'in review':             { bg: '#4ade80', text: '#374151' },
+const DEFAULT_TICKET_STATE_COLOR = DEFAULT_PILL;
+
+const filterStoriesByTeam = (stories: Story[], selectedTeamIds: string[], filterByTeam: boolean): Story[] => {
+  return filterByTeam && selectedTeamIds.length > 0
+    ? stories.filter(s => !s.group_id || selectedTeamIds.includes(s.group_id))
+    : stories;
 };
-const DEFAULT_TICKET_STATE_COLOR = { bg: '#F1F5F9', text: '#475569' };
 
 export default function AssignmentTables(): React.JSX.Element | null {
   const {
@@ -37,9 +37,7 @@ export default function AssignmentTables(): React.JSX.Element | null {
     for (const epic of epics) {
       if (epic.notFound || !visibleEpicIds.has(epic.id)) continue;
       const stories = epic.stories || [];
-      const filtered = filterByTeam && selectedTeamIds.length > 0
-        ? stories.filter(s => !s.group_id || selectedTeamIds.includes(s.group_id))
-        : stories;
+      const filtered = filterStoriesByTeam(stories, selectedTeamIds, filterByTeam);
       for (const story of filtered) {
         if (!story.blocked) continue;
         const key = String(epic.id);
@@ -65,9 +63,7 @@ export default function AssignmentTables(): React.JSX.Element | null {
     for (const epic of epics) {
       if (epic.notFound || !visibleEpicIds.has(epic.id)) continue;
       const stories = epic.stories || [];
-      const filtered = (filterByTeam && selectedTeamIds.length > 0
-        ? stories.filter(s => !s.group_id || selectedTeamIds.includes(s.group_id))
-        : stories).filter(s => !s.archived);
+      const filtered = filterStoriesByTeam(stories, selectedTeamIds, filterByTeam).filter(s => !s.archived);
       for (const story of filtered) {
         const stateName = (workflowConfig.states[story.workflow_state_id] || '').toLowerCase().trim();
         if (COMPLETE_STATE_NAMES.has(stateName)) continue;
@@ -95,9 +91,7 @@ export default function AssignmentTables(): React.JSX.Element | null {
     for (const epic of epics) {
       if (epic.notFound || !visibleEpicIds.has(epic.id)) continue;
       const stories = epic.stories || [];
-      const filtered = filterByTeam && selectedTeamIds.length > 0
-        ? stories.filter(s => !s.group_id || selectedTeamIds.includes(s.group_id))
-        : stories;
+      const filtered = filterStoriesByTeam(stories, selectedTeamIds, filterByTeam);
       for (const story of filtered) {
         const stateName = (workflowConfig.states[story.workflow_state_id] || '').toLowerCase().trim();
         if (COMPLETE_STATE_NAMES.has(stateName)) continue;
@@ -244,7 +238,7 @@ export default function AssignmentTables(): React.JSX.Element | null {
               <div className="text-[0.85rem] font-semibold text-[#6b7280] mb-[0.1rem] whitespace-nowrap">{tickets[0].epicAppUrl ? <a href={tickets[0].epicAppUrl} className="text-[#6b7280] no-underline" target="_blank" rel="noreferrer">{epicName}</a> : epicName} <span className="font-normal text-[0.75rem]">({tickets.length})</span></div>
               <ul className="m-0 pl-3 list-none">
                 {[...tickets].sort((a, b) => a.name.localeCompare(b.name)).map((t) => {
-                  const sc = TICKET_STATE_COLORS[t.stateName.toLowerCase()] ?? DEFAULT_TICKET_STATE_COLOR;
+                  const sc = STATE_PILL_COLORS[t.stateName.toLowerCase()] ?? DEFAULT_TICKET_STATE_COLOR;
                   return (
                     <li key={t.id} className="text-[0.7rem] whitespace-nowrap">
                       {t.blocked && <span className="text-[0.6rem] font-bold px-1.5 py-[0.1rem] rounded-full text-white mr-1" style={{ backgroundColor: '#dc2626', whiteSpace: 'nowrap' }}>Blocked</span>}
@@ -297,7 +291,7 @@ export default function AssignmentTables(): React.JSX.Element | null {
       <td className={tdClass} style={{ width: '60%' }}>
         <ul className="m-0 pl-4 list-disc">
           {[...row.tickets].sort((a, b) => a.name.localeCompare(b.name)).map((t) => {
-            const sc = TICKET_STATE_COLORS[t.stateName.toLowerCase()] ?? DEFAULT_TICKET_STATE_COLOR;
+            const sc = STATE_PILL_COLORS[t.stateName.toLowerCase()] ?? DEFAULT_TICKET_STATE_COLOR;
             return (
               <li key={t.id} className="text-[0.7rem]">
                 {t.app_url
