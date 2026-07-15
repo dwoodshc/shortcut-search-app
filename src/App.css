@@ -164,7 +164,7 @@ body {
   opacity: 0;
   transition: opacity 0.2s;
   transition-delay: 0s;
-  z-index: 100;
+  z-index: 1000;
   font-weight: 400;
 }
 

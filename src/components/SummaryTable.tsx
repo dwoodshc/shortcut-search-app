@@ -198,8 +198,8 @@ function EpicStatusTable(): React.JSX.Element | null {
       .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
       .slice(0, 5);
     return (
-      <tr key={epic.id as React.Key} className="relative">
-        <td className="px-3 py-2 text-sm sm:whitespace-nowrap border-b border-[#F0F0F7]">
+      <tr key={epic.id as React.Key}>
+        <td className="px-3 py-2 text-sm sm:whitespace-nowrap border-b border-[#F0F0F7] relative">
           {hasBlockedTickets ? (
             <span className="has-tooltip" data-tooltip="This Epic has Blocked Tickets">
               <a href={`#epic-${epic.id}`} className="no-underline text-white font-semibold px-2 py-[0.15rem] rounded-full" style={{ backgroundColor: '#dc2626' }}>
@@ -219,7 +219,7 @@ function EpicStatusTable(): React.JSX.Element | null {
             </span>
           ) : null}
         </td>
-        <td className="px-3 py-2 text-center text-sm border-b border-[#F0F0F7] whitespace-nowrap">
+        <td className="px-3 py-2 text-center text-sm border-b border-[#F0F0F7] whitespace-nowrap relative">
           <button
             onClick={(e) => { e.stopPropagation(); setOpenPopover(openPopover === epic.id ? null : epic.id); }}
             className={`underline decoration-dotted cursor-pointer bg-transparent border-0 p-0 font-inherit text-sm ${lastChanged === 0 ? 'text-[#16a34a] font-semibold' : lastChanged !== null && lastChanged <= 3 ? 'text-[#0369a1]' : 'text-[#64748b]'}`}
