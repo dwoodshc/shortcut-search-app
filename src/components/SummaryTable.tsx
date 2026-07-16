@@ -300,7 +300,7 @@ function EpicStatusTable(): React.JSX.Element | null {
   const tableClass = "w-full bg-white rounded-lg shadow-[0_2px_4px_rgba(0,0,0,0.08)] border border-[#F0F0F7]";
   const theadRow = (
     <tr className="bg-[#494BCB] text-white">
-      <th className="cursor-pointer select-none px-3 py-2 text-left font-semibold text-sm rounded-tl-lg w-[35%]">
+      <th className="cursor-pointer select-none px-3 py-2 text-left font-semibold text-sm rounded-tl-lg w-[45%]">
         <span onClick={() => toggleSortState('summary', 'name')} className="cursor-pointer select-none">Epic Name<SortIcon sort={sortState.summary} col="name" /></span>
         <span className="summary-sort-icon ml-[6px] cursor-pointer" data-tooltip="Restore original order" onClick={(e) => { e.stopPropagation(); resetSortState('summary'); }} style={{ opacity: sortState.summary.col ? 1 : 0.4 }}>
           {ResetIcon}
