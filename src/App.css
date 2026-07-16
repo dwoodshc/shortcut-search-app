@@ -147,6 +147,20 @@ body {
   display: inline-block;
 }
 
+table tbody tr {
+  overflow: visible !important;
+  z-index: auto !important;
+}
+
+table tbody td {
+  overflow: visible !important;
+  z-index: auto !important;
+}
+
+table {
+  overflow: visible !important;
+}
+
 .summary-sort-icon::after,
 .has-tooltip::after {
   content: attr(data-tooltip);
@@ -164,7 +178,7 @@ body {
   opacity: 0;
   transition: opacity 0.2s;
   transition-delay: 0s;
-  z-index: 1000;
+  z-index: 10000;
   font-weight: 400;
 }
 
