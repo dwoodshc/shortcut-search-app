@@ -41,6 +41,7 @@ export function useEpicsData({ epicNames, loadSelectedWorkflow, onRateLimit, set
 
   const handleApiError = useCallback(async (response: Response): Promise<boolean> => {
     if (response.status === 429) {
+      console.error('Error searching epics:', { message: 'Too Many Requests' });
       abortControllerRef.current?.abort();
       setLoading(false);
       onRateLimit();

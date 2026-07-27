@@ -8,6 +8,27 @@ const yaml = require('js-yaml');
 const app = express();
 const PORT = 3001;
 
+// Add timestamps to console logs
+const getTimestamp = () => {
+  const now = new Date();
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  const seconds = String(now.getSeconds()).padStart(2, '0');
+  const ms = String(now.getMilliseconds()).padStart(3, '0');
+  return `[${hours}:${minutes}:${seconds}.${ms}]`;
+};
+
+const originalError = console.error;
+const originalWarn = console.warn;
+
+console.error = (...args) => {
+  originalError(getTimestamp(), ...args);
+};
+
+console.warn = (...args) => {
+  originalWarn(getTimestamp(), ...args);
+};
+
 app.use(cors());
 app.use(express.json());
 
