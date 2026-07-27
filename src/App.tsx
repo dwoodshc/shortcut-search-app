@@ -23,7 +23,7 @@ import PercentBar from './components/PercentBar';
 import MatrixRain from './components/MatrixRain';
 import OceanTide from './components/OceanTide';
 import ThemeSelector from './components/ThemeSelector';
-import { storage, getApiBaseUrl, STORAGE_KEYS } from './utils';
+import { storage, getApiBaseUrl, STORAGE_KEYS, initializeConsoleWithTimestamps } from './utils';
 import pkg from '../package.json';
 import { useEpicsData } from './hooks/useEpicsData';
 import { useWorkflowConfig } from './hooks/useWorkflowConfig';
@@ -115,6 +115,10 @@ function App(): React.JSX.Element {
   const selectTheme = useCallback((t: 'normal' | 'dark' | 'star-trek' | 'matrix') => {
     setTheme(t);
     storage.setDisplayMode(t);
+  }, []);
+
+  useEffect(() => {
+    initializeConsoleWithTimestamps();
   }, []);
 
   const [viewSettings, setViewSettingsState] = useState(() => storage.getViewSettings());

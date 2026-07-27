@@ -239,3 +239,25 @@ export const createPieSlice = (startAngle: number, angle: number, radius = 80): 
   const x2 = centerX + radius * Math.cos(endRad),   y2 = centerY + radius * Math.sin(endRad);
   return `M ${centerX} ${centerY} L ${x1} ${y1} A ${radius} ${radius} 0 ${angle > 180 ? 1 : 0} 1 ${x2} ${y2} Z`;
 };
+
+const getTimestamp = (): string => {
+  const now = new Date();
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  const seconds = String(now.getSeconds()).padStart(2, '0');
+  const ms = String(now.getMilliseconds()).padStart(3, '0');
+  return `[${hours}:${minutes}:${seconds}.${ms}]`;
+};
+
+export function initializeConsoleWithTimestamps(): void {
+  const originalError = console.error;
+  const originalWarn = console.warn;
+
+  console.error = (...args: unknown[]): void => {
+    originalError(getTimestamp(), ...args);
+  };
+
+  console.warn = (...args: unknown[]): void => {
+    originalWarn(getTimestamp(), ...args);
+  };
+}
