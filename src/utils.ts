@@ -211,7 +211,7 @@ export function daysAgo(dateStr: string | undefined): number | null {
   const then = new Date(dateStr);
   const nowDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const thenDay = new Date(then.getFullYear(), then.getMonth(), then.getDate());
-  return Math.round((nowDay.getTime() - thenDay.getTime()) / 86_400_000);
+  return Math.floor((nowDay.getTime() - thenDay.getTime()) / 86_400_000);
 }
 
 export function formatDaysAgo(days: number | null): string {
