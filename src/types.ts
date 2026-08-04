@@ -187,7 +187,8 @@ export interface TeamConfig {
 }
 
 export interface EpicConfig {
-  epics: Array<{ name: string }>;
+  epics: Array<{ name: string; group?: string }>;
+  groups?: Array<{ title: string; collapsed?: boolean }>;
 }
 
 export interface WorkflowStorageConfig {
@@ -243,6 +244,8 @@ export interface DashboardContextValue {
   deselectedObjectiveIds: Set<number | -1>;
   setDeselectedObjectiveIds: Dispatch<SetStateAction<Set<number | -1>>>;
   visibleEpicIds: Set<number | string>;
+  collapsedGroups: Set<string>;
+  setCollapsedGroups: Dispatch<SetStateAction<Set<string>>>;
   // Derived / callbacks
   getDisplayStories: (epic: Epic) => Story[];
   generateShortcutUrl: (epicId: number | string, stateName?: string) => string;

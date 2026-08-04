@@ -8,8 +8,8 @@
 import React, { useState, useEffect } from 'react';
 import { useDashboard } from '../context/DashboardContext';
 import { Epic, Story, ViewSettings } from '../types';
-import { ResetIcon, TargetActiveIcon, CheckCircleIcon, BlockedIcon } from './icons';
-import { daysAgo, formatDaysAgo, STATE_PILL_COLORS, DEFAULT_PILL } from '../utils';
+import { ResetIcon, TargetActiveIcon, CheckCircleIcon, BlockedIcon, ExpandAllIcon } from './icons';
+import { daysAgo, formatDaysAgo, STATE_PILL_COLORS, DEFAULT_PILL, storage } from '../utils';
 import SortIcon from './SortIcon';
 import PeekButton from './PeekButton';
 import CycleProgress from './CycleProgress';
@@ -118,11 +118,20 @@ function getEpicLastChanged(stories: Story[]): number | null {
 }
 
 function EpicStatusTable(): React.JSX.Element | null {
-  const { epics, objectives, members, workflowConfig, filteredStateIds, filteredEpicNames, getDisplayStories, getEpicStateInfo, getEpicStateClass, sortState, toggleSortState, resetSortState, filterByTeam, selectedTeamIds, viewSettings, setViewSettings, epicSearchQuery, setEpicSearchQuery, deselectedObjectiveIds, setDeselectedObjectiveIds, visibleEpicIds } = useDashboard();
+  const { epics, objectives, members, workflowConfig, filteredStateIds, filteredEpicNames, getDisplayStories, getEpicStateInfo, getEpicStateClass, sortState, toggleSortState, resetSortState, filterByTeam, selectedTeamIds, viewSettings, setViewSettings, epicSearchQuery, setEpicSearchQuery, deselectedObjectiveIds, setDeselectedObjectiveIds, visibleEpicIds, collapsedGroups, setCollapsedGroups } = useDashboard();
   const updateViewSetting = (key: keyof ViewSettings, value: boolean) =>
     setViewSettings({ ...viewSettings, [key]: value });
   const [openPopover, setOpenPopover] = useState<number | string | null>(null);
   const [objectiveSearchQuery, setObjectiveSearchQuery] = useState('');
+
+  const toggleGroupCollapse = (groupTitle: string) => {
+    setCollapsedGroups(prev => {
+      const next = new Set(prev);
+      if (next.has(groupTitle)) next.delete(groupTitle);
+      else next.add(groupTitle);
+      return next;
+    });
+  };
   useEffect(() => {
     if (!openPopover) return;
     const close = () => setOpenPopover(null);
@@ -148,6 +157,14 @@ function EpicStatusTable(): React.JSX.Element | null {
       return next;
     });
   };
+
+  const epicConfig = storage.getEpicsConfig();
+  const epicGroups = new Map<string | undefined, Epic[]>();
+  for (const epic of foundEpics) {
+    const group = epicConfig?.epics.find(e => e.name === epic.name)?.group;
+    if (!epicGroups.has(group)) epicGroups.set(group, []);
+    epicGroups.get(group)!.push(epic);
+  }
 
   const getCompletePct = (epic: Epic): number => {
     const stories = getDisplayStories(epic);
@@ -293,6 +310,41 @@ function EpicStatusTable(): React.JSX.Element | null {
 
   const visibleEpics = sortedEpics.filter(e => visibleEpicIds.has(e.id));
 
+  const renderEpicTableRows = (epics: Epic[]) => {
+    const rows: React.ReactNode[] = [];
+    const uniqueGroups = Array.from(new Set(epics.map(e => epicConfig?.epics.find(ec => ec.name === e.name)?.group)));
+
+    for (const groupTitle of uniqueGroups) {
+      const groupEpics = epics.filter(e => (epicConfig?.epics.find(ec => ec.name === e.name)?.group || undefined) === groupTitle);
+      const isCollapsed = groupTitle ? collapsedGroups.has(groupTitle) : false;
+
+      if (groupTitle) {
+        rows.push(
+          <tr key={`group-${groupTitle}`} className="bg-[#f0f4f8] hover:bg-[#e8ecf2]">
+            <td colSpan={4} className="px-3 py-2 border-b border-[#F0F0F7]">
+              <button
+                onClick={() => toggleGroupCollapse(groupTitle)}
+                className="bg-transparent border-0 cursor-pointer p-0 font-semibold text-[#1a202c] flex items-center gap-1"
+              >
+                <span className="text-[0.8rem]">{isCollapsed ? '▶' : '▼'}</span>
+                <span className="text-sm">{groupTitle}</span>
+                <span className="text-[0.75rem] text-[#64748b]">({groupEpics.length})</span>
+              </button>
+            </td>
+          </tr>
+        );
+      }
+
+      if (!isCollapsed) {
+        for (const epic of groupEpics) {
+          rows.push(renderRow(epic));
+        }
+      }
+    }
+
+    return rows;
+  };
+
   const half = Math.ceil(visibleEpics.length / 2);
   const leftEpics = visibleEpics.slice(0, half);
   const rightEpics = visibleEpics.slice(half);
@@ -316,7 +368,18 @@ function EpicStatusTable(): React.JSX.Element | null {
     <div id="summary-table" className="mb-4">
       <div className="flex flex-col gap-2 mb-3">
         <div className="flex items-center gap-2 flex-wrap">
-          <h2 className="m-0 text-[1.1rem] font-semibold text-[#1a202c]">Epic Status</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="m-0 text-[1.1rem] font-semibold text-[#1a202c]">Epic Status</h2>
+            {collapsedGroups.size > 0 && (
+              <button
+                onClick={() => setCollapsedGroups(new Set())}
+                className="text-[0.75rem] text-[#494BCB] bg-transparent border-0 cursor-pointer p-0 hover:text-[#3a37aa] flex items-center gap-1"
+              >
+                {ExpandAllIcon}
+                Expand All
+              </button>
+            )}
+          </div>
           {showObjectiveFilter && (
             <PeekButton
               icon={TargetActiveIcon}
@@ -456,7 +519,7 @@ function EpicStatusTable(): React.JSX.Element | null {
         <table className={tableClass} style={{ borderCollapse: 'separate', borderSpacing: 0, width: '100%' }}>
           <thead>{theadRow}</thead>
           <tbody>
-            {visibleEpics.map((epic) => renderRow(epic))}
+            {renderEpicTableRows(visibleEpics)}
             <tr>
               <td colSpan={4} className="px-3 py-2 text-sm text-[#1e40af] text-left rounded-b-lg" style={{ background: '#dbeafe' }}>
                 <span className="font-semibold">
@@ -501,13 +564,13 @@ function EpicStatusTable(): React.JSX.Element | null {
           <div className="flex-1">
             <table className={tableClass} style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
               <thead>{theadRow}</thead>
-              <tbody>{leftEpics.map((epic) => renderRow(epic))}</tbody>
+              <tbody>{renderEpicTableRows(leftEpics)}</tbody>
             </table>
           </div>
           <div className="flex-1">
             <table className={tableClass} style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
               <thead>{theadRow}</thead>
-              <tbody>{rightEpics.map((epic) => renderRow(epic))}</tbody>
+              <tbody>{renderEpicTableRows(rightEpics)}</tbody>
             </table>
           </div>
         </div>

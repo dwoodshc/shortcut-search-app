@@ -36,7 +36,22 @@ export default function SetupWizard({ step, onStepChange, onClose }: Props): Rea
   const [tokenError, setTokenError] = useState('');
   const [hasExistingToken, setHasExistingToken] = useState(() => !!storage.getApiToken());
   const [epicListError, setEpicListError] = useState('');
-  const [epicsText, setEpicsText] = useState(() => (storage.getEpicsConfig()?.epics || []).map(e => e.name).join('\n'));
+  const [epicsText, setEpicsText] = useState(() => {
+    const config = storage.getEpicsConfig();
+    if (!config?.epics) return '';
+    const lines: string[] = [];
+    let lastGroup: string | undefined = undefined;
+    for (const epic of config.epics) {
+      if (epic.group && epic.group !== lastGroup) {
+        lines.push(`-- ${epic.group}`);
+        lastGroup = epic.group;
+      } else if (!epic.group && lastGroup !== undefined) {
+        lastGroup = undefined;
+      }
+      lines.push(epic.name);
+    }
+    return lines.join('\n');
+  });
   const [allTeams, setAllTeams] = useState<Team[]>([]);
   const [myName, setMyName] = useState(() => storage.getMyName());
   const [cycle1Start, setCycle1Start] = useState(() => {
@@ -52,7 +67,23 @@ export default function SetupWizard({ step, onStepChange, onClose }: Props): Rea
   const handleSaveEpicList = () => {
     setEpicListError('');
     try {
-      const epics = epicsText.split('\n').filter(name => name.trim() !== '').map(name => ({ name: name.trim() }));
+      const lines = epicsText.split('\n').map(line => line.trim()).filter(line => line !== '');
+      const epics: Array<{ name: string; group?: string }> = [];
+      const groups: Array<{ title: string; collapsed?: boolean }> = [];
+      let currentGroup: string | undefined = undefined;
+
+      for (const line of lines) {
+        if (line.startsWith('--')) {
+          const groupTitle = line.substring(2).trim();
+          if (groupTitle) {
+            currentGroup = groupTitle;
+            groups.push({ title: groupTitle, collapsed: false });
+          }
+        } else {
+          epics.push({ name: line, group: currentGroup });
+        }
+      }
+
       const seen = new Set<string>();
       const duplicateLowers = new Set<string>();
       for (const e of epics) {
@@ -65,7 +96,7 @@ export default function SetupWizard({ step, onStepChange, onClose }: Props): Rea
         setEpicListError(`Duplicate epic${displayNames.length > 1 ? 's' : ''}: ${displayNames.join(', ')}`);
         return false;
       }
-      storage.setEpicsConfig({ epics });
+      storage.setEpicsConfig({ epics, groups: groups.length > 0 ? groups : undefined });
       setFilteredEpicNames(epics.map(e => e.name));
       return true;
     } catch (err) {
@@ -541,14 +572,14 @@ export default function SetupWizard({ step, onStepChange, onClose }: Props): Rea
           {step === 7 && (
             <div className="flex flex-col h-full">
               <h3 className="text-[#1e293b] mb-[0.4rem]">Step 7: Epic List</h3>
-              <p className="mb-[0.15rem]">Add the epics you want to track.</p>
+              <p className="mb-[0.15rem]">Add the epics names to track. Optionally group them using <code className="text-[#dc2626]">-- Group Title</code> (lines starting with --).</p>
 
               <div className="flex-1 flex flex-col min-h-0">
                 <textarea
                   className="input-field flex-1 w-full resize-none font-inherit text-base px-3 py-2 box-border"
                   value={epicsText}
                   onChange={(e) => setEpicsText(e.target.value)}
-                  placeholder={"Epic Alpha\nEpic Beta\nEpic Gamma"}
+                  placeholder={"-- Group 1\nEpic Alpha\nEpic Beta\n-- Group 2\nEpic Gamma"}
                 />
               </div>
 

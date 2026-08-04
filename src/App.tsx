@@ -109,6 +109,7 @@ const LoadStatsFooter = React.memo(function LoadStatsFooter({ loadStats, pageSiz
 function App(): React.JSX.Element {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [theme, setTheme] = useState<'normal' | 'dark' | 'star-trek' | 'matrix'>(() => storage.getDisplayMode());
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const darkMode = theme === 'dark';
   const matrixMode = theme === 'matrix';
 
@@ -385,6 +386,7 @@ function App(): React.JSX.Element {
     error, setError, loading, successMessage,
     filteredEpicNames, setFilteredEpicNames,
     setupWizardStep, setSetupWizardStep,
+    collapsedGroups, setCollapsedGroups,
     // Derived / callbacks
     getDisplayStories, generateShortcutUrl,
     getEpicStateInfo, getEpicStateClass,
@@ -398,7 +400,7 @@ function App(): React.JSX.Element {
     epicSearchQuery, setEpicSearchQuery,
     deselectedObjectiveIds, setDeselectedObjectiveIds,
     visibleEpicIds,
-  }), [epics, objectives, members, epicStates, teamMemberIds, loadStats, incrementApiCalls, workflowConfig, setWorkflowField, modals, setModal, sortState, toggleSortState, resetSortState, filterByTeam, setFilterByTeam, selectedTeams, setSelectedTeams, selectedTeamIds, selectedTeamLabel, teamNameMap, shortcutWebUrl, setShortcutWebUrl, error, setError, loading, successMessage, filteredEpicNames, setFilteredEpicNames, setupWizardStep, setSetupWizardStep, getDisplayStories, generateShortcutUrl, getEpicStateInfo, getEpicStateClass, filteredStateIds, epicTeamData, memberEpicMap, allDisplayStories, searchEpics, handleSaveShortcutUrl, handleSelectWorkflow, handleOpenReadme, theme, selectTheme, viewSettings, setViewSettings, epicSearchQuery, setEpicSearchQuery, deselectedObjectiveIds, setDeselectedObjectiveIds, visibleEpicIds]);
+  }), [epics, objectives, members, epicStates, teamMemberIds, loadStats, incrementApiCalls, workflowConfig, setWorkflowField, modals, setModal, sortState, toggleSortState, resetSortState, filterByTeam, setFilterByTeam, selectedTeams, setSelectedTeams, selectedTeamIds, selectedTeamLabel, teamNameMap, shortcutWebUrl, setShortcutWebUrl, error, setError, loading, successMessage, filteredEpicNames, setFilteredEpicNames, setupWizardStep, setSetupWizardStep, collapsedGroups, setCollapsedGroups, getDisplayStories, generateShortcutUrl, getEpicStateInfo, getEpicStateClass, filteredStateIds, epicTeamData, memberEpicMap, allDisplayStories, searchEpics, handleSaveShortcutUrl, handleSelectWorkflow, handleOpenReadme, theme, selectTheme, viewSettings, setViewSettings, epicSearchQuery, setEpicSearchQuery, deselectedObjectiveIds, setDeselectedObjectiveIds, visibleEpicIds]);
 
   return (
     <DashboardContext.Provider value={dashboardContext}>
@@ -659,7 +661,14 @@ function App(): React.JSX.Element {
 
             <UnwatchedTickets />
 
-            {epics.filter(epic => !epic.notFound && visibleEpicIds.has(epic.id)).map((epic) => (
+            {epics.filter(epic => {
+              if (epic.notFound || !visibleEpicIds.has(epic.id)) return false;
+              const epicConfig = storage.getEpicsConfig();
+              if (!epicConfig || !epicConfig.epics) return true;
+              const epicEntry = epicConfig.epics.find(e => e.name === epic.name);
+              if (!epicEntry || !epicEntry.group) return true;
+              return !collapsedGroups.has(epicEntry.group);
+            }).map((epic) => (
               <EpicCard key={epic.id as React.Key} epic={epic} />
             ))}
           </div>

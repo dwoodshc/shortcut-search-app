@@ -175,3 +175,10 @@ export const ClipboardCopyIcon = (
     <line x1="9" y1="16" x2="13" y2="16" />
   </svg>
 );
+
+export const ExpandAllIcon = (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-[14px] h-[14px] align-middle inline-block">
+    <path d="M6 9l6 6 6-6" />
+    <path d="M6 3l6 6 6-6" />
+  </svg>
+);
