@@ -310,6 +310,35 @@ function EpicStatusTable(): React.JSX.Element | null {
 
   const visibleEpics = sortedEpics.filter(e => visibleEpicIds.has(e.id));
 
+  const splitGroupsAcrossColumns = (epics: Epic[]) => {
+    const groups: Array<{ groupTitle: string | undefined; epics: Epic[] }> = [];
+    const uniqueGroups = Array.from(new Set(epics.map(e => epicConfig?.epics.find(ec => ec.name === e.name)?.group)));
+
+    for (const groupTitle of uniqueGroups) {
+      const groupEpics = epics.filter(e => (epicConfig?.epics.find(ec => ec.name === e.name)?.group || undefined) === groupTitle);
+      groups.push({ groupTitle, epics: groupEpics });
+    }
+
+    let leftEpics: Epic[] = [];
+    let rightEpics: Epic[] = [];
+    const targetSize = Math.ceil(epics.length / 2);
+    let leftCount = 0;
+
+    for (const group of groups) {
+      const groupSize = group.epics.length + 1; // +1 for group header row
+      if (leftCount + groupSize <= targetSize) {
+        leftEpics.push(...group.epics);
+        leftCount += groupSize;
+      } else {
+        rightEpics.push(...group.epics);
+      }
+    }
+
+    return { leftEpics, rightEpics };
+  };
+
+  const { leftEpics: splitLeftEpics, rightEpics: splitRightEpics } = splitGroupsAcrossColumns(visibleEpics);
+
   const renderEpicTableRows = (epics: Epic[]) => {
     const rows: React.ReactNode[] = [];
     const uniqueGroups = Array.from(new Set(epics.map(e => epicConfig?.epics.find(ec => ec.name === e.name)?.group)));
@@ -345,9 +374,7 @@ function EpicStatusTable(): React.JSX.Element | null {
     return rows;
   };
 
-  const half = Math.ceil(visibleEpics.length / 2);
-  const leftEpics = visibleEpics.slice(0, half);
-  const rightEpics = visibleEpics.slice(half);
+  // Remove old split logic - now using splitGroupsAcrossColumns
 
   const tableClass = "w-full bg-white rounded-lg shadow-[0_2px_4px_rgba(0,0,0,0.08)] border border-[#F0F0F7]";
   const theadRow = (
@@ -564,13 +591,13 @@ function EpicStatusTable(): React.JSX.Element | null {
           <div className="flex-1">
             <table className={tableClass} style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
               <thead>{theadRow}</thead>
-              <tbody>{renderEpicTableRows(leftEpics)}</tbody>
+              <tbody>{renderEpicTableRows(splitLeftEpics)}</tbody>
             </table>
           </div>
           <div className="flex-1">
             <table className={tableClass} style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
               <thead>{theadRow}</thead>
-              <tbody>{renderEpicTableRows(rightEpics)}</tbody>
+              <tbody>{renderEpicTableRows(splitRightEpics)}</tbody>
             </table>
           </div>
         </div>
