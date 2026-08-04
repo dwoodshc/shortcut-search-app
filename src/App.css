@@ -1666,6 +1666,19 @@ textarea.input-field {
   }
 }
 
+/* Epic group header — styled per theme */
+.epic-group-header {
+  background-color: #dbeafe;
+  color: #1a202c;
+}
+
+.epic-group-header:hover {
+  background-color: #bfdbfe;
+}
+
+.epic-group-header button {
+  color: #1a202c;
+}
 
 /* ============================================================
    DARK MODE  (data-theme="dark")
@@ -2111,6 +2124,19 @@ textarea.input-field {
   background-color: #1A2419;
 }
 
+[data-theme="dark"] .epic-group-header {
+  background-color: #243022;
+  color: #E8F5E9;
+}
+
+[data-theme="dark"] .epic-group-header:hover {
+  background-color: #2d3f2a;
+}
+
+[data-theme="dark"] .epic-group-header button {
+  color: #E8F5E9;
+}
+
 /* ============================================================
    STAR TREK — LCARS THEME  (data-theme="star-trek")
    Palette:
@@ -2418,6 +2444,19 @@ textarea.input-field {
 [data-theme="star-trek"] .progress-bar-empty { background: #1A0F00 !important; }
 [data-theme="star-trek"] .summary-bar-wrapper > div { border-color: #1A0F00; }
 [data-theme="star-trek"] .error-message { background: rgba(204, 51, 0, 0.18); border-color: #CC3300; color: #FF6633; }
+
+[data-theme="star-trek"] .epic-group-header {
+  background-color: rgba(255, 153, 0, 0.12);
+  color: #FFCC99;
+}
+
+[data-theme="star-trek"] .epic-group-header:hover {
+  background-color: rgba(255, 153, 0, 0.2);
+}
+
+[data-theme="star-trek"] .epic-group-header button {
+  color: #FFCC99;
+}
 
 /* ============================================================
    MATRIX THEME  (data-theme="matrix")
@@ -2787,5 +2826,18 @@ textarea.input-field {
 [data-theme="matrix"] .progress-bar-empty { background: #001A00 !important; }
 [data-theme="matrix"] .summary-bar-wrapper > div { border-color: #002200; }
 [data-theme="matrix"] .error-message { background: rgba(100, 0, 0, 0.2); border-color: #AA0000; color: #FF4444; }
+
+[data-theme="matrix"] .epic-group-header {
+  background-color: rgba(0, 170, 42, 0.15);
+  color: #00FF41;
+}
+
+[data-theme="matrix"] .epic-group-header:hover {
+  background-color: rgba(0, 170, 42, 0.25);
+}
+
+[data-theme="matrix"] .epic-group-header button {
+  color: #00FF41;
+}
 
 [data-theme="matrix"] .test-mode-badge { background: #00FF41; color: #000; font-family: 'Courier New', Courier, monospace; }

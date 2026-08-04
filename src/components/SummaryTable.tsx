@@ -349,7 +349,7 @@ function EpicStatusTable(): React.JSX.Element | null {
 
       if (groupTitle) {
         rows.push(
-          <tr key={`group-${groupTitle}`} className="bg-[#f0f4f8] hover:bg-[#e8ecf2]">
+          <tr key={`group-${groupTitle}`} className="epic-group-header">
             <td colSpan={4} className="px-3 py-2 border-b border-[#F0F0F7]">
               <button
                 onClick={() => toggleGroupCollapse(groupTitle)}
