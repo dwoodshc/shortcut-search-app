@@ -8,7 +8,7 @@
 import React, { useState, useEffect } from 'react';
 import { useDashboard } from '../context/DashboardContext';
 import { Epic, Story, ViewSettings } from '../types';
-import { ResetIcon, TargetActiveIcon, CheckCircleIcon, BlockedIcon, ExpandAllIcon } from './icons';
+import { ResetIcon, TargetActiveIcon, CheckCircleIcon, BlockedIcon, ExpandAllIcon, CollapseAllIcon } from './icons';
 import { daysAgo, formatDaysAgo, STATE_PILL_COLORS, DEFAULT_PILL, storage } from '../utils';
 import SortIcon from './SortIcon';
 import PeekButton from './PeekButton';
@@ -397,15 +397,35 @@ function EpicStatusTable(): React.JSX.Element | null {
         <div className="flex items-center gap-2 flex-wrap">
           <div className="flex items-center gap-2">
             <h2 className="m-0 text-[1.1rem] font-semibold text-[#1a202c]">Epic Status</h2>
-            {collapsedGroups.size > 0 && (
-              <button
-                onClick={() => setCollapsedGroups(new Set())}
-                className="text-[0.75rem] text-[#494BCB] bg-transparent border-0 cursor-pointer p-0 hover:text-[#3a37aa] flex items-center gap-1"
-              >
-                {ExpandAllIcon}
-                Expand All
-              </button>
-            )}
+            {(() => {
+              const groupTitles = visibleEpics.map(e => epicConfig?.epics.find(ec => ec.name === e.name)?.group);
+              const uniqueGroupTitles = Array.from(new Set(groupTitles)).filter((g): g is string => g !== undefined);
+              const hasGroups = uniqueGroupTitles.length > 0;
+
+              if (!hasGroups) return null;
+
+              if (collapsedGroups.size > 0) {
+                return (
+                  <button
+                    onClick={() => setCollapsedGroups(new Set())}
+                    className="text-[0.75rem] text-[#494BCB] bg-transparent border-0 cursor-pointer p-0 hover:text-[#3a37aa] flex items-center gap-1"
+                  >
+                    {ExpandAllIcon}
+                    Expand All
+                  </button>
+                );
+              } else {
+                return (
+                  <button
+                    onClick={() => setCollapsedGroups(new Set(uniqueGroupTitles))}
+                    className="text-[0.75rem] text-[#494BCB] bg-transparent border-0 cursor-pointer p-0 hover:text-[#3a37aa] flex items-center gap-1"
+                  >
+                    {CollapseAllIcon}
+                    Collapse All
+                  </button>
+                );
+              }
+            })()}
           </div>
           {showObjectiveFilter && (
             <PeekButton

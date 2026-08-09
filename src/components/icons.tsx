@@ -182,3 +182,10 @@ export const ExpandAllIcon = (
     <path d="M6 3l6 6 6-6" />
   </svg>
 );
+
+export const CollapseAllIcon = (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-[14px] h-[14px] align-middle inline-block">
+    <path d="M6 15l6-6 6 6" />
+    <path d="M6 21l6-6 6 6" />
+  </svg>
+);
