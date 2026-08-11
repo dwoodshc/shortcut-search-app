@@ -27,13 +27,13 @@ export default function AssignmentTables(): React.JSX.Element | null {
     epicTeamData, memberEpicMap,
     sortState, toggleSortState, resetSortState,
     filterByTeam, selectedTeamIds,
-    getEpicStateClass,
+    getEpicStateClass, getEpicStateInfo,
     visibleEpicIds,
     viewSettings,
   } = useDashboard();
 
   const blockedTicketsData = useMemo(() => {
-    const map: Record<string, { epicId: number | string; epicName: string; epicAppUrl?: string; tickets: Array<{ id: number; name: string; app_url?: string; owners: string[]; stateName: string }> }> = {};
+    const map: Record<string, { epicId: number | string; epicName: string; epicAppUrl?: string; epicStateName: string; epicOwners: string[]; tickets: Array<{ id: number; name: string; app_url?: string; owners: string[]; stateName: string }> }> = {};
     for (const epic of epics) {
       if (epic.notFound || !visibleEpicIds.has(epic.id)) continue;
       const stories = epic.stories || [];
@@ -41,7 +41,17 @@ export default function AssignmentTables(): React.JSX.Element | null {
       for (const story of filtered) {
         if (!story.blocked) continue;
         const key = String(epic.id);
-        if (!map[key]) map[key] = { epicId: epic.id, epicName: epic.name, epicAppUrl: epic.app_url, tickets: [] };
+        if (!map[key]) {
+          const epicStateInfo = getEpicStateInfo(epic);
+          map[key] = {
+            epicId: epic.id,
+            epicName: epic.name,
+            epicAppUrl: epic.app_url,
+            epicStateName: epicStateInfo.name,
+            epicOwners: (epic.owner_ids || []).map(id => members[id] || id),
+            tickets: [],
+          };
+        }
         map[key].tickets.push({
           id: story.id,
           name: story.name,
@@ -52,14 +62,14 @@ export default function AssignmentTables(): React.JSX.Element | null {
       }
     }
     return Object.values(map);
-  }, [epics, visibleEpicIds, members, workflowConfig.states, filterByTeam, selectedTeamIds]);
+  }, [epics, visibleEpicIds, members, workflowConfig.states, filterByTeam, selectedTeamIds, getEpicStateInfo]);
 
   const topBlockingTicketsData = useMemo(() => {
-    const storyMap = new Map<number, { name: string; app_url?: string }>();
+    const storyMap = new Map<number, Story>();
     for (const epic of epics) {
-      for (const story of epic.stories || []) storyMap.set(story.id, { name: story.name, app_url: story.app_url });
+      for (const story of epic.stories || []) storyMap.set(story.id, story);
     }
-    const result: Array<{ id: number; name: string; app_url?: string; epicId: number | string; epicName: string; blockingCount: number; blockedTickets: Array<{ id: number; name: string; app_url?: string }> }> = [];
+    const result: Array<{ id: number; name: string; app_url?: string; epicId: number | string; epicName: string; stateName: string; owners: string[]; blockingCount: number; blockedTickets: Array<{ id: number; name: string; app_url?: string; stateName: string; owners: string[] }> }> = [];
     for (const epic of epics) {
       if (epic.notFound || !visibleEpicIds.has(epic.id)) continue;
       const stories = epic.stories || [];
@@ -69,22 +79,31 @@ export default function AssignmentTables(): React.JSX.Element | null {
         if (COMPLETE_STATE_NAMES.has(stateName)) continue;
         const blockingLinks = (story.story_links || []).filter(l => l.verb === 'blocks' && l.subject_id === story.id);
         const blockedTickets = blockingLinks
-          .map(l => { const s = storyMap.get(l.object_id); return s ? { id: l.object_id, name: s.name, app_url: s.app_url } : null; })
+          .map(l => {
+            const s = storyMap.get(l.object_id);
+            if (!s) return null;
+            const sStateName = workflowConfig.states[s.workflow_state_id] || '';
+            const sOwners = (s.owner_ids || []).map(id => members[id] || id);
+            return { id: l.object_id, name: s.name, app_url: s.app_url, stateName: sStateName, owners: sOwners };
+          })
           .filter((t): t is NonNullable<typeof t> => t !== null);
         if (blockedTickets.length < 2) continue;
+        const owners = (story.owner_ids || []).map(id => members[id] || id);
         result.push({
           id: story.id,
           name: story.name,
           app_url: story.app_url,
           epicId: epic.id,
           epicName: epic.name,
+          stateName: workflowConfig.states[story.workflow_state_id] || '',
+          owners,
           blockingCount: blockedTickets.length,
           blockedTickets,
         });
       }
     }
     return result;
-  }, [epics, visibleEpicIds, workflowConfig.states, filterByTeam, selectedTeamIds]);
+  }, [epics, visibleEpicIds, workflowConfig.states, filterByTeam, selectedTeamIds, members]);
 
   const memberTicketData = useMemo(() => {
     const map: Record<string, Array<{ id: number; name: string; app_url?: string; epicName: string; epicAppUrl?: string; stateName: string; blocked?: boolean }>> = {};
@@ -191,7 +210,7 @@ export default function AssignmentTables(): React.JSX.Element | null {
   const memberEpicHead = renderHead('memberEpic', { sortField: 'member', label: 'Team Member' }, { label: 'Epics' }, true);
   const memberTicketHead = renderHead('memberTicket', { sortField: 'member', label: 'Team Member' }, { label: 'Open Tickets' }, true);
   const blockedTicketsHead = renderHead('blockedTickets', { sortField: 'epic', label: 'Epic' }, { label: 'Blocked Tickets' }, true);
-  const topBlockingTicketsHead = renderHead('topBlockingTickets', { sortField: 'name', label: 'Blocking Ticket' }, { label: 'Blocked Tickets' }, true, '# Blocked');
+  const topBlockingTicketsHead = renderHead('topBlockingTickets', { sortField: 'name', label: 'Blocking Ticket' }, { label: 'Blocked Tickets' }, true, '# Blocks');
 
   const renderEpicTeamRow = (row: EpicTeamEntry) => (
     <tr key={row.id as React.Key} className={row.team.length === 0 ? 'bg-[#fff9c4]' : ''}>
@@ -258,34 +277,60 @@ export default function AssignmentTables(): React.JSX.Element | null {
     </tr>
   );
 
-  const renderTopBlockingTicketRow = (row: typeof sortedTopBlockingTickets[number]) => (
+  const renderTopBlockingTicketRow = (row: typeof sortedTopBlockingTickets[number]) => {
+    const sc = STATE_PILL_COLORS[row.stateName.toLowerCase()] ?? DEFAULT_PILL;
+    return (
     <tr key={row.id}>
       <td className={tdClass} style={{ width: '30%' }}>
-        {row.app_url
-          ? <a href={row.app_url} className="text-[#1a202c] no-underline" target="_blank" rel="noreferrer">{row.name}</a>
-          : <span>{row.name}</span>}
+        <div>
+          {row.app_url
+            ? <a href={row.app_url} className="text-[#1a202c] no-underline" target="_blank" rel="noreferrer">{row.name}</a>
+            : <span>{row.name}</span>}
+        </div>
+        {(row.stateName || row.owners.length > 0) && (
+          <div className="mt-[0.2rem]">
+            {row.stateName && <span className="text-[0.6rem] font-medium px-1 py-[0.05rem] rounded" style={{ backgroundColor: sc.bg, color: sc.text }}>{row.stateName}</span>}
+            {row.owners.length > 0 && <span className="ml-1 text-[0.6rem] text-[#6b7280]">{row.owners.join(', ')}</span>}
+          </div>
+        )}
       </td>
       <td className={`${tdClass} text-center font-semibold`} style={{ width: '10%' }}>{row.blockingCount}</td>
       <td className={tdClass} style={{ width: '60%' }}>
         <ul className="m-0 pl-4 list-disc">
-          {row.blockedTickets.map((t) => (
-            <li key={t.id} className="text-[0.7rem]">
-              {t.app_url
-                ? <a href={t.app_url} className="text-[#1a202c] no-underline" target="_blank" rel="noreferrer">{t.name}</a>
-                : <span>{t.name}</span>}
-            </li>
-          ))}
+          {row.blockedTickets.map((t) => {
+            const sc = STATE_PILL_COLORS[t.stateName.toLowerCase()] ?? DEFAULT_PILL;
+            return (
+              <li key={t.id} className="text-[0.7rem]">
+                {t.app_url
+                  ? <a href={t.app_url} className="text-[#1a202c] no-underline" target="_blank" rel="noreferrer">{t.name}</a>
+                  : <span>{t.name}</span>}
+                {t.stateName && <span className="ml-1 text-[0.6rem] font-medium px-1 py-[0.05rem] rounded" style={{ backgroundColor: sc.bg, color: sc.text }}>{t.stateName}</span>}
+                {t.owners.length > 0 && <span className="ml-1 text-[0.6rem] text-[#6b7280]">{t.owners.join(', ')}</span>}
+              </li>
+            );
+          })}
         </ul>
       </td>
     </tr>
-  );
+    );
+  };
 
-  const renderBlockedTicketRow = (row: typeof sortedBlockedTickets[number]) => (
+  const renderBlockedTicketRow = (row: typeof sortedBlockedTickets[number]) => {
+    const epicSc = STATE_PILL_COLORS[row.epicStateName.toLowerCase()] ?? DEFAULT_PILL;
+    return (
     <tr key={String(row.epicId)}>
-      <td className={`${tdClass} whitespace-nowrap`} style={{ width: '30%' }}>
-        {row.epicAppUrl
-          ? <a href={`#epic-${row.epicId}`} className="text-[#1a202c] no-underline">{row.epicName}</a>
-          : <span>{row.epicName}</span>}
+      <td className={tdClass} style={{ width: '30%' }}>
+        <div>
+          {row.epicAppUrl
+            ? <a href={`#epic-${row.epicId}`} className="text-[#1a202c] no-underline">{row.epicName}</a>
+            : <span>{row.epicName}</span>}
+        </div>
+        {(row.epicStateName || row.epicOwners.length > 0) && (
+          <div className="mt-[0.2rem]">
+            {row.epicStateName && <span className="text-[0.6rem] font-medium px-1 py-[0.05rem] rounded" style={{ backgroundColor: epicSc.bg, color: epicSc.text }}>{row.epicStateName}</span>}
+            {row.epicOwners.length > 0 && <span className="ml-1 text-[0.6rem] text-[#6b7280]">{row.epicOwners.join(', ')}</span>}
+          </div>
+        )}
       </td>
       <td className={`${tdClass} text-center font-semibold`} style={{ width: '10%' }}>{row.tickets.length}</td>
       <td className={tdClass} style={{ width: '60%' }}>
@@ -305,7 +350,8 @@ export default function AssignmentTables(): React.JSX.Element | null {
         </ul>
       </td>
     </tr>
-  );
+    );
+  };
 
   const epicTeamHalf = Math.ceil(sortedEpicTeam.length / 2);
   const memberEpicHalf = Math.ceil(sortedMemberEpic.length / 2);
