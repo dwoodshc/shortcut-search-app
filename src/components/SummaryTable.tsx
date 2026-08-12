@@ -24,6 +24,33 @@ function applyTeamFilter(stories: Story[], filterByTeam: boolean, selectedTeamId
   return stories.filter(s => !s.group_id || selectedTeamIds.includes(s.group_id));
 }
 
+function getOrderedGroupTitles(epics: Epic[], epicConfig: any): (string | undefined)[] {
+  // Get all unique groups from the epics being rendered
+  const groupsInEpics = new Set<string | undefined>();
+  for (const epic of epics) {
+    const group = epicConfig?.epics.find((e: any) => e.name === epic.name)?.group;
+    groupsInEpics.add(group);
+  }
+
+  const orderedGroups: (string | undefined)[] = [];
+
+  // Use the order from epicConfig.groups (defined in the setup wizard)
+  if (epicConfig?.groups) {
+    for (const groupDef of epicConfig.groups) {
+      if (groupsInEpics.has(groupDef.title)) {
+        orderedGroups.push(groupDef.title);
+      }
+    }
+  }
+
+  // Add any remaining groups not in epicConfig.groups (ungrouped epics, i.e., undefined)
+  if (groupsInEpics.has(undefined) && !orderedGroups.includes(undefined)) {
+    orderedGroups.push(undefined);
+  }
+
+  return orderedGroups;
+}
+
 function StoryTotalsSummary(): React.JSX.Element | null {
   const { epics, workflowConfig, setModal, resetSortState, visibleEpicIds, getDisplayStories, epicSearchQuery, deselectedObjectiveIds, viewSettings, collapsedGroups } = useDashboard();
 
@@ -199,7 +226,6 @@ function EpicStatusTable(): React.JSX.Element | null {
   };
 
   const sortedEpics = [...foundEpics].sort((a, b) => {
-    if (!sortState.summary.col) return 0;
     const dir = sortState.summary.dir === 'asc' ? 1 : -1;
     if (sortState.summary.col === 'name') return dir * a.name.localeCompare(b.name);
     if (sortState.summary.col === 'status') return dir * getEpicStateInfo(a).name.localeCompare(getEpicStateInfo(b).name);
@@ -209,7 +235,10 @@ function EpicStatusTable(): React.JSX.Element | null {
       const db = getEpicLastChanged(applyTeamFilter(b.stories || [], filterByTeam, selectedTeamIds)) ?? Infinity;
       return dir * (da - db);
     }
-    return 0;
+    // Default order: by position in filteredEpicNames from setup wizard
+    const indexA = filteredEpicNames.indexOf(a.name);
+    const indexB = filteredEpicNames.indexOf(b.name);
+    return indexA - indexB;
   });
 
   const renderRow = (epic: Epic) => {
@@ -338,7 +367,7 @@ function EpicStatusTable(): React.JSX.Element | null {
 
   const splitGroupsAcrossColumns = (epics: Epic[]) => {
     const groups: Array<{ groupTitle: string | undefined; epics: Epic[] }> = [];
-    const uniqueGroups = Array.from(new Set(epics.map(e => epicConfig?.epics.find(ec => ec.name === e.name)?.group)));
+    const uniqueGroups = getOrderedGroupTitles(epics, epicConfig);
 
     for (const groupTitle of uniqueGroups) {
       const groupEpics = epics.filter(e => (epicConfig?.epics.find(ec => ec.name === e.name)?.group || undefined) === groupTitle);
@@ -367,7 +396,7 @@ function EpicStatusTable(): React.JSX.Element | null {
 
   const renderEpicTableRows = (epics: Epic[]) => {
     const rows: React.ReactNode[] = [];
-    const uniqueGroups = Array.from(new Set(epics.map(e => epicConfig?.epics.find(ec => ec.name === e.name)?.group)));
+    const uniqueGroups = getOrderedGroupTitles(epics, epicConfig);
 
     for (const groupTitle of uniqueGroups) {
       const groupEpics = epics.filter(e => (epicConfig?.epics.find(ec => ec.name === e.name)?.group || undefined) === groupTitle);
@@ -424,8 +453,7 @@ function EpicStatusTable(): React.JSX.Element | null {
           <div className="flex items-center gap-2">
             <h2 className="m-0 text-[1.1rem] font-semibold text-[#1a202c]">Epic Status</h2>
             {(() => {
-              const groupTitles = visibleEpics.map(e => epicConfig?.epics.find(ec => ec.name === e.name)?.group);
-              const uniqueGroupTitles = Array.from(new Set(groupTitles)).filter((g): g is string => g !== undefined);
+              const uniqueGroupTitles = getOrderedGroupTitles(visibleEpics, epicConfig).filter((g): g is string => g !== undefined);
               const hasGroups = uniqueGroupTitles.length > 0;
 
               if (!hasGroups) return null;
