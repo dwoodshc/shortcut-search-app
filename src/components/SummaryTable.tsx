@@ -25,18 +25,44 @@ function applyTeamFilter(stories: Story[], filterByTeam: boolean, selectedTeamId
 }
 
 function StoryTotalsSummary(): React.JSX.Element | null {
-  const { allDisplayStories, workflowConfig, setModal, resetSortState } = useDashboard();
+  const { epics, workflowConfig, setModal, resetSortState, visibleEpicIds, getDisplayStories, epicSearchQuery, deselectedObjectiveIds, viewSettings, collapsedGroups } = useDashboard();
 
-  if (allDisplayStories.length === 0) return null;
+  // Build epic groups to determine which epics are collapsed
+  const epicConfig = storage.getEpicsConfig();
+  const epicGroups = new Map<string | undefined, string[]>();
+  const foundEpics = epics.filter(e => !e.notFound);
+  for (const epic of foundEpics) {
+    const group = epicConfig?.epics.find(e => e.name === epic.name)?.group;
+    if (!epicGroups.has(group)) epicGroups.set(group, []);
+    epicGroups.get(group)!.push(epic.id as string);
+  }
+
+  // Get stories from displayed epics (visible AND not in a collapsed group)
+  const displayStories = foundEpics
+    .filter(e => visibleEpicIds.has(e.id))
+    .filter(e => {
+      const group = epicConfig?.epics.find(ec => ec.name === e.name)?.group;
+      return !collapsedGroups.has(group || '');
+    })
+    .flatMap(e => getDisplayStories(e));
+
+  if (displayStories.length === 0) return null;
+
+  // Check if any filters are active
+  const isFiltered = epicSearchQuery.trim() !== '' ||
+    deselectedObjectiveIds.size > 0 ||
+    !viewSettings.showDoneEpics ||
+    viewSettings.showBlockedOnly ||
+    collapsedGroups.size > 0;
 
   const stateCounts: Record<string, number> = {};
   STATE_ORDER.forEach(s => { stateCounts[s] = 0; });
-  allDisplayStories.forEach(story => {
+  displayStories.forEach(story => {
     const name = workflowConfig.states[story.workflow_state_id];
     if (name && stateCounts[name] !== undefined) stateCounts[name]++;
   });
 
-  const total = allDisplayStories.length;
+  const total = Object.values(stateCounts).reduce((a, b) => a + b, 0);
   const completeCount = stateCounts['Complete'] || 0;
   const inProgressCount = (stateCounts['Ready for Development'] || 0) + (stateCounts['In Development'] || 0) + (stateCounts['In Review'] || 0);
   const backlogCount = stateCounts['Backlog'] || 0;
@@ -66,7 +92,7 @@ function StoryTotalsSummary(): React.JSX.Element | null {
               </th>
             ))}
             <th className="px-2 py-2 text-center font-semibold text-[0.8rem]">Total</th>
-            <th className="px-2 py-2 text-center font-semibold text-[0.8rem] rounded-tr-lg">Overall Progress</th>
+            <th className="px-2 py-2 text-center font-semibold text-[0.8rem] rounded-tr-lg">Overall Progress {isFiltered ? '- Filtered' : '- All'}</th>
           </tr>
         </thead>
         <tbody>
