@@ -238,7 +238,7 @@ export function useEpicsData({ epicNames, loadSelectedWorkflow, onRateLimit, set
         epicNamesToSearch.map(async (name): Promise<Epic | null> => {
           try {
             const searchResponse = await fetch(
-              `${getApiBaseUrl()}/api/search/epics?query=${encodeURIComponent(name)}`,
+              `${getApiBaseUrl()}/api/search/epics?query=${encodeURIComponent(`"${name}`)}`,
               { headers: { 'Authorization': `Bearer ${token}` }, signal: controller.signal }
             );
             if (!searchResponse.ok) {
