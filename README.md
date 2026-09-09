@@ -190,8 +190,8 @@ Automatically launches on first use or when configuration is incomplete. **7 ste
 | 3 | Select workflow from all available workflows in your workspace |
 | 4 | Select one or more Shortcut teams to filter assignment and ticket tables (click to toggle each team; multiple selections supported) |
 | 5 | Enter your name **exactly as it appears in Shortcut** (optional — enables the Unwatched Tickets table) |
-| 6 | Pick the **Cycle 1 start date** — anchors the 6-week cycle calculations used by the Cycle Progress table (defaults to the first weekday of the current year) |
-| 7 | Enter the list of epic names to track (one per line) |
+| 6 | Pick the **Cycle 1 start date** and custom **week counts per cycle** (Cycle Progress calculations use these; defaults to 42-day cycles) |
+| 7 | Enter the list of epic names to track (one per line); organize into optional groups |
 
 - Visual workflow preview showing all states with colour-coded badges
 - Settings saved to browser localStorage automatically
@@ -296,6 +296,7 @@ All configuration is stored in **browser localStorage**:
 | `shortcut_team_config` | Array of selected Shortcut teams (each with ID and name) |
 | `shortcut_my_name` | Your Shortcut display name (optional; used by Unwatched Tickets) |
 | `shortcut_cycle1_start` | Cycle 1 start date (ISO `YYYY-MM-DD`); anchors the Cycle Progress calculations |
+| `shortcut_cycle_weeks` | Custom week counts for each of the 8 cycles (optional; defaults to [6,6,6,7,6,7,6,6]) |
 | `shortcut_members_cache` | Owner ID → display name cache |
 | `shortcut_team_members_cache` | Team member IDs keyed by team ID; cached per team, populated on demand |
 | `shortcut_epic_workflow_cache` | Epic workflow states cache |
@@ -359,7 +360,7 @@ Epic workflow states are cached to localStorage and skipped on subsequent loads.
 ### First-Time Setup
 1. Run `npm run dev`
 2. The Setup Wizard launches automatically
-3. Complete all 7 steps: API token → workspace URL → workflow → select teams → your name → Cycle 1 start → epic list
+3. Complete all 7 steps: API token → workspace URL → workflow → select teams → your name → cycle setup (dates & weeks) → epic list
 4. The dashboard loads automatically once setup is complete
 
 ### Daily Use
@@ -372,7 +373,7 @@ Epic workflow states are cached to localStorage and skipped on subsequent loads.
 
 ### Managing Configuration
 - **Edit Epic List** header icon — open the epic list editor (wizard step 7)
-- **Settings → Setup Wizard** — re-run the full setup wizard to change token, URL, workflow, teams, your name, or Cycle 1 start date
+- **Settings → Setup Wizard** — re-run the setup wizard to change any configuration
 - **Settings → Export/Import** — backup configuration to JSON or restore from a previous backup
 - **Settings → Wipe Settings** — clear all localStorage data to start fresh
 
@@ -408,7 +409,7 @@ Epic workflow states are cached to localStorage and skipped on subsequent loads.
 
 ## Version Information
 
-**Version**: 5.1.0
+**Version**: 7.0.0
 **Project Name**: D.A.V.E. (Dashboards Are Very Effective)
 **Author**: Dave Woods
 

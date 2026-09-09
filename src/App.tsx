@@ -480,28 +480,28 @@ function App(): React.JSX.Element {
             </div>
             <p>A React-based dashboard for tracking Shortcut.com epics, visualising progress, and monitoring team workload.</p>
             <ul>
-              <li><strong>Story Summary:</strong> Overall story counts across all epics by workflow state</li>
-              <li><strong>Cycle Progress:</strong> Current 6-week cycle with start/end and % done</li>
-              <li><strong>Epic Status Table:</strong> Progress bars, Last Changed; search and objective filters</li>
-              <li><strong>Global Filters:</strong> Search/Done/Blocked filters apply across all sections</li>
-              <li><strong>Unwatched Tickets:</strong> Open tickets in your selected teams you are not watching</li>
-              <li><strong>Epic Owner Assignments:</strong> Maps each epic to its assigned team members</li>
-              <li><strong>Team Member Epic Assignments:</strong> Inverted view — each member and their epics</li>
-              <li><strong>Team Member Ticket Assignments:</strong> Open tickets grouped by epic, with status pills</li>
-              <li><strong>Epic Card:</strong> Collapsible; Done epics start collapsed by default</li>
-              <li><strong>Additional Views Row:</strong> Per-card peek icons toggle sections globally</li>
-              <li><strong>Ticket Status Breakdown:</strong> 3D column chart; click a bar to view tickets in that state</li>
-              <li><strong>Workflow Status Pie Chart:</strong> Stories by workflow state with clickable Shortcut links</li>
-              <li><strong>Story Type Breakdown:</strong> Feature / Bug / Chore pie chart per epic</li>
-              <li><strong>Story Owners Table:</strong> Sortable per-epic owner counts, plus unassigned</li>
-              <li><strong>Team Open Tickets:</strong> Sortable open counts per team member, non-complete</li>
-              <li><strong>Pull Requests:</strong> Sortable table linking each story to its GitHub PRs</li>
-              <li><strong>User Story Board:</strong> Kanban board (Backlog → Complete) per epic</li>
-              <li><strong>Setup Wizard:</strong> 7-step setup: token, URL, workflow, teams, name, cycle, list</li>
-              <li><strong>Configuration Management:</strong> Export / Import all settings as JSON</li>
-              <li><strong>View Settings:</strong> Toggle the per-card Top of Page link</li>
-              <li><strong>Load Stats Bar:</strong> Load time, API call breakdown, page size, and download</li>
-              <li><strong>Themes:</strong> Normal, Dark Mode, Star Trek (LCARS), and Matrix</li>
+              <li><strong>Story Summary:</strong> Overall story counts by workflow state</li>
+              <li><strong>Cycle Progress:</strong> Current 6-week cycle tracker with dates</li>
+              <li><strong>Epic Status Table:</strong> Progress bars with search & filters</li>
+              <li><strong>Global Filters:</strong> Search/Done/Blocked across sections</li>
+              <li><strong>Unwatched Tickets:</strong> Open tickets you're not watching</li>
+              <li><strong>Epic Owner Assignments:</strong> Epics mapped to team members</li>
+              <li><strong>Team Member Epic Assignments:</strong> Members with their epics</li>
+              <li><strong>Team Member Ticket Assignments:</strong> Open tickets by member</li>
+              <li><strong>Epic Card:</strong> Collapsible card; Done epics collapsed</li>
+              <li><strong>Peek Icons:</strong> Toggle views globally per epic</li>
+              <li><strong>Status Column Chart:</strong> Workflow states with drill-down</li>
+              <li><strong>Workflow Pie Chart:</strong> Stories by state, linked to Shortcut</li>
+              <li><strong>Story Type Chart:</strong> Feature/Bug/Chore breakdown</li>
+              <li><strong>Story Owners:</strong> Sortable owner counts per epic</li>
+              <li><strong>Team Open Tickets:</strong> Open ticket counts by member</li>
+              <li><strong>Pull Requests:</strong> GitHub PRs linked to stories</li>
+              <li><strong>User Story Board:</strong> Kanban board per epic</li>
+              <li><strong>Setup Wizard:</strong> 7-step guided configuration</li>
+              <li><strong>Export/Import:</strong> Backup and restore settings</li>
+              <li><strong>View Settings:</strong> Toggle Top of Page link</li>
+              <li><strong>Stats Bar:</strong> Load time, API calls, page size</li>
+              <li><strong>Themes:</strong> Normal, Dark, Star Trek, Matrix</li>
             </ul>
             <p className="mt-4 text-sm text-[#718096]">
               Version {pkg.version} | Project D.A.V.E. (Dashboards Are Very Effective)
