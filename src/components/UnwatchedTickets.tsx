@@ -68,6 +68,7 @@ export default function UnwatchedTickets(): React.JSX.Element | null {
   const [myMemberId, setMyMemberId] = useState<string | null>(null);
   const [nameNotFound, setNameNotFound] = useState(false);
   const [myName] = useState<string>(() => storage.getMyName());
+  const [isExpanded, setIsExpanded] = useState(false);
 
   useEffect(() => {
     if (!myName || myMemberId) return;
@@ -114,61 +115,69 @@ export default function UnwatchedTickets(): React.JSX.Element | null {
 
   return (
     <div className="mb-4">
-      <h3 className="m-0 mb-2 text-base font-semibold">
-        ⚠️ Unwatched Open Tickets — {myName}
+      <h3
+        className="m-0 mb-2 text-base font-semibold cursor-pointer select-none hover:text-[#494BCB] transition-colors"
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        <span className="mr-1">{isExpanded ? '▼' : '▶'}</span>
+        ⚠️ Unwatched Open Tickets — {myName} ({tickets.length})
       </h3>
-      <div className="lcars-table-frame">
-        <table className={tableClass} style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
-          <colgroup>
-            <col style={{ width: '12%' }} />
-            <col style={{ width: '10%' }} />
-            <col style={{ width: '78%' }} />
-          </colgroup>
-          <thead>
-            <tr className="bg-[#494BCB]">
-              <th className="px-3 py-2 font-semibold text-sm text-left text-white rounded-tl-lg whitespace-nowrap">Ticket ID</th>
-              <th className="px-3 py-2 font-semibold text-sm text-left text-white whitespace-nowrap">Type</th>
-              <th className="px-3 py-2 font-semibold text-sm text-left text-white rounded-tr-lg">Description</th>
-            </tr>
-          </thead>
-          <tbody>
-            {tickets.map((t) => (
-              <tr key={`${t.type}-${t.id}`}>
-                <td className={tdClass}>
-                  {t.app_url ? (
-                    <a href={t.app_url} target="_blank" rel="noopener noreferrer" className="text-[#494BCB] no-underline hover:underline font-mono text-xs">
-                      {t.displayId}
-                    </a>
-                  ) : t.epicAnchor ? (
-                    <a href={t.epicAnchor} className="text-[#494BCB] no-underline hover:underline font-mono text-xs">
-                      {t.displayId}
-                    </a>
-                  ) : (
-                    <span className="font-mono text-xs text-[#64748b]">{t.displayId}</span>
-                  )}
-                </td>
-                <td className={tdClass}>
-                  <span
-                    className="text-xs font-semibold px-2 py-[0.15rem] rounded-full text-white"
-                    style={{ backgroundColor: typeColor(t.type) }}
-                  >
-                    {t.type}
-                  </span>
-                </td>
-                <td className={`${tdClass} break-words`}>{t.name}</td>
-              </tr>
-            ))}
-          </tbody>
-          <tfoot>
-            <tr>
-              <td colSpan={3} className="px-3 py-2 text-xs text-[#64748b] font-semibold border-t border-[#F0F0F7]">
-                {tickets.length} unwatched ticket{tickets.length !== 1 ? 's' : ''} in selected teams
-              </td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
-      <hr className="border-0 border-t-2 border-slate-200 mt-4" />
+      {isExpanded && (
+        <>
+          <div className="lcars-table-frame">
+            <table className={tableClass} style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
+              <colgroup>
+                <col style={{ width: '12%' }} />
+                <col style={{ width: '10%' }} />
+                <col style={{ width: '78%' }} />
+              </colgroup>
+              <thead>
+                <tr className="bg-[#494BCB]">
+                  <th className="px-3 py-2 font-semibold text-sm text-left text-white rounded-tl-lg whitespace-nowrap">Ticket ID</th>
+                  <th className="px-3 py-2 font-semibold text-sm text-left text-white whitespace-nowrap">Type</th>
+                  <th className="px-3 py-2 font-semibold text-sm text-left text-white rounded-tr-lg">Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                {tickets.map((t) => (
+                  <tr key={`${t.type}-${t.id}`}>
+                    <td className={tdClass}>
+                      {t.app_url ? (
+                        <a href={t.app_url} target="_blank" rel="noopener noreferrer" className="text-[#494BCB] no-underline hover:underline font-mono text-xs">
+                          {t.displayId}
+                        </a>
+                      ) : t.epicAnchor ? (
+                        <a href={t.epicAnchor} className="text-[#494BCB] no-underline hover:underline font-mono text-xs">
+                          {t.displayId}
+                        </a>
+                      ) : (
+                        <span className="font-mono text-xs text-[#64748b]">{t.displayId}</span>
+                      )}
+                    </td>
+                    <td className={tdClass}>
+                      <span
+                        className="text-xs font-semibold px-2 py-[0.15rem] rounded-full text-white"
+                        style={{ backgroundColor: typeColor(t.type) }}
+                      >
+                        {t.type}
+                      </span>
+                    </td>
+                    <td className={`${tdClass} break-words`}>{t.name}</td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td colSpan={3} className="px-3 py-2 text-xs text-[#64748b] font-semibold border-t border-[#F0F0F7]">
+                    {tickets.length} unwatched ticket{tickets.length !== 1 ? 's' : ''} in selected teams
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+          <hr className="border-0 border-t-2 border-slate-200 mt-4" />
+        </>
+      )}
     </div>
   );
 }
