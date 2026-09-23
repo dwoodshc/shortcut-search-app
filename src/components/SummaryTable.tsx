@@ -286,9 +286,15 @@ function EpicStatusTable(): React.JSX.Element | null {
         </td>
         <td className="px-3 py-[0.4rem] text-center border-b border-[#F0F0F7] whitespace-nowrap">
           {si.name ? (
-            <span className={`epic-state ${getEpicStateClass(si.type, si.name)} !text-[0.75rem] !py-[0.15rem] !px-2`}>
-              {si.type.toLowerCase() === 'done' ? 'Done ✓' : si.name}
-            </span>
+            epic.app_url ? (
+              <a href={epic.app_url} target="_blank" rel="noopener noreferrer" className={`epic-state ${getEpicStateClass(si.type, si.name)} !text-[0.75rem] !py-[0.15rem] !px-2 no-underline hover:opacity-80 transition-opacity`}>
+                {si.type.toLowerCase() === 'done' ? 'Done ✓' : si.name}
+              </a>
+            ) : (
+              <span className={`epic-state ${getEpicStateClass(si.type, si.name)} !text-[0.75rem] !py-[0.15rem] !px-2`}>
+                {si.type.toLowerCase() === 'done' ? 'Done ✓' : si.name}
+              </span>
+            )
           ) : null}
         </td>
         <td className="px-3 py-2 text-center text-sm border-b border-[#F0F0F7] whitespace-nowrap relative">
